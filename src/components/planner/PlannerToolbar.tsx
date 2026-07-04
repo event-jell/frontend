@@ -30,6 +30,8 @@ interface Props {
   hasSelection?: boolean;
   onlineUsers?: PresenceUser[];
   onBringToFront?: () => void;
+  onSaveTemplate?: () => void;
+  onLoadTemplate?: () => void;
 }
 
 function ToolBtn({ active, disabled, onClick, title, children }: {
@@ -66,6 +68,7 @@ export default function PlannerToolbar({
   onExport, onShare, planName, eventName,
   onAlignLeft, onAlignCenter, onToggleLock, onBringToFront,
   darkMode, onToggleDarkMode, hasSelection, onlineUsers = [],
+  onSaveTemplate, onLoadTemplate,
 }: Props) {
   return (
     <div className="bg-white border-b border-slate-100 flex-shrink-0 shadow-sm">
@@ -127,6 +130,21 @@ export default function PlannerToolbar({
             title={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             {darkMode ? '☀️' : '🌙'}
+          </button>
+          
+          <div className="w-px h-6 bg-slate-200 mx-1"></div>
+
+          <button
+            onClick={onLoadTemplate}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            Templates
+          </button>
+          <button
+            onClick={onSaveTemplate}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
+          >
+            Save as Template
           </button>
 
           <button

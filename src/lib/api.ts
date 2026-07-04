@@ -102,6 +102,7 @@ function normalizeFloorPlan(raw: any): FloorPlan {
     rooms: raw.rooms ?? [],
     thumbnail: raw.thumbnail,
     status: raw.status ?? 'draft',
+    isTemplate: raw.is_template,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
@@ -219,6 +220,7 @@ function denormalizeFloorPlan(data: Partial<FloorPlan>): Record<string, unknown>
   if (data.gridSize !== undefined) out.grid_size = data.gridSize;
   if (data.thumbnail !== undefined) out.thumbnail = data.thumbnail;
   if (data.status !== undefined) out.status = data.status;
+  if (data.isTemplate !== undefined) out.is_template = data.isTemplate;
   if (data.elements !== undefined) {
     out.elements = data.elements.map(e => ({
       ...e,
@@ -338,6 +340,7 @@ function denormalizeComm(data: Partial<Comm>): Record<string, unknown> {
 
 export const floorPlansApi = {
   list: () => http.get('/floor-plans').then(r => (r.data as unknown[]).map(normalizeFloorPlan)),
+  listTemplates: () => http.get('/floor-plans/templates/all').then(r => (r.data as unknown[]).map(normalizeFloorPlan)),
   get: (id: string) => http.get(`/floor-plans/${id}`).then(r => normalizeFloorPlan(r.data)),
   create: (data: Partial<FloorPlan>) =>
     http.post('/floor-plans', denormalizeFloorPlan(data)).then(r => normalizeFloorPlan(r.data)),

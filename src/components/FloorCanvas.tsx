@@ -20,6 +20,11 @@ interface Props {
   onZoomChange?: (zoom: number) => void;
   externalZoom?: number;
   darkMode?: boolean;
+  onCursorMove?: (x: number, y: number) => void;
+  otherCursors?: { x: number; y: number; color: string; name: string }[];
+  onElementDrag?: (id: string, x: number, y: number) => void;
+  onElementTransform?: (id: string, x: number, y: number, width: number, height: number, rotation: number) => void;
+  remoteDrags?: Record<string, { x: number; y: number; width?: number; height?: number; rotation?: number }>;
 }
 
 interface ViewState { scale: number; x: number; y: number; }
@@ -40,14 +45,18 @@ function GridLines({ width, height, gridSize }: { width: number; height: number;
 }
 
 
-function ElementShape({ el, isSelected, onSelect, onChange, gridSize, snap, toolMode }: {
+function ElementShape({ el, isSelected, onSelect, onChange, onDragMove, onTransform, reportPointer, gridSize, snap, toolMode, isRemoteDragging }: {
   el: PlacedElement;
   isSelected: boolean;
   onSelect: () => void;
   onChange: (updated: PlacedElement) => void;
+  onDragMove?: (x: number, y: number) => void;
+  onTransform?: (x: number, y: number, width: number, height: number, rotation: number) => void;
+  reportPointer?: (pointer: { x: number, y: number } | null) => void;
   gridSize: number;
   snap: boolean;
   toolMode: ToolMode;
+  isRemoteDragging?: boolean;
 }) {
   const groupRef = useRef<Konva.Group>(null);
   const trRef = useRef<Konva.Transformer>(null);
@@ -59,6 +68,19 @@ function ElementShape({ el, isSelected, onSelect, onChange, gridSize, snap, tool
     }
   }, [isSelected]);
 
+  const handleDragMove = useCallback((e: KonvaEventObject<DragEvent>) => {
+    const node = groupRef.current;
+    if (!node) return;
+    const x = snap ? snapToGrid(node.x(), gridSize) : node.x();
+    const y = snap ? snapToGrid(node.y(), gridSize) : node.y();
+    onDragMove?.(x, y);
+
+    const stage = node.getStage();
+    if (stage) {
+      reportPointer?.(stage.getPointerPosition());
+    }
+  }, [gridSize, snap, onDragMove, reportPointer]);
+
   const handleDragEnd = useCallback((e: KonvaEventObject<DragEvent>) => {
     const node = groupRef.current;
     if (!node) return;
@@ -66,6 +88,24 @@ function ElementShape({ el, isSelected, onSelect, onChange, gridSize, snap, tool
     const y = snap ? snapToGrid(node.y(), gridSize) : node.y();
     onChange({ ...el, x, y });
   }, [el, onChange, gridSize, snap]);
+
+  const handleTransform = useCallback(() => {
+    const node = groupRef.current;
+    if (!node) return;
+    const scaleX = node.scaleX(), scaleY = node.scaleY();
+    const x = snap ? snapToGrid(node.x(), gridSize) : node.x();
+    const y = snap ? snapToGrid(node.y(), gridSize) : node.y();
+    const width = Math.max(20, snap ? snapToGrid(el.width * scaleX, gridSize) : el.width * scaleX);
+    const height = Math.max(20, snap ? snapToGrid(el.height * scaleY, gridSize) : el.height * scaleY);
+    const rotation = node.rotation();
+
+    onTransform?.(x, y, width, height, rotation);
+
+    const stage = node.getStage();
+    if (stage) {
+      reportPointer?.(stage.getPointerPosition());
+    }
+  }, [el, gridSize, snap, onTransform, reportPointer]);
 
   const handleTransformEnd = useCallback(() => {
     const node = groupRef.current;
@@ -106,14 +146,17 @@ function ElementShape({ el, isSelected, onSelect, onChange, gridSize, snap, tool
         x={el.x}
         y={el.y}
         rotation={el.rotation}
-        draggable={toolMode === 'select' && !el.locked}
+        draggable={toolMode === 'select' && !el.locked && !isRemoteDragging}
+        opacity={isRemoteDragging ? 0.5 : 1}
         onClick={(e: KonvaEventObject<MouseEvent>) => { e.cancelBubble = true; onSelect(); }}
         onTap={(e: KonvaEventObject<Event>) => { e.cancelBubble = true; onSelect(); }}
         onDragStart={(e: KonvaEventObject<DragEvent>) => {
           e.cancelBubble = true;
           onSelect();
         }}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
+        onTransform={handleTransform}
         onTransformEnd={handleTransformEnd}
       >
         {isCircle ? (
@@ -304,6 +347,8 @@ export default function FloorCanvas({
   toolMode = 'select', snapEnabled = true,
   onZoomChange, externalZoom,
   darkMode = false,
+  onCursorMove, otherCursors,
+  onElementDrag, onElementTransform, remoteDrags,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
@@ -432,12 +477,33 @@ export default function FloorCanvas({
   }, [isPanMode]);
 
   const handleMouseMove = useCallback((e: KonvaEventObject<MouseEvent>) => {
-    if (!isPanning || !lastPos.current) return;
-    const dx = e.evt.clientX - lastPos.current.x;
-    const dy = e.evt.clientY - lastPos.current.y;
-    lastPos.current = { x: e.evt.clientX, y: e.evt.clientY };
-    setClampedView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
-  }, [isPanning, setClampedView]);
+    if (isPanning && lastPos.current) {
+      const dx = e.evt.clientX - lastPos.current.x;
+      const dy = e.evt.clientY - lastPos.current.y;
+      lastPos.current = { x: e.evt.clientX, y: e.evt.clientY };
+      setClampedView(v => ({ ...v, x: v.x + dx, y: v.y + dy }));
+    }
+
+    if (onCursorMove) {
+      const stage = stageRef.current;
+      if (stage) {
+        const pointer = stage.getPointerPosition();
+        if (pointer) {
+          const logicalX = (pointer.x - view.x) / view.scale;
+          const logicalY = (pointer.y - view.y) / view.scale;
+          onCursorMove(logicalX, logicalY);
+        }
+      }
+    }
+  }, [isPanning, setClampedView, onCursorMove, view.x, view.y, view.scale]);
+
+  const handleReportPointer = useCallback((pointer: { x: number, y: number } | null) => {
+    if (pointer && onCursorMove) {
+      const logicalX = (pointer.x - view.x) / view.scale;
+      const logicalY = (pointer.y - view.y) / view.scale;
+      onCursorMove(logicalX, logicalY);
+    }
+  }, [onCursorMove, view.x, view.y, view.scale]);
 
   const handleMouseUp = useCallback(() => { setIsPanning(false); lastPos.current = null; }, []);
 
@@ -493,18 +559,68 @@ export default function FloorCanvas({
 
             {[...elements]
               .sort((a, b) => a.zIndex - b.zIndex)
-              .map(el => (
-                <ElementShape
-                  key={el.id}
-                  el={el}
-                  isSelected={selectedId === el.id}
-                  onSelect={() => onSelect(el.id)}
-                  onChange={handleElementChange}
-                  gridSize={gridSize}
-                  snap={snapEnabled}
-                  toolMode={toolMode}
+              .map(el => {
+                const remoteDrag = remoteDrags?.[el.id];
+                const displayEl = remoteDrag ? { 
+                  ...el, 
+                  x: remoteDrag.x, 
+                  y: remoteDrag.y,
+                  ...(remoteDrag.width !== undefined && { width: remoteDrag.width }),
+                  ...(remoteDrag.height !== undefined && { height: remoteDrag.height }),
+                  ...(remoteDrag.rotation !== undefined && { rotation: remoteDrag.rotation }),
+                } : el;
+                return (
+                  <ElementShape
+                    key={el.id}
+                    el={displayEl}
+                    isSelected={selectedId === el.id}
+                    onSelect={() => onSelect(el.id)}
+                    onChange={handleElementChange}
+                    onDragMove={(x, y) => onElementDrag?.(el.id, x, y)}
+                    onTransform={(x, y, w, h, r) => onElementTransform?.(el.id, x, y, w, h, r)}
+                    reportPointer={handleReportPointer}
+                    gridSize={gridSize}
+                    snap={snapEnabled}
+                    toolMode={toolMode}
+                    isRemoteDragging={!!remoteDrag}
+                  />
+                );
+              })}
+
+            {otherCursors?.map(c => (
+              <Group key={c.name} x={c.x} y={c.y} listening={false}>
+                <Line 
+                  points={[0, 0, 15, 10, 8, 12, 10, 20, 6, 21, 4, 13, 0, 16]} 
+                  fill={c.color} 
+                  stroke="#ffffff" 
+                  strokeWidth={1.5} 
+                  closed 
+                  shadowColor="rgba(0,0,0,0.3)"
+                  shadowBlur={4}
+                  shadowOffset={{ x: 0, y: 2 }}
                 />
-              ))}
+                <Group x={12} y={16}>
+                  <Rect 
+                    fill={c.color} 
+                    cornerRadius={6} 
+                    width={c.name.length * 8 + 16} 
+                    height={22} 
+                    shadowColor="rgba(0,0,0,0.2)"
+                    shadowBlur={4}
+                    shadowOffset={{ x: 0, y: 2 }}
+                  />
+                  <Text 
+                    x={8} 
+                    y={5} 
+                    text={c.name} 
+                    fill="#ffffff" 
+                    fontSize={12} 
+                    fontStyle="bold" 
+                    fontFamily="sans-serif"
+                  />
+                </Group>
+              </Group>
+            ))}
           </Group>
         </Layer>
       </Stage>

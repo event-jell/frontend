@@ -70,6 +70,7 @@ export interface FloorPlan {
   status: 'draft' | 'published';
   createdAt: string;
   updatedAt: string;
+  isTemplate?: boolean;
 }
 
 export interface ElementTemplate {

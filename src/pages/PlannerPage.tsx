@@ -9,11 +9,19 @@ import PlannerToolbar, { type ToolMode } from '../components/planner/PlannerTool
 import StatusBar, { type Room } from '../components/planner/StatusBar';
 import ExportModal from '../components/planner/ExportModal';
 import ShareModal from '../components/planner/ShareModal';
-import { useFloorPlan, useUpdateFloorPlan, useSaveElements } from '../hooks/useFloorPlans';
+import TemplatesModal from '../components/planner/TemplatesModal';
+import { useFloorPlan, useUpdateFloorPlan, useSaveElements, useCreateFloorPlan, useTemplates } from '../hooks/useFloorPlans';
 import { usePresence } from '../hooks/usePresence';
 import { useAuth } from '../contexts/AuthContext';
 import { socket } from '../lib/socket';
 import type { PlacedElement, ElementTemplate } from '../types';
+
+interface UserCursor {
+  x: number;
+  y: number;
+  color: string;
+  name: string;
+}
 
 type FloorMap = Record<string, PlacedElement[]>;
 
@@ -41,6 +49,8 @@ export default function PlannerPage() {
   const onlineUsers = usePresence(id ? `floor-plan:${id}` : undefined, user);
   const updatePlan = useUpdateFloorPlan();
   const saveElements = useSaveElements();
+  const createPlan = useCreateFloorPlan();
+  const { data: templates = [] } = useTemplates();
 
   const [planName, setPlanName] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -49,6 +59,7 @@ export default function PlannerPage() {
   const [rulersEnabled, setRulersEnabled] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showShare, setShowShare] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -59,12 +70,18 @@ export default function PlannerPage() {
   const [floorModalWidth, setFloorModalWidth] = useState('');
   const [floorModalHeight, setFloorModalHeight] = useState('');
   const [deleteRoomId, setDeleteRoomId] = useState<string | null>(null);
+  const [cursors, setCursors] = useState<Record<string, UserCursor>>({});
+  const [remoteDrags, setRemoteDrags] = useState<Record<string, { x: number, y: number, width?: number, height?: number, rotation?: number }>>({});
 
   // History tracks the full per-floor element map
   const { current: floorMap, push: pushHistory, undo, redo, canUndo, canRedo } = useHistory<FloorMap>({});
 
   // Elements for the currently active floor
   const elements: PlacedElement[] = (activeRoomId ? floorMap[activeRoomId] : undefined) ?? [];
+  
+  const activeRoom = rooms.find(r => r.id === activeRoomId);
+  const activeCanvasWidth = activeRoom?.width ?? plan?.canvasWidth ?? 30;
+  const activeCanvasHeight = activeRoom?.height ?? plan?.canvasHeight ?? 20;
 
   const isInitialized = useRef(false);
 
@@ -142,9 +159,19 @@ export default function PlannerPage() {
     floorMapRef.current = floorMap;
   }, [floorMap]);
 
+  const activeRoomIdRef = useRef(activeRoomId);
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId;
+  }, [activeRoomId]);
+
+  const onlineUsersRef = useRef(onlineUsers);
+  useEffect(() => {
+    onlineUsersRef.current = onlineUsers;
+  }, [onlineUsers]);
+
   // Socket.io Real-time Collaboration
   useEffect(() => {
-    if (!id) return;
+    if (!id || !user) return;
     
     // Join the floor plan room
     socket.emit('planner:join', { planId: id });
@@ -153,16 +180,86 @@ export default function PlannerPage() {
       if (payload.planId === id) {
         // Update local state by pushing to history
         pushHistory({ ...floorMapRef.current, [payload.activeRoomId]: payload.elements });
+        if (payload.activeRoomId === activeRoomIdRef.current) {
+          setRemoteDrags({});
+        }
+      }
+    };
+
+    const handlePlannerCursor = (payload: { planId: string; activeRoomId: string; userId: string; x: number; y: number }) => {
+      if (payload.planId === id && payload.activeRoomId === activeRoomIdRef.current) {
+        if (payload.userId === user.id) return;
+        const presenceUser = onlineUsersRef.current.find(u => u.id === payload.userId);
+        if (presenceUser) {
+          setCursors(prev => ({
+            ...prev,
+            [payload.userId]: { x: payload.x, y: payload.y, color: presenceUser.color, name: presenceUser.name }
+          }));
+        }
+      }
+    };
+
+    const handlePlannerElementMoved = (payload: { planId: string; activeRoomId: string; userId: string; elementId: string; x: number; y: number; width?: number; height?: number; rotation?: number }) => {
+      if (payload.planId === id && payload.activeRoomId === activeRoomIdRef.current) {
+        if (payload.userId === user.id) return;
+        setRemoteDrags(prev => ({ 
+          ...prev, 
+          [payload.elementId]: { 
+            x: payload.x, 
+            y: payload.y,
+            ...(payload.width !== undefined && { width: payload.width }),
+            ...(payload.height !== undefined && { height: payload.height }),
+            ...(payload.rotation !== undefined && { rotation: payload.rotation }),
+          } 
+        }));
       }
     };
     
     socket.on('planner:updated', handlePlannerUpdated);
+    socket.on('planner:cursor_moved', handlePlannerCursor);
+    socket.on('planner:element_moved', handlePlannerElementMoved);
     
     return () => {
       socket.emit('planner:leave', { planId: id });
       socket.off('planner:updated', handlePlannerUpdated);
+      socket.off('planner:cursor_moved', handlePlannerCursor);
+      socket.off('planner:element_moved', handlePlannerElementMoved);
     };
-  }, [id, pushHistory]);
+  }, [id, pushHistory, user]);
+
+  const lastCursorEmitTime = useRef(0);
+  const lastDragEmitTime = useRef(0);
+  const THROTTLE_MS = 50; // 20 updates per second
+
+  const handleCursorMove = useCallback((x: number, y: number) => {
+    if (id && activeRoomId && user) {
+      const now = Date.now();
+      if (now - lastCursorEmitTime.current > THROTTLE_MS) {
+        socket.emit('planner:cursor', { planId: id, activeRoomId, userId: user.id, x, y });
+        lastCursorEmitTime.current = now;
+      }
+    }
+  }, [id, activeRoomId, user]);
+
+  const handleElementDrag = useCallback((elementId: string, x: number, y: number) => {
+    if (id && activeRoomId && user) {
+      const now = Date.now();
+      if (now - lastDragEmitTime.current > THROTTLE_MS) {
+        socket.emit('planner:element_moving', { planId: id, activeRoomId, userId: user.id, elementId, x, y });
+        lastDragEmitTime.current = now;
+      }
+    }
+  }, [id, activeRoomId, user]);
+
+  const handleElementTransform = useCallback((elementId: string, x: number, y: number, width: number, height: number, rotation: number) => {
+    if (id && activeRoomId && user) {
+      const now = Date.now();
+      if (now - lastDragEmitTime.current > THROTTLE_MS) {
+        socket.emit('planner:element_moving', { planId: id, activeRoomId, userId: user.id, elementId, x, y, width, height, rotation });
+        lastDragEmitTime.current = now;
+      }
+    }
+  }, [id, activeRoomId, user]);
 
   const handleAddElement = useCallback((template: ElementTemplate) => {
     const newEl: PlacedElement = {
@@ -296,6 +393,37 @@ export default function PlannerPage() {
     handleAddRoom(name, w, h);
   }, [floorModalName, floorModalWidth, floorModalHeight, handleAddRoom]);
 
+  const handleSaveTemplate = useCallback(() => {
+    if (elements.length === 0) return;
+    const templateName = prompt('Enter a name for this template:', `${planName} Template`);
+    if (!templateName) return;
+    
+    createPlan.mutate({
+      name: templateName,
+      description: 'Saved from floor plan',
+      canvasWidth: activeCanvasWidth,
+      canvasHeight: activeCanvasHeight,
+      gridSize: plan?.gridSize || 1,
+      elements: elements,
+      rooms: [],
+      status: 'published',
+      isTemplate: true
+    });
+  }, [elements, planName, activeCanvasWidth, activeCanvasHeight, plan, createPlan]);
+
+  const handleLoadTemplate = useCallback((template: FloorPlan) => {
+    if (!template.elements || template.elements.length === 0) return;
+    
+    // Adjust IDs to prevent collision
+    const newElements = template.elements.map(el => ({
+      ...el,
+      id: nanoid()
+    }));
+    
+    updateFloor(newElements);
+    setShowTemplates(false);
+  }, [updateFloor]);
+
   const handleAutoSave = useCallback(async () => {
     if (!id) return;
     // Save all floors flattened for backwards compatibility
@@ -318,10 +446,6 @@ export default function PlannerPage() {
     }, 500);
     return () => clearTimeout(timer);
   }, [handleAutoSave]);
-
-  const activeRoom = rooms.find(r => r.id === activeRoomId);
-  const activeCanvasWidth = activeRoom?.width ?? plan?.canvasWidth ?? 30;
-  const activeCanvasHeight = activeRoom?.height ?? plan?.canvasHeight ?? 20;
 
   const selectedElement = elements.find(el => el.id === selectedId) ?? null;
   const totalSeated = elements.reduce((sum, el) => sum + (el.seated || 0), 0);
@@ -365,6 +489,14 @@ export default function PlannerPage() {
           Go Back
         </button>
       </div>
+
+      {showTemplates && (
+        <TemplatesModal 
+          templates={templates} 
+          onClose={() => setShowTemplates(false)} 
+          onLoad={handleLoadTemplate} 
+        />
+      )}
 
       {showExport && <ExportModal planName={planName} onClose={() => setShowExport(false)} />}
       {showShare && <ShareModal planName={planName} onClose={() => setShowShare(false)} />}
@@ -528,6 +660,8 @@ export default function PlannerPage() {
         onToggleDarkMode={() => setDarkMode(p => !p)}
         hasSelection={!!selectedId}
         onlineUsers={onlineUsers}
+        onSaveTemplate={handleSaveTemplate}
+        onLoadTemplate={() => setShowTemplates(true)}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -548,6 +682,11 @@ export default function PlannerPage() {
             onZoomChange={setZoom}
             externalZoom={zoom}
             darkMode={darkMode}
+            onCursorMove={handleCursorMove}
+            otherCursors={Object.values(cursors)}
+            onElementDrag={handleElementDrag}
+            onElementTransform={handleElementTransform}
+            remoteDrags={remoteDrags}
           />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-slate-50/50">

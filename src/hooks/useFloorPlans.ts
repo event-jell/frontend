@@ -16,6 +16,14 @@ export function useFloorPlans() {
   });
 }
 
+export function useTemplates() {
+  return useQuery({
+    queryKey: [...floorPlanKeys.all, 'templates'],
+    queryFn: floorPlansApi.listTemplates,
+    staleTime: 30_000,
+  });
+}
+
 export function useFloorPlan(id: string) {
   return useQuery({
     queryKey: floorPlanKeys.detail(id),

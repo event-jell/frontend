@@ -539,7 +539,7 @@ function AppPreview() {
   const handleTab = (i: number) => { setActive(i); setKey(k=>k+1); };
 
   return (
-    <div className="relative w-full max-w-[600px] mx-auto"
+    <div className="relative w-full max-w-4xl mx-auto"
       style={{ animation:'float 7s ease-in-out infinite', animationDelay:'0.3s' }}>
       <div className="absolute -inset-6 rounded-3xl blur-3xl opacity-20 pointer-events-none"
         style={{ background:`linear-gradient(135deg,${C.red},${C.gold})`, animation:'blob1 9s ease-in-out infinite' }} />
@@ -575,7 +575,7 @@ function AppPreview() {
         </div>
 
         {/* Screen */}
-        <div style={{height:320,overflow:'hidden'}}>
+        <div style={{height:480,overflow:'hidden'}}>
           <div key={key} className="w-full h-full">
             {active===0&&<DashboardScreen/>}
             {active===1&&<FloorPlanScreen/>}
@@ -725,10 +725,10 @@ export default function LandingPage() {
           style={{ backgroundImage:'radial-gradient(rgba(212,162,76,1) 1px,transparent 1px)', backgroundSize:'32px 32px' }} />
 
         <div className="relative max-w-6xl mx-auto px-6 w-full py-28">
-          <div className="flex flex-col lg:flex-row items-center gap-16">
+          <div className="flex flex-col items-center gap-16">
 
             {/* Text */}
-            <div className="flex-1 text-center lg:text-left">
+            <div className="flex-1 text-center">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-7"
                 style={{ background:'rgba(212,162,76,0.12)', color:'rgba(212,162,76,0.95)', border:'1px solid rgba(212,162,76,0.25)', animation:'fadeUp 0.7s ease both 0.1s' }}>
                 <Zap size={11} style={{ color: C.gold }} />
@@ -748,12 +748,12 @@ export default function LandingPage() {
                 </span>
               </h1>
 
-              <p className="text-lg leading-relaxed mb-9 max-w-lg mx-auto lg:mx-0"
+              <p className="text-lg leading-relaxed mb-9 max-w-lg mx-auto"
                 style={{ color:'rgba(255,255,255,0.58)', animation:'fadeUp 0.7s ease both 0.4s' }}>
                 Design stunning floor plans, manage guests, create beautiful tickets, coordinate vendors, and track every detail — all from one platform built for memorable events.
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start"
+              <div className="flex flex-col sm:flex-row items-center gap-3 justify-center"
                 style={{ animation:'fadeUp 0.7s ease both 0.55s' }}>
                 <Link to="/register"
                   className="flex items-center gap-2 px-7 py-3.5 text-sm rounded-2xl shadow-2xl transition-all hover:-translate-y-1 btn-gold">
@@ -766,7 +766,7 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-              <div className="flex items-center gap-3 mt-8 justify-center lg:justify-start"
+              <div className="flex items-center gap-3 mt-8 justify-center"
                 style={{ animation:'fadeUp 0.7s ease both 0.7s' }}>
                 <div className="flex -space-x-2">
                   {[C.red,C.gold,'#6366F1',C.green].map((c,i)=>(
@@ -783,15 +783,15 @@ export default function LandingPage() {
             </div>
 
             {/* Preview */}
-            <div className="flex-1 w-full lg:max-w-[600px]" style={{ animation:'scaleIn 0.8s ease both 0.3s' }}>
+            <div className="flex-1 w-full lg:max-w-4xl" style={{ animation:'scaleIn 0.8s ease both 0.3s' }}>
               <AppPreview />
             </div>
           </div>
         </div>
 
         {/* Wave */}
-        <div className="absolute bottom-0 inset-x-0 pointer-events-none">
-          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-12">
+        <div className="absolute -bottom-[1px] inset-x-0 pointer-events-none">
+          <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" className="w-full h-12 block">
             <path d="M0,40 C240,0 480,60 720,40 C960,20 1200,60 1440,40 L1440,60 L0,60 Z" fill="white" />
           </svg>
         </div>

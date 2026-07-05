@@ -61,6 +61,7 @@ export interface FloorPlan {
   _id: string;
   name: string;
   description: string;
+  eventId?: string;
   canvasWidth: number;
   canvasHeight: number;
   gridSize: number;
@@ -68,9 +69,11 @@ export interface FloorPlan {
   rooms: Room[];
   thumbnail?: string;
   status: 'draft' | 'published';
+  isTemplate?: boolean;
+  isPublic?: boolean;
+  ownerId?: string;
   createdAt: string;
   updatedAt: string;
-  isTemplate?: boolean;
 }
 
 export interface ElementTemplate {

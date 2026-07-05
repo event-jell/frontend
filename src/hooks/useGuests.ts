@@ -42,7 +42,7 @@ export function useUpdateGuest() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Guest> }) => guestsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await qc.cancelQueries({ queryKey: guestKeys.all });
-      const snapshots = new Map<string, Guest>();
+      const snapshots = new Map<string, Guest[]>();
 
       qc.getQueriesData<Guest[]>({ queryKey: guestKeys.all }).forEach(([key, guests]) => {
         if (!guests) return;

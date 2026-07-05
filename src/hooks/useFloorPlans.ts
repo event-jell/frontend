@@ -37,7 +37,7 @@ export function useCreateFloorPlan() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: Partial<FloorPlan>) => floorPlansApi.create(data),
-    onSuccess: () => qc.invalidateQueries({ queryKey: floorPlanKeys.list() }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: floorPlanKeys.all }),
   });
 }
 

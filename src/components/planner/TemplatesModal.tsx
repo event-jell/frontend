@@ -4,21 +4,31 @@ import type { FloorPlan, PlacedElement } from '../../types';
 
 interface Props {
   templates: FloorPlan[];
+  currentUserId?: string;
   onClose: () => void;
   onLoad: (template: FloorPlan) => void;
 }
 
-export default function TemplatesModal({ templates, onClose, onLoad }: Props) {
+export default function TemplatesModal({ templates, currentUserId, onClose, onLoad }: Props) {
   const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'my' | 'public'>('my');
 
-  const filtered = templates.filter(t => 
-    t.name.toLowerCase().includes(search.toLowerCase()) || 
-    (t.description && t.description.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = templates.filter(t => {
+    const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase()) || 
+      (t.description && t.description.toLowerCase().includes(search.toLowerCase()));
+    
+    if (!matchesSearch) return false;
+    
+    if (tab === 'my') {
+      return t.ownerId === currentUserId;
+    } else {
+      return t.isPublic === true;
+    }
+  });
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl w-[600px] max-h-[85vh] flex flex-col">
+      <div className="bg-white rounded-2xl shadow-2xl w-[700px] max-h-[85vh] flex flex-col">
         {/* Header */}
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
           <div>
@@ -27,6 +37,22 @@ export default function TemplatesModal({ templates, onClose, onLoad }: Props) {
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 rounded-full transition-colors">
             <X size={20} />
+          </button>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex px-6 pt-2 border-b border-slate-100 gap-6">
+          <button 
+            className={`pb-3 font-medium text-sm transition-colors border-b-2 ${tab === 'my' ? 'border-[#7A1F1F] text-[#7A1F1F]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setTab('my')}
+          >
+            My Templates
+          </button>
+          <button 
+            className={`pb-3 font-medium text-sm transition-colors border-b-2 ${tab === 'public' ? 'border-[#7A1F1F] text-[#7A1F1F]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+            onClick={() => setTab('public')}
+          >
+            Public Templates
           </button>
         </div>
 
@@ -59,7 +85,14 @@ export default function TemplatesModal({ templates, onClose, onLoad }: Props) {
               {filtered.map(template => (
                 <div key={template._id} className="bg-white border border-slate-200 rounded-xl p-4 hover:border-[#7A1F1F]/50 hover:shadow-md transition-all group flex flex-col">
                   <div className="flex-1">
-                    <h3 className="font-bold text-slate-800 mb-1 line-clamp-1">{template.name}</h3>
+                    <div className="flex justify-between items-start gap-2 mb-1">
+                      <h3 className="font-bold text-slate-800 line-clamp-1">{template.name}</h3>
+                      {template.isPublic && (
+                        <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider rounded-full">
+                          Public
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-500 line-clamp-2 min-h-[32px]">
                       {template.description || 'No description provided'}
                     </p>
@@ -71,9 +104,13 @@ export default function TemplatesModal({ templates, onClose, onLoad }: Props) {
                   </div>
                   
                   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <button className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50">
-                      <Trash2 size={16} />
-                    </button>
+                    {template.ownerId === currentUserId ? (
+                      <button className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50">
+                        <Trash2 size={16} />
+                      </button>
+                    ) : (
+                      <div />
+                    )}
                     <button 
                       onClick={() => onLoad(template)}
                       className="px-4 py-1.5 bg-[#7A1F1F] text-white text-sm font-semibold rounded-lg hover:bg-[#601818] transition-colors"

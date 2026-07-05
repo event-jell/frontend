@@ -95,6 +95,7 @@ function normalizeFloorPlan(raw: any): FloorPlan {
     _id: raw._id,
     name: raw.name,
     description: raw.description ?? '',
+    eventId: raw.event_id ?? raw.eventId,
     canvasWidth: raw.canvas_width ?? raw.canvasWidth ?? 1200,
     canvasHeight: raw.canvas_height ?? raw.canvasHeight ?? 800,
     gridSize: raw.grid_size ?? raw.gridSize ?? 20,
@@ -103,6 +104,8 @@ function normalizeFloorPlan(raw: any): FloorPlan {
     thumbnail: raw.thumbnail,
     status: raw.status ?? 'draft',
     isTemplate: raw.is_template,
+    isPublic: raw.is_public,
+    ownerId: raw.owner_id,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
   };
@@ -215,12 +218,14 @@ function denormalizeFloorPlan(data: Partial<FloorPlan>): Record<string, unknown>
   const out: Record<string, unknown> = {};
   if (data.name !== undefined) out.name = data.name;
   if (data.description !== undefined) out.description = data.description;
+  if (data.eventId !== undefined) out.event_id = data.eventId;
   if (data.canvasWidth !== undefined) out.canvas_width = data.canvasWidth;
   if (data.canvasHeight !== undefined) out.canvas_height = data.canvasHeight;
   if (data.gridSize !== undefined) out.grid_size = data.gridSize;
   if (data.thumbnail !== undefined) out.thumbnail = data.thumbnail;
   if (data.status !== undefined) out.status = data.status;
   if (data.isTemplate !== undefined) out.is_template = data.isTemplate;
+  if (data.isPublic !== undefined) out.is_public = data.isPublic;
   if (data.elements !== undefined) {
     out.elements = data.elements.map(e => ({
       ...e,

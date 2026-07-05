@@ -125,11 +125,12 @@ function ElementShape({ el, isSelected, onSelect, onChange, onDragMove, onTransf
   const isDanceFloor = el.type === 'dance_floor';
   const isExit = el.type === 'exit' || el.type === 'security';
 
+  const isWhite = el.color.toLowerCase() === '#ffffff' || el.color.toLowerCase() === '#fff';
   const commonProps = {
     fill: (isDanceFloor || isExit) ? 'transparent' : el.color,
     opacity: el.opacity !== undefined ? el.opacity : ((isDanceFloor || isExit) ? 1 : 0.9),
-    stroke: isDanceFloor ? '#94A3B8' : isExit ? el.color : el.color,
-    strokeWidth: isDanceFloor || isExit ? 1.5 : 1,
+    stroke: isDanceFloor ? '#94A3B8' : isExit ? el.color : (isWhite ? '#cbd5e1' : el.color),
+    strokeWidth: isDanceFloor || isExit ? 1.5 : (isWhite ? 1.5 : 1),
     dash: isDanceFloor || isExit ? [6, 4] : [],
   };
 
@@ -535,7 +536,7 @@ export default function FloorCanvas({
         <Layer>
           <Group x={view.x} y={view.y} scaleX={view.scale} scaleY={view.scale}>
             {/* Canvas bg */}
-            <Rect width={canvasWidth} height={canvasHeight} fill={darkMode ? '#1e293b' : '#ffffff'} cornerRadius={4} listening={false} perfectDrawEnabled={false} />
+            <Rect width={canvasWidth} height={canvasHeight} fill={darkMode ? '#1e293b' : '#f8fafc'} cornerRadius={4} listening={false} perfectDrawEnabled={false} />
             {Array.from({ length: Math.ceil(canvasWidth / gridSize) + 1 }).map((_, i) => (
               <Line
                 key={`v-${i}`}

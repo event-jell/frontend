@@ -14,7 +14,7 @@ import { useFloorPlan, useUpdateFloorPlan, useSaveElements, useCreateFloorPlan, 
 import { usePresence } from '../hooks/usePresence';
 import { useAuth } from '../contexts/AuthContext';
 import { socket } from '../lib/socket';
-import type { PlacedElement, ElementTemplate } from '../types';
+import type { PlacedElement, ElementTemplate, FloorPlan } from '../types';
 
 interface UserCursor {
   x: number;
@@ -60,6 +60,10 @@ export default function PlannerPage() {
   const [showExport, setShowExport] = useState(false);
   const [showShare, setShowShare] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  
+  const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+  const [saveTemplateName, setSaveTemplateName] = useState('');
+  const [saveTemplateIsPublic, setSaveTemplateIsPublic] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [activeRoomId, setActiveRoomId] = useState<string>('');
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -80,8 +84,8 @@ export default function PlannerPage() {
   const elements: PlacedElement[] = (activeRoomId ? floorMap[activeRoomId] : undefined) ?? [];
   
   const activeRoom = rooms.find(r => r.id === activeRoomId);
-  const activeCanvasWidth = activeRoom?.width ?? plan?.canvasWidth ?? 30;
-  const activeCanvasHeight = activeRoom?.height ?? plan?.canvasHeight ?? 20;
+  const activeCanvasWidth = activeRoom?.width ?? plan?.canvasWidth ?? 1200;
+  const activeCanvasHeight = activeRoom?.height ?? plan?.canvasHeight ?? 800;
 
   const isInitialized = useRef(false);
 
@@ -306,7 +310,7 @@ export default function PlannerPage() {
 
   const handleAlignCenter = useCallback(() => {
     if (!selectedId) return;
-    const w = rooms.find(r => r.id === activeRoomId)?.width ?? plan?.canvasWidth ?? 30;
+    const w = rooms.find(r => r.id === activeRoomId)?.width ?? plan?.canvasWidth ?? 1200;
     updateFloor(elements.map(el => el.id === selectedId ? { ...el, x: (w - el.width) / 2 } : el));
   }, [elements, selectedId, rooms, activeRoomId, plan, updateFloor]);
 
@@ -340,8 +344,8 @@ export default function PlannerPage() {
     if (id) {
       const updatedRooms = newRooms.map(r => ({
         ...r,
-        canvasWidth: plan?.canvasWidth ?? 30,
-        canvasHeight: plan?.canvasHeight ?? 20,
+        canvasWidth: plan?.canvasWidth ?? 1200,
+        canvasHeight: plan?.canvasHeight ?? 800,
         elements: floorMap[r.id] || []
       }));
       updatePlan.mutate({ id, data: { name: planName, rooms: updatedRooms as any } });
@@ -369,8 +373,8 @@ export default function PlannerPage() {
     if (id) {
       const updatedRooms = remaining.map(r => ({
         ...r,
-        canvasWidth: plan?.canvasWidth ?? 30,
-        canvasHeight: plan?.canvasHeight ?? 20,
+        canvasWidth: plan?.canvasWidth ?? 1200,
+        canvasHeight: plan?.canvasHeight ?? 800,
         elements: newMap[r.id] || []
       }));
       updatePlan.mutate({ id, data: { name: planName, rooms: updatedRooms as any } });
@@ -393,13 +397,18 @@ export default function PlannerPage() {
     handleAddRoom(name, w, h);
   }, [floorModalName, floorModalWidth, floorModalHeight, handleAddRoom]);
 
-  const handleSaveTemplate = useCallback(() => {
+  const handleSaveTemplateClick = useCallback(() => {
     if (elements.length === 0) return;
-    const templateName = prompt('Enter a name for this template:', `${planName} Template`);
-    if (!templateName) return;
+    setSaveTemplateName(`${planName} Template`);
+    setSaveTemplateIsPublic(false);
+    setShowSaveTemplateModal(true);
+  }, [elements, planName]);
+
+  const confirmSaveTemplate = useCallback(() => {
+    if (!saveTemplateName.trim()) return;
     
     createPlan.mutate({
-      name: templateName,
+      name: saveTemplateName.trim(),
       description: 'Saved from floor plan',
       canvasWidth: activeCanvasWidth,
       canvasHeight: activeCanvasHeight,
@@ -407,22 +416,58 @@ export default function PlannerPage() {
       elements: elements,
       rooms: [],
       status: 'published',
-      isTemplate: true
+      isTemplate: true,
+      isPublic: saveTemplateIsPublic
     });
-  }, [elements, planName, activeCanvasWidth, activeCanvasHeight, plan, createPlan]);
+    setShowSaveTemplateModal(false);
+  }, [saveTemplateName, saveTemplateIsPublic, elements, activeCanvasWidth, activeCanvasHeight, plan, createPlan]);
 
   const handleLoadTemplate = useCallback((template: FloorPlan) => {
     if (!template.elements || template.elements.length === 0) return;
     
-    // Adjust IDs to prevent collision
-    const newElements = template.elements.map(el => ({
+    const tempW = template.canvasWidth || 80;
+    const tempH = template.canvasHeight || 60;
+    const scaleX = activeCanvasWidth / tempW;
+    const scaleY = activeCanvasHeight / tempH;
+    const scale = Math.min(scaleX, scaleY);
+    
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    
+    const scaledElements = template.elements.map((el: any) => {
+      const scaledX = el.x * scale;
+      const scaledY = el.y * scale;
+      const scaledW = el.width * scale;
+      const scaledH = el.height * scale;
+      
+      minX = Math.min(minX, scaledX);
+      minY = Math.min(minY, scaledY);
+      maxX = Math.max(maxX, scaledX + scaledW);
+      maxY = Math.max(maxY, scaledY + scaledH);
+      
+      return {
+        ...el,
+        id: nanoid(),
+        x: scaledX,
+        y: scaledY,
+        width: scaledW,
+        height: scaledH
+      };
+    });
+    
+    const bboxW = maxX - minX;
+    const bboxH = maxY - minY;
+    const dx = (activeCanvasWidth - bboxW) / 2 - minX;
+    const dy = (activeCanvasHeight - bboxH) / 2 - minY;
+    
+    const newElements = scaledElements.map(el => ({
       ...el,
-      id: nanoid()
+      x: el.x + dx,
+      y: el.y + dy
     }));
     
     updateFloor(newElements);
     setShowTemplates(false);
-  }, [updateFloor]);
+  }, [updateFloor, activeCanvasWidth, activeCanvasHeight]);
 
   const handleAutoSave = useCallback(async () => {
     if (!id) return;
@@ -433,8 +478,8 @@ export default function PlannerPage() {
     // Save the rooms array to the plan as well
     const updatedRooms = rooms.map(r => ({
       ...r,
-      canvasWidth: plan?.canvasWidth ?? 30,
-      canvasHeight: plan?.canvasHeight ?? 20,
+      canvasWidth: plan?.canvasWidth ?? 1200,
+      canvasHeight: plan?.canvasHeight ?? 800,
       elements: floorMap[r.id] || []
     }));
     await updatePlan.mutateAsync({ id, data: { name: planName, rooms: updatedRooms as any } });
@@ -493,6 +538,7 @@ export default function PlannerPage() {
       {showTemplates && (
         <TemplatesModal 
           templates={templates} 
+          currentUserId={user?.id}
           onClose={() => setShowTemplates(false)} 
           onLoad={handleLoadTemplate} 
         />
@@ -563,7 +609,7 @@ export default function PlannerPage() {
                       min={1}
                       value={floorModalWidth}
                       onChange={e => setFloorModalWidth(e.target.value)}
-                      placeholder={String(plan?.canvasWidth ?? 30)}
+                      placeholder={String(plan?.canvasWidth ?? 1200)}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 focus:border-[#7A1F1F]/60 transition-all pr-8"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">ft</span>
@@ -575,13 +621,13 @@ export default function PlannerPage() {
                       min={1}
                       value={floorModalHeight}
                       onChange={e => setFloorModalHeight(e.target.value)}
-                      placeholder={String(plan?.canvasHeight ?? 20)}
+                      placeholder={String(plan?.canvasHeight ?? 800)}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 focus:border-[#7A1F1F]/60 transition-all pr-8"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">ft</span>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-1.5">Default: {plan?.canvasWidth ?? 30} × {plan?.canvasHeight ?? 20} ft</p>
+                <p className="text-xs text-slate-400 mt-1.5">Default: {plan?.canvasWidth ?? 1200} × {plan?.canvasHeight ?? 800} ft</p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -633,6 +679,66 @@ export default function PlannerPage() {
         </div>
       )}
 
+      {/* Save Template Modal */}
+      {showSaveTemplateModal && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+              <h2 className="text-lg font-bold text-slate-800">Save as Template</h2>
+              <button onClick={() => setShowSaveTemplateModal(false)} className="text-slate-400 hover:text-slate-700">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="p-6">
+              <div className="mb-5">
+                <label className="block text-sm font-semibold text-slate-700 mb-2">Template Name</label>
+                <input
+                  type="text"
+                  value={saveTemplateName}
+                  onChange={e => setSaveTemplateName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F] transition-all"
+                  placeholder="e.g. Banquet Layout A"
+                  autoFocus
+                />
+              </div>
+              <div className="mb-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <div className="relative">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only" 
+                      checked={saveTemplateIsPublic}
+                      onChange={e => setSaveTemplateIsPublic(e.target.checked)}
+                    />
+                    <div className={`block w-10 h-6 rounded-full transition-colors ${saveTemplateIsPublic ? 'bg-blue-500' : 'bg-slate-200'}`}></div>
+                    <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${saveTemplateIsPublic ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-slate-800">Make Public</div>
+                    <div className="text-xs text-slate-500">Allow other users to see and use this template</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-100 flex gap-3">
+              <button
+                onClick={() => setShowSaveTemplateModal(false)}
+                className="flex-1 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmSaveTemplate}
+                disabled={!saveTemplateName.trim()}
+                className="flex-1 py-2 rounded-xl bg-[#7A1F1F] text-white text-sm font-semibold hover:bg-[#601818] disabled:opacity-50 transition-colors"
+              >
+                Save Template
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <PlannerToolbar
         activeTool={activeTool}
         onToolChange={setActiveTool}
@@ -660,7 +766,7 @@ export default function PlannerPage() {
         onToggleDarkMode={() => setDarkMode(p => !p)}
         hasSelection={!!selectedId}
         onlineUsers={onlineUsers}
-        onSaveTemplate={handleSaveTemplate}
+        onSaveTemplate={handleSaveTemplateClick}
         onLoadTemplate={() => setShowTemplates(true)}
       />
 

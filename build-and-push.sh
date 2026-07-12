@@ -57,3 +57,8 @@ fi
 echo ""
 echo "✅  Done! Image available at:"
 echo "    ${FULL_IMAGE}"
+echo ""
+echo "▶️   Run the container:"
+echo "    docker run -d \\"
+echo "      -p 3000:3000 \\"
+echo "      ${FULL_IMAGE}"

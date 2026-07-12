@@ -34,6 +34,10 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # Custom nginx config: serve SPA with fallback to index.html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
+# Copy entrypoint script
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+
 EXPOSE 3000
 
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

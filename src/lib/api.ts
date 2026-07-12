@@ -3,10 +3,13 @@ import type { FloorPlan, PlacedElement, Event, Guest, Ticket, Vendor, Comm } fro
 
 const TOKEN_KEY = 'ej_token';
 
+const runtimeEnv = (window as any).RUNTIME_ENV || {};
+const envApiUrl = runtimeEnv.VITE_API_URL || import.meta.env.VITE_API_URL || '';
+
 // VITE_API_URL:
 //   - local dev  → leave blank; Vite proxy rewrites /api → http://localhost:3000
 //   - docker/prod → set to full backend URL e.g. http://localhost:3000 or https://api.eventjelly.com
-const BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '') || '';
+const BASE_URL = envApiUrl.replace(/\/$/, '') || '';
 const API_PREFIX = BASE_URL ? `${BASE_URL}/api` : '/api';
 
 export const http = axios.create({ baseURL: API_PREFIX });

@@ -413,7 +413,7 @@ export default function PlannerPage() {
       name: saveTemplateName.trim(),
       description: 'Saved from floor plan',
       canvasWidth: activeCanvasWidth,
-      canvasHieght: activeCanvasHeight,
+      canvasHeight: activeCanvasHeight,
       gridSize: plan?.gridSize || 1,
       elements: elements,
       rooms: [],

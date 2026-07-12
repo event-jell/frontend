@@ -140,6 +140,7 @@ function RsvpBadge({ status }: { status: Guest['rsvpStatus'] }) {
 export default function TicketGuestsPage() {
   const { id, ticketId } = useParams<{ id: string; ticketId: string }>();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const { data: tickets = [], isLoading: isLoadingTickets } = useTickets(id);
   const ticket = tickets.find(t => t._id === ticketId);

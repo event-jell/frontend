@@ -11,6 +11,14 @@ RUN npm ci --frozen-lockfile
 # Copy rest of source
 COPY . .
 
+# Accept build arguments
+ARG VITE_API_URL
+ARG VITE_SOCKET_URL
+
+# Set environment variables for the build
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_SOCKET_URL=$VITE_SOCKET_URL
+
 # Vite build (outputs to /app/dist)
 RUN npm run build
 

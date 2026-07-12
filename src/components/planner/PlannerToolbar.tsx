@@ -1,4 +1,5 @@
 import { Undo2, Redo2, MousePointer2, Hand, Square, Minus, Plus, Maximize2, Grid3X3, Ruler, AlignLeft, AlignCenterHorizontal, Lock, Layers, Download, Share2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { PresenceUser } from '../../hooks/usePresence';
 
 export type ToolMode = 'select' | 'pan' | 'frame';
@@ -70,16 +71,17 @@ export default function PlannerToolbar({
   darkMode, onToggleDarkMode, hasSelection, onlineUsers = [],
   onSaveTemplate, onLoadTemplate,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white border-b border-slate-100 flex-shrink-0 shadow-sm">
       {/* Top row: breadcrumb + project info + actions */}
       <div className="flex items-center px-4 h-11 border-b border-slate-50 gap-3">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
-          <span className="hover:text-slate-800 cursor-pointer">🏠</span>
+          <span className="hover:text-slate-800 cursor-pointer">{t('planner.toolbar_home')}</span>
           <span className="text-slate-300">›</span>
-          <span className="hover:text-slate-800 cursor-pointer">Events</span>
+          <span className="hover:text-slate-800 cursor-pointer">{t('planner.toolbar_events')}</span>
           <span className="text-slate-300">›</span>
-          <span className="font-semibold text-slate-800">Floor Plan</span>
+          <span className="font-semibold text-slate-800">{t('planner.toolbar_floor_plan')}</span>
         </div>
 
         <div className="flex items-center gap-2 ml-3 pl-3 border-l border-slate-100">

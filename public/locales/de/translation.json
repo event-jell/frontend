@@ -1,0 +1,28 @@
+{
+  "landing": {
+    "hero_line1": "Events planen",
+    "hero_line2": "die man nie vergisst",
+    "hero_title": "Eventplanung, Wunderschön Vereinfacht",
+    "hero_subtitle": "Erstelle beeindruckende Grundrisse, verwalte schöne Tickets, koordiniere Anbieter und behalte jeden Detail im Blick — alles auf einer Plattform für unvergessliche Events.",
+    "start_free": "Kostenlos starten",
+    "sign_in": "Anmelden"
+  },
+  "dashboard": {
+    "events": "Veranstaltungen",
+    "create_event": "Veranstaltung erstellen",
+    "revenue": "Gesamtumsatz",
+    "tickets": "Verkaufte Tickets",
+    "guests": "Gäste",
+    "upcoming": "Bevorstehende Events",
+    "search": "Veranstaltungen suchen..."
+  },
+  "common": {
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "loading": "Laden...",
+    "settings": "Einstellungen",
+    "language": "Sprache",
+    "currency": "Währung",
+    "timezone": "Zeitzone"
+  }
+}

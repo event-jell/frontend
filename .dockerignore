@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+
+# Node
+node_modules
+
+# Local build output (Docker rebuilds from source)
+dist
+
+# Editor / OS
+.DS_Store
+*.local
+.vscode
+.idea
+
+# Env files (secrets should be build args / runtime envs)
+.env
+.env.*
+
+# Logs
+*.log
+npm-debug.log*

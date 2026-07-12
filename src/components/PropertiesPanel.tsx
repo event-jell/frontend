@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { PlacedElement } from '../types';
 
 interface Props {
@@ -49,15 +50,17 @@ export default function PropertiesPanel({
   onBringForward,
   onSendBackward,
 }: Props) {
+  const { t } = useTranslation();
+
   if (!element) {
     return (
       <aside className="w-56 bg-white border-l border-slate-100 flex flex-col shadow-sm">
         <div className="px-4 py-4 border-b border-slate-100">
-          <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#7A1F1F' }}>Properties</h3>
+          <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#7A1F1F' }}>{t('planner.properties')}</h3>
         </div>
         <div className="flex-1 flex flex-col items-center justify-center p-6 gap-2">
           <div className="text-3xl opacity-20">🖱️</div>
-          <p className="text-xs text-slate-400 text-center">Select an element to edit its properties</p>
+          <p className="text-xs text-slate-400 text-center">{t('planner.select_element_prompt')}</p>
         </div>
       </aside>
     );
@@ -68,7 +71,7 @@ export default function PropertiesPanel({
   return (
     <aside className="w-56 bg-white border-l border-slate-100 flex flex-col overflow-y-auto shadow-sm">
       <div className="px-4 py-4 border-b border-slate-100">
-        <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#7A1F1F' }}>Properties</h3>
+        <h3 className="text-xs font-bold uppercase tracking-wider" style={{ color: '#7A1F1F' }}>{t('planner.properties')}</h3>
         <p className="text-sm font-semibold text-slate-700 mt-0.5 truncate">{element.label}</p>
       </div>
 

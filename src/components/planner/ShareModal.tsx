@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Copy, Mail, Check, Users } from 'lucide-react';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export default function ShareModal({ planName, onClose }: Props) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [email, setEmail] = useState('');
   const [invited, setInvited] = useState(false);
@@ -34,7 +36,7 @@ export default function ShareModal({ planName, onClose }: Props) {
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
           <div>
-            <h2 className="text-base font-bold text-slate-800">Share Floor Plan</h2>
+            <h2 className="text-base font-bold text-slate-800">{t('planner.share_title')}</h2>
             <p className="text-xs text-slate-500 mt-0.5">{planName}</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 bg-white rounded-full p-1 shadow-sm">
@@ -47,9 +49,9 @@ export default function ShareModal({ planName, onClose }: Props) {
           <div className="mb-6">
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-2">
               <Users size={16} className="text-[#7A1F1F]" />
-              Share Link
+              {t('planner.share_link')}
             </h3>
-            <p className="text-xs text-slate-500 mb-3">Anyone with the link can view this floor plan.</p>
+            <p className="text-xs text-slate-500 mb-3">{t('planner.share_view_desc')}</p>
             
             <div className="flex items-center gap-2">
               <div className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-600 truncate">
@@ -64,7 +66,7 @@ export default function ShareModal({ planName, onClose }: Props) {
                 }`}
               >
                 {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('planner.share_copied') : t('planner.share_copy')}
               </button>
             </div>
           </div>
@@ -75,33 +77,33 @@ export default function ShareModal({ planName, onClose }: Props) {
           <div>
             <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-2">
               <Mail size={16} className="text-[#7A1F1F]" />
-              Invite Collaborators
+              {t('planner.share_invite_title')}
             </h3>
-            <p className="text-xs text-slate-500 mb-3">Invite team members or clients to edit this plan.</p>
+            <p className="text-xs text-slate-500 mb-3">{t('planner.share_invite_desc')}</p>
             
             <form onSubmit={handleInvite} className="flex flex-col gap-3">
               <input
                 type="email"
-                placeholder="Enter email address..."
+                placeholder={t('planner.share_email_placeholder')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30"
               />
               <div className="flex items-center justify-between mt-1">
                 <select className="text-sm text-slate-600 bg-transparent border-none focus:outline-none cursor-pointer">
-                  <option>Can edit</option>
-                  <option>Can view</option>
+                  <option>{t('planner.share_can_edit')}</option>
+                  <option>{t('planner.share_can_view')}</option>
                 </select>
                 <button
                   type="submit"
                   disabled={!email}
                   className="px-4 py-2 bg-[#7A1F1F] text-white rounded-lg text-sm font-semibold hover:bg-[#5C1414] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Send Invite
+                  {t('planner.share_send_invite')}
                 </button>
               </div>
               {invited && (
-                <p className="text-xs text-green-600 font-medium mt-1">Invitation sent successfully!</p>
+                <p className="text-xs text-green-600 font-medium mt-1">{t('planner.share_success')}</p>
               )}
             </form>
           </div>

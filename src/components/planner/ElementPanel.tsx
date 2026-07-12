@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Search } from 'lucide-react';
 import { ELEMENT_TEMPLATES, CATEGORIES, CATEGORY_LABELS } from '../../lib/elementTemplates';
 import type { ElementTemplate, ElementCategory } from '../../types';
@@ -8,7 +9,7 @@ interface Props {
 }
 
 // SVG icons for each element type
-function ElementIcon({ type, color }: { type: string; color: string }) {
+function ElementIcon({ type, color, exitText }: { type: string; color: string; exitText?: string }) {
   const c = color === 'transparent' ? '#94A3B8' : color;
   const props = { fill: 'none', stroke: c, strokeWidth: 2 };
 
@@ -64,7 +65,7 @@ function ElementIcon({ type, color }: { type: string; color: string }) {
       return (
         <svg viewBox="0 0 32 32" width="100%" height="100%">
           <rect x="4" y="8" width="24" height="16" rx="2" fill="none" stroke={c} strokeWidth="2" strokeDasharray="4 3" />
-          <text x="16" y="20" textAnchor="middle" fill={c} fontSize="8" fontWeight="bold">EXIT</text>
+          <text x="16" y="20" textAnchor="middle" fill={c} fontSize="8" fontWeight="bold">{exitText || 'EXIT'}</text>
         </svg>
       );
     case 'bar':
@@ -102,6 +103,7 @@ function ElementIcon({ type, color }: { type: string; color: string }) {
 }
 
 export default function ElementPanel({ onAdd }: Props) {
+  const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [width, setWidth] = useState(176);
   const isDragging = useRef(false);
@@ -167,7 +169,7 @@ export default function ElementPanel({ onAdd }: Props) {
               className="flex flex-col items-center gap-1.5 p-2.5 rounded-xl hover:bg-slate-50 active:scale-95 transition-all text-center group"
             >
               <div className="w-10 h-10">
-                <ElementIcon type={template.type} color={template.defaultColor} />
+                <ElementIcon type={template.type} color={template.defaultColor} exitText={t('planner.exit')} />
               </div>
               <span className="text-xs text-slate-600 font-medium leading-tight">{template.label}</span>
             </button>

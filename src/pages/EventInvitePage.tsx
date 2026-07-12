@@ -4,10 +4,12 @@ import { useFloorPlan } from '../hooks/useFloorPlans';
 import { useTickets } from '../hooks/useTickets';
 import { useCreateGuest } from '../hooks/useGuests';
 import { Calendar, MapPin, Ticket, CheckCircle2, ChevronRight, ArrowLeft } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { Ticket as TicketType } from '../types';
 import Logo from '../components/Logo';
 
 export default function EventInvitePage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { data: event, isLoading: isLoadingEvent } = useFloorPlan(id!);
   const { data: tickets = [], isLoading: isLoadingTickets } = useTickets(id!);
@@ -20,7 +22,7 @@ export default function EventInvitePage() {
   if (isLoadingEvent || isLoadingTickets) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-400">Loading invitation details...</div>
+        <div className="text-slate-400">{t('invite.loading')}</div>
       </div>
     );
   }
@@ -28,7 +30,7 @@ export default function EventInvitePage() {
   if (!event) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-slate-400">Event not found.</div>
+        <div className="text-slate-400">{t('invite.not_found')}</div>
       </div>
     );
   }
@@ -59,7 +61,7 @@ export default function EventInvitePage() {
           <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={32} />
           </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">You're on the list!</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('invite.welcome')}</h1>
           <p className="text-slate-500 mb-8">
             {selectedTicket?.price === 0 
               ? "Your RSVP has been confirmed. We've sent the details to your email."
@@ -69,7 +71,7 @@ export default function EventInvitePage() {
             onClick={() => { setSubmitted(false); setForm({ firstName: '', lastName: '', email: '' }); setSelectedTicket(null); }}
             className="text-[#7A1F1F] font-medium hover:underline"
           >
-            Register another guest
+            {t('invite.register_another')}
           </button>
         </div>
       </div>
@@ -82,11 +84,11 @@ export default function EventInvitePage() {
       <div className="bg-white border-b border-slate-100 py-4 px-6 md:px-12 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Logo size={32} />
-          <span className="font-bold text-slate-900 tracking-tight">Event Jelly</span>
+          <span className="font-bold text-slate-900 tracking-tight">{t('invite.brand')}</span>
         </div>
         <Link to="/events" className="text-sm font-medium text-slate-500 flex items-center gap-1 hover:text-slate-800 transition-colors">
           <ArrowLeft size={16} />
-          Back to Events
+          {t('common.back_to_events')}
         </Link>
       </div>
 
@@ -94,13 +96,13 @@ export default function EventInvitePage() {
         {/* Left Column: Event Details */}
         <div className="flex-1 pt-4">
           <span className="inline-block px-3 py-1 bg-[#FDF5EE] text-[#7A1F1F] text-xs font-bold rounded-full uppercase tracking-wider mb-4">
-            You're Invited
+            {t('invite.youre_invited')}
           </span>
           <h1 className="text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
             {event.name}
           </h1>
           <p className="text-lg text-slate-600 mb-8 max-w-xl leading-relaxed">
-            {event.description || "Join us for an unforgettable experience. Secure your spot by registering for a ticket below."}
+            {event.description || t('invite.description_placeholder')}
           </p>
           
           <div className="space-y-4">
@@ -109,8 +111,8 @@ export default function EventInvitePage() {
                 <Calendar size={20} />
               </div>
               <div>
-                <p className="font-semibold">Date to be announced</p>
-                <p className="text-sm text-slate-500">Time to be announced</p>
+                <p className="font-semibold">{t('invite.date_tba')}</p>
+                <p className="text-sm text-slate-500">{t('invite.time_tba')}</p>
               </div>
             </div>
             
@@ -119,8 +121,8 @@ export default function EventInvitePage() {
                 <MapPin size={20} />
               </div>
               <div>
-                <p className="font-semibold">Location to be announced</p>
-                <p className="text-sm text-slate-500">Check back later for details</p>
+                <p className="font-semibold">{t('invite.location_tba')}</p>
+                <p className="text-sm text-slate-500">{t('invite.check_back')}</p>
               </div>
             </div>
           </div>
@@ -131,12 +133,12 @@ export default function EventInvitePage() {
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-8 border border-slate-100">
             <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
               <Ticket className="text-[#7A1F1F]" size={20} />
-              Select a Ticket
+              {t('invite.select_ticket')}
             </h2>
 
             {activeTickets.length === 0 ? (
               <div className="text-center py-10 bg-slate-50 rounded-2xl border border-slate-100">
-                <p className="text-slate-500 font-medium">Registrations are currently closed.</p>
+                <p className="text-slate-500 font-medium">{t('invite.closed')}</p>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -184,10 +186,10 @@ export default function EventInvitePage() {
 
                 {selectedTicket && (
                   <div className="pt-6 border-t border-slate-100 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                    <h3 className="font-bold text-slate-900 mb-4">Guest Details</h3>
+                    <h3 className="font-bold text-slate-900 mb-4">{t('invite.guest_details')}</h3>
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">First Name</label>
+                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">{t('invite.first_name')}</label>
                         <input 
                           required
                           value={form.firstName}
@@ -197,7 +199,7 @@ export default function EventInvitePage() {
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Last Name</label>
+                        <label className="text-xs font-semibold text-slate-600 mb-1.5 block">{t('invite.last_name')}</label>
                         <input 
                           required
                           value={form.lastName}
@@ -208,7 +210,7 @@ export default function EventInvitePage() {
                       </div>
                     </div>
                     <div className="mb-6">
-                      <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Email Address</label>
+                      <label className="text-xs font-semibold text-slate-600 mb-1.5 block">{t('invite.email')}</label>
                       <input 
                         required
                         type="email"
@@ -226,10 +228,10 @@ export default function EventInvitePage() {
                       style={{ backgroundColor: '#7A1F1F' }}
                     >
                       {createGuest.isPending 
-                        ? 'Processing...' 
+                        ? t('common.processing') 
                         : selectedTicket.price === 0 
-                          ? 'Complete RSVP' 
-                          : `Pay $${selectedTicket.price} & Register`}
+                          ? t('invite.complete_rsvp') 
+                          : t('invite.pay_register', { price: selectedTicket.price })}
                       {!createGuest.isPending && <ChevronRight size={18} />}
                     </button>
                   </div>

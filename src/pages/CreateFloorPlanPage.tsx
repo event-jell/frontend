@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useCreateFloorPlan } from '../hooks/useFloorPlans';
 
 export default function CreateFloorPlanPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const createPlan = useCreateFloorPlan();
   const [name, setName] = useState('');
@@ -24,13 +26,13 @@ export default function CreateFloorPlanPage() {
         >
           <Plus size={18} className="text-white" />
         </div>
-        <h2 className="text-lg font-bold text-slate-800 mb-1">New Floor Plan</h2>
-        <p className="text-sm text-slate-500 mb-6">Set up your event layout</p>
+        <h2 className="text-lg font-bold text-slate-800 mb-1">{t('planner.new_floor_plan')}</h2>
+        <p className="text-sm text-slate-500 mb-6">{t('planner.new_floor_plan_desc')}</p>
 
         <div className="flex flex-col gap-4">
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block uppercase tracking-wide">
-              Name *
+              {t('common.name')}
             </label>
             <input
               autoFocus
@@ -43,7 +45,7 @@ export default function CreateFloorPlanPage() {
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-600 mb-1.5 block uppercase tracking-wide">
-              Description
+              {t('common.description')}
             </label>
             <textarea
               value={desc}
@@ -60,7 +62,7 @@ export default function CreateFloorPlanPage() {
             onClick={() => navigate('/floor-plans')}
             className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
           >
-            Cancel
+            {t('common.cancel')}
           </button>
           <button
             onClick={handleCreate}
@@ -68,7 +70,7 @@ export default function CreateFloorPlanPage() {
             className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 transition-opacity shadow-sm"
             style={{ background: 'linear-gradient(135deg, #0F6E56 0%, #185FA5 100%)' }}
           >
-            {createPlan.isPending ? 'Creating…' : 'Create Plan'}
+            {createPlan.isPending ? t('common.creating') : t('planner.create_plan')}
           </button>
         </div>
       </div>

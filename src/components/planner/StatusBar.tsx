@@ -1,4 +1,5 @@
 import { Plus, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export interface Room {
   id: string;
@@ -27,6 +28,7 @@ export default function StatusBar({
   totalElements, selectedCount, gridPx,
   seatedCount, seatedTotal, zoom, scale,
 }: Props) {
+  const { t } = useTranslation();
   const pct = seatedTotal > 0 ? seatedCount / seatedTotal : 0;
 
   return (
@@ -76,23 +78,23 @@ export default function StatusBar({
       {/* Right stats */}
       <div className="ml-auto flex items-center gap-4 pr-4 text-xs text-slate-500">
         <span>
-          <span className="text-slate-700 font-medium">{totalElements}</span> elements
+          <span className="text-slate-700 font-medium">{t('planner.status_bar_elements', { count: totalElements })}</span>
           {selectedCount > 0 && (
-            <> · <span className="text-slate-700 font-medium">{selectedCount}</span> selected</>
+            <> · <span className="text-slate-700 font-medium">{t('planner.status_bar_selected', { count: selectedCount })}</span></>
           )}
         </span>
 
-        <span>Grid <span className="text-slate-700 font-medium">{gridPx}px</span></span>
+        <span>{t('planner.status_bar_grid', { px: gridPx })}</span>
 
         <span className="text-slate-400">|</span>
 
-        <span>{Math.round(zoom * 100)}% · <span className="font-medium">{scale}</span></span>
+        <span>{t('planner.status_bar_zoom', { pct: Math.round(zoom * 100), scale: scale })}</span>
 
         <span className="text-slate-400">|</span>
 
         <div className="flex items-center gap-2">
           <span>
-            Seated <span className="font-medium text-slate-700">{seatedCount}/{seatedTotal}</span>
+            {t('planner.status_bar_seated', { seated: seatedCount, total: seatedTotal })}
           </span>
           <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden">
             <div

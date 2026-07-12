@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import AppShell from './layouts/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
+import { PreferencesProvider } from './contexts/PreferencesContext';
 import EventsPage from './pages/EventsPage';
 import HomePage from './pages/HomePage';
 import PlannerPage from './pages/PlannerPage';
@@ -133,9 +134,11 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <PreferencesProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </PreferencesProvider>
       </AuthProvider>
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>

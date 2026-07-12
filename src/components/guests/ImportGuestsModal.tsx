@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import Papa from 'papaparse';
 import { Upload, X, AlertCircle, CheckCircle2, ChevronDown, FileText, ClipboardPaste, Download } from 'lucide-react';
 import type { Guest } from '../../types';
@@ -25,21 +26,6 @@ interface ColMap {
   rsvp_status: string;
   plus_ones: string;
 }
-
-const GUEST_FIELDS: { key: keyof ColMap; label: string; required?: boolean }[] = [
-  { key: 'name',         label: 'Name',                required: true },
-  { key: 'email',        label: 'Email' },
-  { key: 'phone',        label: 'Phone' },
-  { key: 'group',        label: 'Group / Table' },
-  { key: 'dietary_reqs',label: 'Dietary Requirements' },
-  { key: 'rsvp_status', label: 'RSVP Status' },
-  { key: 'plus_ones',   label: '+1 Guests' },
-];
-
-const SAMPLE_CSV = `name,email,phone,group,dietary_reqs,rsvp_status,plus_ones
-Jane Smith,jane@example.com,+1-555-0100,VIP,,confirmed,1
-John Doe,john@example.com,,Family,Vegan,pending,0
-Alice Johnson,alice@example.com,+1-555-0102,Friends,Gluten-free,confirmed,2`;
 
 function autoMap(headers: string[]): ColMap {
   const find = (...terms: string[]) =>
@@ -81,6 +67,21 @@ function buildRows(raw: Record<string, string>[], map: ColMap): ParsedRow[] {
   });
 }
 
+const SAMPLE_CSV = `name,email,phone,group,dietary_reqs,rsvp_status,plus_ones
+Jane Smith,jane@example.com,+1-555-0100,Table 1,None,confirmed,1
+John Doe,john@example.com,+1-555-0200,Table 2,Vegan,pending,0
+`;
+
+const GUEST_FIELDS: { key: keyof ColMap; label: string; required?: boolean }[] = [
+  { key: 'name',         label: 'Name',          required: true },
+  { key: 'email',        label: 'Email' },
+  { key: 'phone',        label: 'Phone' },
+  { key: 'group',        label: 'Group / Table' },
+  { key: 'dietary_reqs', label: 'Dietary Reqs' },
+  { key: 'rsvp_status',  label: 'RSVP Status' },
+  { key: 'plus_ones',    label: 'Plus Ones' },
+];
+
 interface Props {
   eventId: string;
   onClose: () => void;
@@ -89,6 +90,7 @@ interface Props {
 }
 
 export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport, importing }: Props) {
+  const { t } = useTranslation();
   const [tab, setTab] = useState<Tab>('csv');
   const [headers, setHeaders] = useState<string[]>([]);
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([]);
@@ -163,8 +165,8 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-slate-900">Import Guests</h2>
-            <p className="text-sm text-slate-500 mt-0.5">Add up to 2,000 guests at once</p>
+            <h2 className="text-lg font-bold text-slate-900">{t('import.title')}</h2>
+            <p className="text-sm text-slate-500 mt-0.5">{t('import.subtitle')}</p>
           </div>
           <button onClick={onClose} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
             <X size={18} />
@@ -208,8 +210,8 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
               }`}
             >
               <Upload size={32} className="mx-auto mb-3 text-slate-300" />
-              <p className="text-sm font-medium text-slate-700">Drop a CSV file here, or click to browse</p>
-              <p className="text-xs text-slate-400 mt-1">Columns: name, email, phone, group, dietary_reqs, rsvp_status, plus_ones</p>
+              <p className="text-sm font-medium text-slate-700">{t('import.drop_prompt')}</p>
+              <p className="text-xs text-slate-400 mt-1">{t('import.column_hint')}</p>
               <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); }} />
             </div>
@@ -218,7 +220,7 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
           {/* Paste tab */}
           {tab === 'paste' && (
             <div className="space-y-3">
-              <p className="text-sm text-slate-600">Paste tab-separated or comma-separated data from Excel or Google Sheets. The first row should be column headers.</p>
+              <p className="text-sm text-slate-600">{t('import.paste_prompt')}</p>
               <textarea
                 value={pasteText}
                 onChange={e => setPasteText(e.target.value)}
@@ -246,15 +248,15 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
                   <FileText size={15} className="text-slate-400" />
                   {fileName || 'Pasted data'}
                   <span className="text-slate-400">·</span>
-                  <span className="font-medium">{rawRows.length} rows</span>
+                  <span className="font-medium">{t('import.rows_count', { count: rawRows.length })}</span>
                 </div>
                 <button onClick={() => { setRawRows([]); setHeaders([]); setFileName(''); setResult(null); }}
-                  className="text-xs text-slate-400 hover:text-slate-600">Start over</button>
+                  className="text-xs text-slate-400 hover:text-slate-600">{t('import.start_over')}</button>
               </div>
 
               {/* Column mapping */}
               <div>
-                <p className="text-sm font-semibold text-slate-700 mb-2">Map columns</p>
+                <p className="text-sm font-semibold text-slate-700 mb-2">{t('import.map_columns')}</p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {GUEST_FIELDS.map(({ key, label, required }) => (
                     <div key={key}>
@@ -267,7 +269,7 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
                           onChange={e => setColMap(m => ({ ...m, [key]: e.target.value }))}
                           className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 pr-6 focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 bg-white appearance-none"
                         >
-                          <option value="">— skip —</option>
+                          <option value="">{t('import.skip')}</option>
                           {headers.map(h => <option key={h} value={h}>{h}</option>)}
                         </select>
                         <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
@@ -282,8 +284,8 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
                 <div className="flex items-start gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-sm">
                   <AlertCircle size={15} className="text-amber-500 mt-0.5 flex-shrink-0" />
                   <span className="text-amber-700">
-                    <strong>{invalidRows.length}</strong> row{invalidRows.length > 1 ? 's' : ''} will be skipped (missing name).{' '}
-                    <strong>{validRows.length}</strong> will be imported.
+                    <strong>{t('import.invalid_rows', { count: invalidRows.length })}</strong>{' '}
+                    <strong>{t('import.valid_rows', { count: validRows.length })}</strong>
                   </span>
                 </div>
               )}
@@ -291,19 +293,19 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
               {/* Preview table */}
               <div>
                 <p className="text-sm font-semibold text-slate-700 mb-2">
-                  Preview <span className="text-slate-400 font-normal">(showing first {Math.min(rows.length, 8)} of {rows.length})</span>
+                  {t('import.preview', { start: Math.min(rows.length, 8), total: rows.length })}
                 </p>
                 <div className="border border-slate-200 rounded-xl overflow-hidden">
                   <div className="overflow-x-auto">
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="bg-slate-50 border-b border-slate-200">
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500">Name</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500">Email</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500">Phone</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500">Group</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500">RSVP</th>
-                          <th className="px-3 py-2 text-left font-semibold text-slate-500">+1</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500">{t('import.table_name')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500">{t('import.table_email')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500">{t('import.table_phone')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500">{t('import.table_group')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500">{t('import.table_rsvp')}</th>
+                          <th className="px-3 py-2 text-left font-semibold text-slate-500">{t('import.table_plus_one')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -311,7 +313,7 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
                           <tr key={i} className={`border-b border-slate-100 last:border-0 ${row._error ? 'bg-red-50' : ''}`}>
                             <td className="px-3 py-2">
                               {row._error
-                                ? <span className="flex items-center gap-1 text-red-500"><AlertCircle size={11} /><em>missing</em></span>
+                                ? <span className="flex items-center gap-1 text-red-500"><AlertCircle size={11} /><em>{t('import.missing')}</em></span>
                                 : <span className="font-medium text-slate-800">{row.name}</span>
                               }
                             </td>
@@ -341,8 +343,8 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
             <div className="flex items-center gap-3 px-4 py-3 bg-green-50 border border-green-200 rounded-xl">
               <CheckCircle2 size={20} className="text-green-500 flex-shrink-0" />
               <div>
-                <p className="text-sm font-semibold text-green-800">Import complete</p>
-                <p className="text-xs text-green-600">{result.inserted} guest{result.inserted !== 1 ? 's' : ''} added successfully.</p>
+                <p className="text-sm font-semibold text-green-800">{t('import.import_complete')}</p>
+                <p className="text-xs text-green-600">{t('import.import_success', { count: result.inserted })}</p>
               </div>
             </div>
           )}
@@ -351,7 +353,7 @@ export default function ImportGuestsModal({ eventId: _eventId, onClose, onImport
         {/* Footer */}
         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 flex-shrink-0">
           <p className="text-xs text-slate-400">
-            {validRows.length > 0 ? <><strong className="text-slate-600">{validRows.length}</strong> guests ready to import</> : 'No data loaded'}
+            {validRows.length > 0 ? <><strong className="text-slate-600">{validRows.length}</strong> {t('import.ready_to_import', { count: validRows.length })}</> : t('import.no_data')}
           </p>
           <div className="flex gap-2">
             <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">

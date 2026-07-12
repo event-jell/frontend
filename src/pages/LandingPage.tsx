@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { usePreferences } from '../contexts/PreferencesContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Layout, Users, Ticket, Store, MessageSquare, BarChart2,
@@ -657,6 +659,8 @@ const PERKS = [
 export default function LandingPage() {
   const { token } = useAuth();
   const navigate = useNavigate();
+  const { i18n, t } = useTranslation();
+  const { updatePreferences } = usePreferences();
   const styleRef = useRef<HTMLStyleElement | null>(null);
 
   useEffect(() => {
@@ -737,32 +741,32 @@ export default function LandingPage() {
 
               <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6"
                 style={{ fontFamily:'Playfair Display, serif', animation:'fadeUp 0.7s ease both 0.25s' }}>
-                Plan events
+                {t('landing.hero_line1', 'Plan events')}
                 <br />
                 <span style={{
                   background:`linear-gradient(90deg,${C.gold},#F5D78E,${C.gold})`,
                   WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
                   backgroundSize:'200% auto', animation:'shimmerGold 4s linear infinite',
                 }}>
-                  people remember
+                  {t('landing.hero_line2', 'people remember')}
                 </span>
               </h1>
 
               <p className="text-lg leading-relaxed mb-9 max-w-lg mx-auto"
                 style={{ color:'rgba(255,255,255,0.58)', animation:'fadeUp 0.7s ease both 0.4s' }}>
-                Design stunning floor plans, manage guests, create beautiful tickets, coordinate vendors, and track every detail — all from one platform built for memorable events.
+                {t('landing.hero_subtitle', 'Design stunning floor plans, manage guests, create beautiful tickets, coordinate vendors, and track every detail — all from one platform built for memorable events.')}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 justify-center"
                 style={{ animation:'fadeUp 0.7s ease both 0.55s' }}>
                 <Link to="/register"
                   className="flex items-center gap-2 px-7 py-3.5 text-sm rounded-2xl shadow-2xl transition-all hover:-translate-y-1 btn-gold">
-                  Start for free <ArrowRight size={15} />
+                  {t('landing.start_free', 'Start for free')} <ArrowRight size={15} />
                 </Link>
                 <Link to="/login"
                   className="flex items-center gap-2 px-7 py-3.5 text-sm font-semibold rounded-2xl transition-all hover:-translate-y-0.5"
                   style={{ background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.8)', border:'1px solid rgba(255,255,255,0.14)' }}>
-                  Sign in <ChevronRight size={14} />
+                  {t('landing.sign_in', 'Sign in')} <ChevronRight size={14} />
                 </Link>
               </div>
 
@@ -995,9 +999,31 @@ export default function LandingPage() {
             <span className="text-sm font-bold text-white" style={{ fontFamily:'Playfair Display, serif' }}>EventJelly</span>
           </div>
           <p className="text-xs" style={{ color:'rgba(255,255,255,0.22)' }}>© {new Date().getFullYear()} EventJelly. All rights reserved.</p>
-          <div className="flex items-center gap-5 text-xs" style={{ color:'rgba(255,255,255,0.3)' }}>
-            <Link to="/login" className="hover:text-white transition-colors">Sign in</Link>
-            <Link to="/register" className="hover:text-white transition-colors">Register</Link>
+          <div className="flex items-center gap-4 flex-wrap justify-center">
+            <div className="flex items-center gap-3 text-xs" style={{ color:'rgba(255,255,255,0.3)' }}>
+              <Link to="/login" className="hover:text-white transition-colors">Sign in</Link>
+              <Link to="/register" className="hover:text-white transition-colors">Register</Link>
+            </div>
+            {/* Language Switcher */}
+            <select
+              value={i18n.language}
+              onChange={(e) => {
+                const lng = e.target.value;
+                i18n.changeLanguage(lng);
+                updatePreferences({ language: lng });
+              }}
+              className="text-xs rounded-lg px-2.5 py-1.5 border-0 outline-none cursor-pointer transition-all"
+              style={{ background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.6)', appearance:'none' }}
+              title="Change language"
+            >
+              <option value="en">🇬🇧 EN</option>
+              <option value="fr">🇫🇷 FR</option>
+              <option value="ar">🇸🇦 AR</option>
+              <option value="es">🇪🇸 ES</option>
+              <option value="de">🇩🇪 DE</option>
+              <option value="pt">🇧🇷 PT</option>
+              <option value="zh">🇨🇳 ZH</option>
+            </select>
           </div>
         </div>
       </footer>

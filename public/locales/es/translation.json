@@ -1,0 +1,28 @@
+{
+  "landing": {
+    "hero_line1": "Planifica eventos",
+    "hero_line2": "que la gente recuerda",
+    "hero_title": "Planificación de Eventos, Simplificada Bellamente",
+    "hero_subtitle": "Diseña impresionantes planos de planta, gestiona hermosos tickets, coordina proveedores y rastrea cada detalle — todo desde una plataforma pensada para eventos memorables.",
+    "start_free": "Empezar gratis",
+    "sign_in": "Iniciar sesión"
+  },
+  "dashboard": {
+    "events": "Eventos",
+    "create_event": "Crear evento",
+    "revenue": "Ingresos totales",
+    "tickets": "Entradas vendidas",
+    "guests": "Invitados",
+    "upcoming": "Próximos eventos",
+    "search": "Buscar eventos..."
+  },
+  "common": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "loading": "Cargando...",
+    "settings": "Configuración",
+    "language": "Idioma",
+    "currency": "Moneda",
+    "timezone": "Zona horaria"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "landing": {
+    "hero_line1": "策划活动",
+    "hero_line2": "让人难以忘怀",
+    "hero_title": "活动策划，简单而美好",
+    "hero_subtitle": "设计精美的平面图，管理漂亮的票务，协调供应商，追踪每个细节——一个平台，打造难忘的活动体验。",
+    "start_free": "免费开始",
+    "sign_in": "登录"
+  },
+  "dashboard": {
+    "events": "活动",
+    "create_event": "创建活动",
+    "revenue": "总收入",
+    "tickets": "已售票数",
+    "guests": "嘉宾",
+    "upcoming": "即将举行的活动",
+    "search": "搜索活动..."
+  },
+  "common": {
+    "save": "保存",
+    "cancel": "取消",
+    "loading": "加载中...",
+    "settings": "设置",
+    "language": "语言",
+    "currency": "货币",
+    "timezone": "时区"
+  }
+}

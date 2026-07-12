@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Stage, Layer, Rect, Circle, Text, Transformer, Line, Group,
 } from 'react-konva';
@@ -351,6 +352,7 @@ export default function FloorCanvas({
   onCursorMove, otherCursors,
   onElementDrag, onElementTransform, remoteDrags,
 }: Props) {
+  const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<Konva.Stage>(null);
   const [size, setSize] = useState({ w: 800, h: 600 });
@@ -630,7 +632,7 @@ export default function FloorCanvas({
       <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-white rounded-xl shadow-md border border-slate-100 px-2 py-1.5">
         <button onClick={() => setClampedView(v => { const s = Math.min(MAX_SCALE, v.scale * ZOOM_FACTOR); onZoomChange?.(s); const cx = size.w/2, cy = size.h/2; return { scale: s, x: cx-(cx-v.x)*(s/v.scale), y: cy-(cy-v.y)*(s/v.scale) }; })}
           className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-50 rounded text-base font-light">+</button>
-        <span className="text-xs font-semibold text-slate-600 w-12 text-center tabular-nums">{Math.round(view.scale * 100)}%</span>
+        <span className="text-xs font-semibold text-slate-600 w-12 text-center tabular-nums">{t('planner.zoom_pct', { pct: Math.round(view.scale * 100) })}</span>
         <button onClick={() => setClampedView(v => { const s = Math.max(MIN_SCALE, v.scale / ZOOM_FACTOR); onZoomChange?.(s); const cx = size.w/2, cy = size.h/2; return { scale: s, x: cx-(cx-v.x)*(s/v.scale), y: cy-(cy-v.y)*(s/v.scale) }; })}
           className="w-6 h-6 flex items-center justify-center text-slate-600 hover:bg-slate-50 rounded text-base font-light">-</button>
         <div className="w-px h-4 bg-slate-200 mx-1"></div>
@@ -639,7 +641,7 @@ export default function FloorCanvas({
           setClampedView({ scale: initScale, x: (size.w - canvasWidth * initScale) / 2, y: (size.h - canvasHeight * initScale) / 2 });
           onZoomChange?.(initScale);
         }}
-          className="text-xs font-semibold text-slate-600 hover:bg-slate-50 px-2 py-1 rounded">Fit</button>
+          className="text-xs font-semibold text-slate-600 hover:bg-slate-50 px-2 py-1 rounded">{t('planner.fit')}</button>
       </div>
     </div>
   );

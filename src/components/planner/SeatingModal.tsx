@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { X, Search, User, Ticket as TicketIcon, CheckCircle2, ChevronRight, Ban } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import type { PlacedElement, SeatAssignment } from '../../types';
 import { useGuests } from '../../hooks/useGuests';
 import { useTickets } from '../../hooks/useTickets';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function SeatingModal({ element, eventId, onClose, onSave }: Props) {
+  const { t } = useTranslation();
   const { data: guests = [], isLoading: loadingGuests } = useGuests(eventId);
   const { data: tickets = [], isLoading: loadingTickets } = useTickets(eventId);
 
@@ -130,7 +132,7 @@ export default function SeatingModal({ element, eventId, onClose, onSave }: Prop
         {/* Header */}
         <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 bg-white z-10 shrink-0">
           <div>
-            <h2 className="text-2xl font-black text-slate-800">Manage Seating</h2>
+            <h2 className="text-2xl font-black text-slate-800">{t('planner.seating_title')}</h2>
             <div className="flex items-center gap-2 mt-1.5">
               <span className="text-sm font-semibold text-indigo-600 bg-indigo-50 px-2.5 py-0.5 rounded-md">
                 {element.label}
@@ -151,14 +153,14 @@ export default function SeatingModal({ element, eventId, onClose, onSave }: Prop
           {/* LEFT PANE: Seats List */}
           <div className="w-1/2 border-r border-slate-100 bg-slate-50/50 flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/80 backdrop-blur-md sticky top-0 z-10 shrink-0">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Table Seats</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">{t('planner.seating_table_seats')}</h3>
             </div>
             
             <div className="flex-1 overflow-y-auto p-4 space-y-2">
               {capacity === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400 space-y-3">
                   <Ban size={32} className="opacity-50" />
-                  <p className="text-sm font-medium">This element has no seating capacity.</p>
+                  <p className="text-sm font-medium">{t('planner.seating_no_capacity')}</p>
                 </div>
               ) : (
                 Array.from({ length: capacity }).map((_, i) => {
@@ -245,15 +247,15 @@ export default function SeatingModal({ element, eventId, onClose, onSave }: Prop
 
             <div className="flex-1 overflow-y-auto p-4">
               {isLoading ? (
-                <div className="flex items-center justify-center h-full text-slate-400">Loading directory...</div>
+                <div className="flex items-center justify-center h-full text-slate-400">{t('planner.seating_loading')}</div>
               ) : capacity === 0 ? (
-                <div className="flex items-center justify-center h-full text-slate-400">Select an element with capacity to assign seats.</div>
+                <div className="flex items-center justify-center h-full text-slate-400">{t('planner.seating_no_element')}</div>
               ) : (
                 <div className="space-y-6">
                   {/* Guests */}
                   {filteredOptions.guests.length > 0 && (
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-2 mb-3">Guests</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-2 mb-3">{t('planner.seating_guests')}</h4>
                       <div className="space-y-1">
                         {filteredOptions.guests.map((g: any) => (
                           <button
@@ -277,7 +279,7 @@ export default function SeatingModal({ element, eventId, onClose, onSave }: Prop
                   {/* Tickets */}
                   {filteredOptions.tickets.length > 0 && (
                     <div>
-                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-2 mb-3 mt-4">Open Tickets</h4>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-2 mb-3 mt-4">{t('planner.seating_tickets')}</h4>
                       <div className="space-y-1">
                         {filteredOptions.tickets.map((t: any) => (
                           <button

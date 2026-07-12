@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Mail, Phone, Users, UtensilsCrossed, StickyNote,
   CheckCircle2, Clock, XCircle, HelpCircle, UserCheck, Trash2, Edit2, Check, X,
@@ -41,6 +42,7 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
 }
 
 export default function GuestDetailPage() {
+  const { t } = useTranslation();
   const { id, guestId } = useParams<{ id: string; guestId: string }>();
   const navigate = useNavigate();
 
@@ -95,8 +97,8 @@ export default function GuestDetailPage() {
   if (!guest) {
     return (
       <div className="flex flex-col h-full items-center justify-center text-slate-400">
-        <p className="font-medium">Guest not found</p>
-        <button onClick={() => navigate(-1)} className="mt-3 text-sm text-[#7A1F1F] hover:underline">Go back</button>
+        <p className="font-medium">{t('guest_detail.not_found')}</p>
+        <button onClick={() => navigate(-1)} className="mt-3 text-sm text-[#7A1F1F] hover:underline">{t('guest_detail.go_back')}</button>
       </div>
     );
   }
@@ -112,13 +114,13 @@ export default function GuestDetailPage() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-xl font-bold text-slate-900">Guest Profile</h1>
-            <p className="text-sm text-slate-500 mt-0.5">View and manage guest details</p>
+            <h1 className="text-xl font-bold text-slate-900">{t('guest_detail.title')}</h1>
+            <p className="text-sm text-slate-500 mt-0.5">{t('guest_detail.subtitle')}</p>
           </div>
         </div>
         <button onClick={handleDelete} className="flex items-center gap-2 px-3 py-2 text-sm text-red-500 border border-red-100 rounded-xl hover:bg-red-50 transition-colors">
           <Trash2 size={14} />
-          Remove guest
+          {t('common.delete')}
         </button>
       </div>
 
@@ -159,7 +161,7 @@ export default function GuestDetailPage() {
 
           {/* RSVP status changer */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">RSVP Status</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('guest_detail.rsvp_status')}</p>
             <div className="flex flex-wrap gap-2">
               {RSVP_OPTIONS.map(opt => {
                 const Icon = opt.icon;
@@ -181,20 +183,20 @@ export default function GuestDetailPage() {
 
           {/* Contact info */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Contact</p>
-            <InfoRow icon={Mail} label="Email" value={guest.email} />
-            <InfoRow icon={Phone} label="Phone" value={guest.phone} />
-            <InfoRow icon={Users} label="Plus ones" value={guest.plusOnes > 0 ? `+${guest.plusOnes} guest${guest.plusOnes > 1 ? 's' : ''}` : undefined} />
-            <InfoRow icon={UtensilsCrossed} label="Dietary requirements" value={guest.dietaryReqs} />
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('guest_detail.contact')}</p>
+            <InfoRow icon={Mail} label={t('guests.modal.email')} value={guest.email} />
+            <InfoRow icon={Phone} label={t('guests.modal.phone')} value={guest.phone} />
+            <InfoRow icon={Users} label={t('guests.modal.plus_ones')} value={guest.plusOnes > 0 ? `+${guest.plusOnes} guest${guest.plusOnes > 1 ? 's' : ''}` : undefined} />
+            <InfoRow icon={UtensilsCrossed} label={t('guests.modal.dietary')} value={guest.dietaryReqs} />
           </div>
 
           {/* Table & notes */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Seating & Notes</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('guest_detail.seating_notes')}</p>
 
             {/* Table assignment */}
             <div className="mb-4">
-              <p className="text-xs text-slate-400 mb-1">Table Assignment</p>
+              <p className="text-xs text-slate-400 mb-1">{t('guest_detail.table_assignment')}</p>
               {editingField === 'tableAssignment' ? (
                 <div className="flex items-center gap-2">
                   <input value={editValue} onChange={e => setEditValue(e.target.value)} autoFocus
@@ -207,7 +209,7 @@ export default function GuestDetailPage() {
                 </div>
               ) : (
                 <div className="flex items-center gap-2 group">
-                  <p className="text-sm font-medium text-slate-800">{guest.tableAssignment || <span className="text-slate-400 font-normal">Not assigned</span>}</p>
+                  <p className="text-sm font-medium text-slate-800">{guest.tableAssignment || <span className="text-slate-400 font-normal">{t('guest_detail.not_assigned')}</span>}</p>
                   <button onClick={() => startEdit('tableAssignment', guest.tableAssignment ?? '')} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-slate-100">
                     <Edit2 size={12} className="text-slate-400" />
                   </button>
@@ -217,21 +219,21 @@ export default function GuestDetailPage() {
 
             {/* Notes */}
             <div>
-              <p className="text-xs text-slate-400 mb-1">Notes</p>
+              <p className="text-xs text-slate-400 mb-1">{t('guest_detail.notes')}</p>
               {editingField === 'notes' ? (
                 <div className="space-y-2">
                   <textarea value={editValue} onChange={e => setEditValue(e.target.value)} autoFocus rows={3}
                     className="w-full text-sm px-3 py-2 border border-indigo-300 rounded-lg focus:outline-none resize-none"
-                    placeholder="Add notes about this guest…"
+                    placeholder={t('guests.modal.dietary_placeholder')}
                   />
                   <div className="flex gap-2">
-                    <button onClick={() => saveEdit('notes')} className="px-3 py-1 text-xs text-white bg-[#FDF5EE]0 rounded-lg">Save</button>
-                    <button onClick={cancelEdit} className="px-3 py-1 text-xs text-slate-500 border border-slate-200 rounded-lg">Cancel</button>
+                    <button onClick={() => saveEdit('notes')} className="px-3 py-1 text-xs text-white bg-[#FDF5EE]0 rounded-lg">{t('guest_detail.save')}</button>
+                    <button onClick={cancelEdit} className="px-3 py-1 text-xs text-slate-500 border border-slate-200 rounded-lg">{t('common.cancel')}</button>
                   </div>
                 </div>
               ) : (
                 <div className="flex items-start gap-2 group">
-                  <p className="text-sm text-slate-700 flex-1">{guest.notes || <span className="text-slate-400">No notes</span>}</p>
+                  <p className="text-sm text-slate-700 flex-1">{guest.notes || <span className="text-slate-400">{t('guest_detail.no_notes')}</span>}</p>
                   <button onClick={() => startEdit('notes', guest.notes ?? '')} className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-slate-100 flex-shrink-0 mt-0.5">
                     <StickyNote size={12} className="text-slate-400" />
                   </button>
@@ -242,11 +244,11 @@ export default function GuestDetailPage() {
 
           {/* Check-in */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Check-in</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">{t('guest_detail.check_in')}</p>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-800">{guest.checkedIn ? 'Guest has checked in' : 'Not yet checked in'}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{guest.checkedIn ? 'Mark as not checked in to undo' : 'Mark as checked in when guest arrives'}</p>
+                <p className="text-sm font-medium text-slate-800">{guest.checkedIn ? t('guest_detail.checked_in') : t('guest_detail.not_checked_in')}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{guest.checkedIn ? t('guest_detail.undo_check_in') : t('guest_detail.do_check_in')}</p>
               </div>
               <button
                 onClick={() => updateGuest.mutate({ id: guest._id, data: { checkedIn: !guest.checkedIn } })}
@@ -254,7 +256,7 @@ export default function GuestDetailPage() {
                 style={guest.checkedIn ? {} : { backgroundColor: '#7A1F1F' }}
               >
                 <UserCheck size={15} />
-                {guest.checkedIn ? 'Checked in' : 'Check in'}
+                {guest.checkedIn ? t('guest_detail.check_in') : t('guest_detail.check_in')}
               </button>
             </div>
           </div>

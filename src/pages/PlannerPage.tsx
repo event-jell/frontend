@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import { LayoutGrid, X, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import FloorCanvas from '../components/FloorCanvas';
 import ElementPanel from '../components/planner/ElementPanel';
 import RightPanel from '../components/planner/RightPanel';
@@ -43,6 +44,7 @@ function useHistory<T>(initial: T) {
 }
 
 export default function PlannerPage() {
+  const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { data: plan, isLoading } = useFloorPlan(id!);
@@ -411,7 +413,7 @@ export default function PlannerPage() {
       name: saveTemplateName.trim(),
       description: 'Saved from floor plan',
       canvasWidth: activeCanvasWidth,
-      canvasHeight: activeCanvasHeight,
+      canvasHieght: activeCanvasHeight,
       gridSize: plan?.gridSize || 1,
       elements: elements,
       rooms: [],
@@ -501,7 +503,7 @@ export default function PlannerPage() {
       <div className="flex h-full items-center justify-center">
         <div className="flex items-center gap-3 text-slate-500">
           <div className="w-5 h-5 border-2 border-[#7A1F1F] border-t-transparent rounded-full animate-spin" />
-          Loading floor plan…
+          {t('common.loading_floor_plan')}
         </div>
       </div>
     );
@@ -510,7 +512,7 @@ export default function PlannerPage() {
   if (!plan) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-red-500 text-sm">Floor plan not found.</p>
+        <p className="text-red-500 text-sm">{t('planner.not_found')}</p>
       </div>
     );
   }
@@ -522,16 +524,16 @@ export default function PlannerPage() {
         <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
           <LayoutGrid size={32} className="text-slate-400" />
         </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-3">Warning: Not Mobile Friendly</h2>
+        <h2 className="text-xl font-bold text-slate-800 mb-3">{t('planner.mobile_warning')}</h2>
         <p className="text-slate-500 mb-8 max-w-[280px]">
-          This planner is designed for larger screens. Please use a computer or tablet to build your floor plan.
+          {t('planner.mobile_desc')}
         </p>
         <button 
           onClick={() => window.history.back()}
           className="px-6 py-3 text-white font-semibold rounded-xl transition-colors shadow-sm"
           style={{ backgroundColor: '#7A1F1F' }}
         >
-          Go Back
+          {t('common.go_back')}
         </button>
       </div>
 
@@ -572,17 +574,17 @@ export default function PlannerPage() {
               <LayoutGrid size={18} className="text-white" />
             </div>
             <h2 className="text-lg font-bold text-slate-800 mb-1">
-              {rooms.length === 0 ? 'Name your first floor' : 'Add a new floor'}
+              {rooms.length === 0 ? t('planner.name_first_floor') : t('planner.add_new_floor')}
             </h2>
             <p className="text-sm text-slate-500 mb-5">
               {rooms.length === 0
-                ? 'Give this floor a name to start designing your layout.'
-                : 'Each floor has its own independent canvas.'}
+                ? t('planner.name_floor_desc')
+                : t('planner.floor_independent_desc')}
             </p>
             <div className="space-y-3 mb-4">
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
-                  Floor Name <span className="text-red-400">*</span>
+                  {t('planner.floor_name')} <span className="text-red-400">*</span>
                 </label>
                 <input
                   ref={floorModalInputRef}
@@ -600,7 +602,7 @@ export default function PlannerPage() {
 
               <div>
                 <label className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-1.5 block">
-                  Floor Size <span className="text-slate-400 font-normal normal-case">(optional)</span>
+                  {t('planner.floor_size')} <span className="text-slate-400 font-normal normal-case">{t('planner.optional')}</span>
                 </label>
                 <div className="flex items-center gap-2">
                   <div className="flex-1 relative">
@@ -612,9 +614,9 @@ export default function PlannerPage() {
                       placeholder={String(plan?.canvasWidth ?? 1200)}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 focus:border-[#7A1F1F]/60 transition-all pr-8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">ft</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{t('planner.unit_ft')}</span>
                   </div>
-                  <span className="text-slate-400 text-sm flex-shrink-0">×</span>
+                  <span className="text-slate-400 text-sm flex-shrink-0">{t('planner.multiplier')}</span>
                   <div className="flex-1 relative">
                     <input
                       type="number"
@@ -624,10 +626,12 @@ export default function PlannerPage() {
                       placeholder={String(plan?.canvasHeight ?? 800)}
                       className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 focus:border-[#7A1F1F]/60 transition-all pr-8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">ft</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">{t('planner.unit_ft')}</span>
                   </div>
                 </div>
-                <p className="text-xs text-slate-400 mt-1.5">Default: {plan?.canvasWidth ?? 1200} × {plan?.canvasHeight ?? 800} ft</p>
+                <p className="text-xs text-slate-400 mt-1.5">
+                  {t('planner.default_size', { width: plan?.canvasWidth ?? 1200, height: plan?.canvasHeight ?? 800 })}
+                </p>
               </div>
             </div>
             <div className="flex gap-3">
@@ -635,7 +639,7 @@ export default function PlannerPage() {
                 onClick={() => setShowFloorModal(false)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={submitFloorModal}
@@ -643,7 +647,7 @@ export default function PlannerPage() {
                 className="flex-1 py-2.5 rounded-xl text-white text-sm font-semibold disabled:opacity-40 transition-all shadow-sm"
                 style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
               >
-                {rooms.length === 0 ? 'Start Designing' : 'Add Floor'}
+                {rooms.length === 0 ? t('planner.start_designing') : t('planner.add_floor')}
               </button>
             </div>
           </div>
@@ -657,22 +661,22 @@ export default function PlannerPage() {
             <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center mb-4">
               <X size={18} className="text-red-500" />
             </div>
-            <h2 className="text-base font-bold text-slate-800 mb-1">Delete floor?</h2>
+            <h2 className="text-base font-bold text-slate-800 mb-1">{t('planner.delete_title')}</h2>
             <p className="text-sm text-slate-500 mb-5">
-              <span className="font-semibold text-slate-700">"{rooms.find(r => r.id === deleteRoomId)?.name}"</span> and all its elements will be permanently removed.
+              <span className="font-semibold text-slate-700">"{rooms.find(r => r.id === deleteRoomId)?.name}"</span> {t('planner.delete_confirm', { name: rooms.find(r => r.id === deleteRoomId)?.name })}
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteRoomId(null)}
                 className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={confirmDeleteRoom}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-semibold transition-colors"
               >
-                Delete
+                {t('common.delete')}
               </button>
             </div>
           </div>
@@ -684,14 +688,14 @@ export default function PlannerPage() {
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h2 className="text-lg font-bold text-slate-800">Save as Template</h2>
+              <h2 className="text-lg font-bold text-slate-800">{t('planner.template_title')}</h2>
               <button onClick={() => setShowSaveTemplateModal(false)} className="text-slate-400 hover:text-slate-700">
                 <X size={20} />
               </button>
             </div>
             <div className="p-6">
               <div className="mb-5">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">Template Name</label>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">{t('planner.template_name')}</label>
                 <input
                   type="text"
                   value={saveTemplateName}
@@ -714,8 +718,8 @@ export default function PlannerPage() {
                     <div className={`absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform ${saveTemplateIsPublic ? 'translate-x-4' : 'translate-x-0'}`}></div>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-slate-800">Make Public</div>
-                    <div className="text-xs text-slate-500">Allow other users to see and use this template</div>
+                    <div className="text-sm font-semibold text-slate-800">{t('planner.public_title')}</div>
+                    <div className="text-xs text-slate-500">{t('planner.public_desc')}</div>
                   </div>
                 </label>
               </div>
@@ -725,14 +729,14 @@ export default function PlannerPage() {
                 onClick={() => setShowSaveTemplateModal(false)}
                 className="flex-1 py-2 rounded-xl border border-slate-200 text-sm font-medium text-slate-600 hover:bg-white transition-colors"
               >
-                Cancel
+                {t('common.cancel')}
               </button>
               <button
                 onClick={confirmSaveTemplate}
                 disabled={!saveTemplateName.trim()}
                 className="flex-1 py-2 rounded-xl bg-[#7A1F1F] text-white text-sm font-semibold hover:bg-[#601818] disabled:opacity-50 transition-colors"
               >
-                Save Template
+                {t('planner.template_title')}
               </button>
             </div>
           </div>
@@ -800,9 +804,9 @@ export default function PlannerPage() {
               <div className="w-16 h-16 bg-[#FDF5EE] rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <LayoutGrid size={32} className="text-[#7A1F1F]" />
               </div>
-              <h3 className="text-lg font-bold text-slate-800 mb-2">No floor selected</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-2">{t('planner.no_selection')}</h3>
               <p className="text-slate-500 text-sm mb-6 leading-relaxed">
-                Create your first floor to start designing the event space, arranging tables, and managing seating.
+                {t('planner.no_selection_desc')}
               </p>
               <button
                 onClick={openFloorModal}
@@ -810,7 +814,7 @@ export default function PlannerPage() {
                 style={{ backgroundColor: '#7A1F1F' }}
               >
                 <Plus size={16} />
-                Create a Floor
+                {t('planner.create_floor')}
               </button>
             </div>
           </div>

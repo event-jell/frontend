@@ -49,8 +49,8 @@ function normalizeAuth(raw: any): AuthResponse {
 }
 
 export const authApi = {
-  register: ({ firstName, lastName, ...rest }: { firstName: string; lastName: string; email: string; password: string }) =>
-    http.post('/auth/register', { first_name: firstName, last_name: lastName, ...rest }).then(r => normalizeAuth(r.data)),
+  register: ({ firstName, lastName, country, ...rest }: { firstName: string; lastName: string; email: string; password: string; country?: string }) =>
+    http.post('/auth/register', { first_name: firstName, last_name: lastName, ...(country && { country }), ...rest }).then(r => normalizeAuth(r.data)),
   login: (data: { email: string; password: string }) =>
     http.post('/auth/login', data).then(r => normalizeAuth(r.data)),
   forgotPassword: (data: { email: string }) =>
@@ -100,7 +100,10 @@ function normalizeFloorPlan(raw: any): FloorPlan {
     canvasHeight: raw.canvas_height ?? raw.canvasHeight ?? 800,
     gridSize: raw.grid_size ?? raw.gridSize ?? 20,
     elements: (raw.elements ?? []).map(normalizeElement),
-    rooms: raw.rooms ?? [],
+    rooms: (raw.rooms ?? []).map((r: any) => ({
+      ...r,
+      elements: (r.elements ?? []).map(normalizeElement),
+    })),
     thumbnail: raw.thumbnail,
     status: raw.status ?? 'draft',
     isTemplate: raw.is_template,

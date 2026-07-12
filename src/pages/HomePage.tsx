@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Plus, Trash2, Copy, Calendar, ChevronRight, Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import {
   useFloorPlans,
   useDeleteFloorPlan,
@@ -7,16 +8,17 @@ import {
 } from '../hooks/useFloorPlans';
 import type { FloorPlan } from '../types';
 
-function PlanThumbnail({ name }: { name: string }) {
+function PlanThumbnail() {
+  const { t } = useTranslation();
   return (
     <svg viewBox="0 0 320 160" className="w-full h-full">
       <defs>
-        <linearGradient id={`grad-${name}`} x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id="grad-thumb" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#7A1F1F" stopOpacity="0.12" />
           <stop offset="100%" stopColor="#D4A24C" stopOpacity="0.08" />
         </linearGradient>
       </defs>
-      <rect width="320" height="160" fill={`url(#grad-${name})`} />
+      <rect width="320" height="160" fill="url(#grad-thumb)" />
       {[40, 80, 120, 160, 200, 240, 280].map(x => (
         <line key={x} x1={x} y1="0" x2={x} y2="160" stroke="#7A1F1F" strokeOpacity="0.06" strokeWidth="1" />
       ))}
@@ -24,7 +26,7 @@ function PlanThumbnail({ name }: { name: string }) {
         <line key={y} x1="0" y1={y} x2="320" y2={y} stroke="#7A1F1F" strokeOpacity="0.06" strokeWidth="1" />
       ))}
       <rect x="100" y="14" width="120" height="32" rx="6" fill="#EF9F27" fillOpacity="0.85" />
-      <text x="160" y="35" textAnchor="middle" fill="white" fontSize="10" fontWeight="700" letterSpacing="0.5">STAGE</text>
+      <text x="160" y="35" textAnchor="middle" fill="white" fontSize="10" fontWeight="700" letterSpacing="0.5">{t('home.stage')}</text>
       <circle cx="70" cy="95" r="24" fill="none" stroke="#7A1F1F" strokeWidth="2.5" strokeOpacity="0.45" />
       <circle cx="160" cy="95" r="24" fill="none" stroke="#7A1F1F" strokeWidth="2.5" strokeOpacity="0.45" />
       <circle cx="250" cy="95" r="24" fill="none" stroke="#7A1F1F" strokeWidth="2.5" strokeOpacity="0.45" />
@@ -47,17 +49,18 @@ function PlanCard({ plan, onOpen, onDelete, onDuplicate }: {
   onDelete: () => void;
   onDuplicate: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-200 group overflow-hidden">
       <div
         className="h-36 bg-slate-50 flex items-center justify-center cursor-pointer relative overflow-hidden"
         onClick={onOpen}
       >
-        <PlanThumbnail name={plan.name} />
+        <PlanThumbnail />
         <div className="absolute inset-0 bg-gradient-to-t from-black/0 to-black/0 group-hover:from-black/10 transition-all duration-200" />
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
           <div className="bg-white/90 backdrop-blur-sm text-slate-800 text-xs font-semibold px-4 py-2 rounded-full shadow-md flex items-center gap-1.5">
-            Open <ChevronRight size={12} />
+            {t('common.open')} <ChevronRight size={12} />
           </div>
         </div>
       </div>
@@ -66,7 +69,7 @@ function PlanCard({ plan, onOpen, onDelete, onDuplicate }: {
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="min-w-0">
             <h3 className={`font-bold truncate text-sm ${!plan.name ? 'text-slate-400 italic' : 'text-slate-800'}`}>
-              {plan.name || 'Untitled Plan'}
+              {plan.name || t('home.untitled_plan')}
             </h3>
             {plan.description && (
               <p className="text-xs text-slate-400 mt-0.5 truncate">{plan.description}</p>
@@ -85,7 +88,7 @@ function PlanCard({ plan, onOpen, onDelete, onDuplicate }: {
           <Calendar size={10} />
           {new Date(plan.updatedAt).toLocaleDateString()}
           <span className="mx-1 text-slate-200">·</span>
-          {plan.elements?.length ?? 0} elements
+          {plan.elements?.length ?? 0} {t('home.elements')}
         </div>
 
         <div className="flex gap-2">
@@ -94,7 +97,7 @@ function PlanCard({ plan, onOpen, onDelete, onDuplicate }: {
             className="flex-1 flex items-center justify-center gap-1.5 py-2 text-white text-xs font-semibold rounded-xl transition-all shadow-sm hover:shadow-md"
             style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
           >
-            Open <ChevronRight size={11} />
+            {t('common.open')} <ChevronRight size={11} />
           </button>
           <button
             onClick={onDuplicate}
@@ -117,6 +120,7 @@ function PlanCard({ plan, onOpen, onDelete, onDuplicate }: {
 }
 
 export default function HomePage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: plans, isLoading } = useFloorPlans();
   const deletePlan = useDeleteFloorPlan();
@@ -128,8 +132,8 @@ export default function HomePage() {
       <div className="bg-white border-b border-slate-100 px-4 py-4 sm:px-8 sm:py-5 flex-shrink-0">
         <div className="flex items-center justify-between max-w-5xl mx-auto w-full">
           <div>
-            <p className="text-xs text-slate-400 font-medium mb-0.5 uppercase tracking-wide">Workspace</p>
-            <h1 className="text-2xl font-bold text-slate-900">Floor Plans</h1>
+            <p className="text-xs text-slate-400 font-medium mb-0.5 uppercase tracking-wide">{t('home.workspace')}</p>
+            <h1 className="text-2xl font-bold text-slate-900">{t('home.floor_plans')}</h1>
           </div>
           <button
             onClick={() => navigate('/floor-plans/new')}
@@ -137,7 +141,7 @@ export default function HomePage() {
             style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
           >
             <Plus size={15} />
-            New Plan
+            {t('home.new_plan')}
           </button>
         </div>
       </div>
@@ -157,22 +161,22 @@ export default function HomePage() {
               >
                 📐
               </div>
-              <h2 className="text-xl font-bold text-slate-700 mb-2">No floor plans yet</h2>
-              <p className="text-sm text-slate-500 mb-7">Design your first event layout — stage, tables, and all</p>
+              <h2 className="text-xl font-bold text-slate-700 mb-2">{t('home.empty_title')}</h2>
+              <p className="text-sm text-slate-500 mb-7">{t('home.empty_subtitle')}</p>
               <button
                 onClick={() => navigate('/floor-plans/new')}
                 className="inline-flex items-center gap-2 px-6 py-3 text-white text-sm font-semibold rounded-xl hover:opacity-90 transition-opacity shadow-md"
                 style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
               >
                 <Plus size={15} />
-                Create Floor Plan
+                {t('planner.create_floor')}
               </button>
             </div>
           ) : (
             <>
               <div className="flex items-center justify-between mb-5">
                 <div>
-                  <h2 className="text-base font-bold text-slate-800">Your Plans</h2>
+                  <h2 className="text-base font-bold text-slate-800">{t('home.your_plans')}</h2>
                   <p className="text-xs text-slate-400 mt-0.5">
                     {plans.length} floor plan{plans.length !== 1 ? 's' : ''}
                   </p>
@@ -202,7 +206,7 @@ export default function HomePage() {
                     <Plus size={18} className="text-white" />
                   </div>
                   <span className="text-sm font-medium text-slate-400 group-hover:text-slate-600 transition-colors">
-                    New Plan
+                    {t('home.new_plan')}
                   </span>
                 </button>
               </div>

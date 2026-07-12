@@ -1,0 +1,28 @@
+{
+  "landing": {
+    "hero_line1": "Planifiez des événements",
+    "hero_line2": "dont on se souvient",
+    "hero_title": "La Planification d'Événements, Magnifiquement Simplifiée",
+    "hero_subtitle": "Concevez des plans de salle impressionnants, gérez vos invités, gérez de superbes billets, coordonnez les fournisseurs et suivez chaque détail — tout cela depuis une plateforme conçue pour des événements mémorables.",
+    "start_free": "Commencer gratuitement",
+    "sign_in": "Se connecter"
+  },
+  "dashboard": {
+    "events": "Événements",
+    "create_event": "Créer un événement",
+    "revenue": "Revenu total",
+    "tickets": "Billets vendus",
+    "guests": "Invités",
+    "upcoming": "Événements à venir",
+    "search": "Rechercher des événements..."
+  },
+  "common": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "loading": "Chargement...",
+    "settings": "Paramètres",
+    "language": "Langue",
+    "currency": "Devise",
+    "timezone": "Fuseau horaire"
+  }
+}

@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Ticket, CheckCircle2, Clock, XCircle, HelpCircle, UserCheck, Plus, Link as LinkIcon, Edit2, Trash2 } from 'lucide-react';
 import { useTickets, useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
 import { useGuests, useUpdateGuest, useCreateGuest } from '../hooks/useGuests';
 import type { Guest, Ticket as TicketType } from '../types';
 
 function EditTicketModal({ ticket, onClose, onSave, isPending }: { ticket: TicketType; onClose: () => void; onSave: (data: Partial<TicketType>) => void; isPending?: boolean }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ 
     name: ticket.name || '', 
     description: ticket.description || '', 
@@ -18,52 +20,52 @@ function EditTicketModal({ ticket, onClose, onSave, isPending }: { ticket: Ticke
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 mx-4">
-        <h2 className="text-lg font-bold text-slate-800 mb-5">Edit Ticket Type</h2>
+        <h2 className="text-lg font-bold text-slate-800 mb-5">{t('ticket_guests.edit_ticket_title')}</h2>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Ticket Name *</label>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">{t('ticketing.name')}</label>
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="e.g. General Admission, VIP" />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Description</label>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">{t('ticketing.description')}</label>
             <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 resize-none" rows={2} placeholder="What's included…" />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Price ($)</label>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">{t('ticketing.price')}</label>
               <input type="number" min={0} value={form.price} onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))}
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Total Capacity</label>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">{t('ticketing.capacity')}</label>
               <input type="number" min={1} value={form.total} onChange={e => setForm(f => ({ ...f, total: Number(e.target.value) }))}
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" />
             </div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Sale Start</label>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">{t('ticketing.sale_start')}</label>
               <input type="date" value={form.saleStart} onChange={e => setForm(f => ({ ...f, saleStart: e.target.value }))}
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" />
             </div>
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">Sale End</label>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">{t('ticketing.sale_end')}</label>
               <input type="date" value={form.saleEnd} onChange={e => setForm(f => ({ ...f, saleEnd: e.target.value }))}
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" />
             </div>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">{t('common.cancel')}</button>
           <button
             disabled={isPending}
             onClick={() => { if (form.name) { onSave(form); } }}
             className="px-4 py-2 text-sm text-white font-semibold rounded-xl hover:opacity-90 disabled:opacity-50"
             style={{ backgroundColor: '#7A1F1F' }}
           >
-            {isPending ? 'Saving...' : 'Save Changes'}
+            {isPending ? t('common.processing') : t('common.save')}
           </button>
         </div>
       </div>
@@ -72,43 +74,44 @@ function EditTicketModal({ ticket, onClose, onSave, isPending }: { ticket: Ticke
 }
 
 function AddGuestModal({ onClose, onSave }: { onClose: () => void; onSave: (data: Partial<Guest>) => void }) {
+  const { t } = useTranslation();
   const [form, setForm] = useState({ name: '', email: '', phone: '', rsvpStatus: 'pending' as Guest['rsvpStatus'] });
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 mx-4">
-        <h2 className="text-lg font-bold text-slate-800 mb-5">Add Applicant</h2>
+        <h2 className="text-lg font-bold text-slate-800 mb-5">{t('ticket_guests.add_applicant_title')}</h2>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Name *</label>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">{t('common.name')}</label>
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="Full name" />
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder={t('guests.modal.name_placeholder')} />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Email</label>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">{t('guests.modal.email')}</label>
             <input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="email@example.com" />
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder={t('guests.modal.email_placeholder')} />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Phone</label>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">{t('guests.modal.phone')}</label>
             <input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="+1 (555) 000-0000" />
+              className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder={t('guests.modal.phone_placeholder')} />
           </div>
           <div>
-            <label className="text-xs font-medium text-slate-600 mb-1 block">Status</label>
+            <label className="text-xs font-medium text-slate-600 mb-1 block">{t('guests.modal.rsvp_status')}</label>
             <select value={form.rsvpStatus} onChange={e => setForm(f => ({ ...f, rsvpStatus: e.target.value as Guest['rsvpStatus'] }))}
               className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 bg-white">
-              <option value="pending">Pending</option>
-              <option value="confirmed">Confirmed</option>
-              <option value="declined">Declined</option>
-              <option value="maybe">Maybe</option>
+              <option value="pending">{t('guests.status.pending')}</option>
+              <option value="confirmed">{t('guests.status.confirmed')}</option>
+              <option value="declined">{t('guests.status.declined')}</option>
+              <option value="maybe">{t('guests.status.maybe')}</option>
             </select>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">Cancel</button>
+          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">{t('common.cancel')}</button>
           <button onClick={() => { if (form.name) { onSave(form); onClose(); } }}
             className="px-4 py-2 text-sm text-white font-semibold rounded-xl hover:opacity-90" style={{ backgroundColor: '#7A1F1F' }}>
-            Add Applicant
+            {t('ticket_guests.add_applicant_title')}
           </button>
         </div>
       </div>
@@ -210,9 +213,9 @@ export default function TicketGuestsPage() {
   if (!ticket) {
     return (
       <div className="flex-1 flex flex-col justify-center items-center">
-        <h2 className="text-xl font-bold text-slate-700">Ticket not found</h2>
+        <h2 className="text-xl font-bold text-slate-700">{t('ticket_guests.not_found')}</h2>
         <button onClick={() => navigate(`/events/${id}/ticketing`)} className="mt-4 text-[#7A1F1F] hover:underline">
-          Back to Ticketing
+          {t('common.back_to_events')}
         </button>
       </div>
     );
@@ -286,7 +289,7 @@ export default function TicketGuestsPage() {
             className="flex items-center gap-2 px-4 py-2 text-slate-700 bg-white border border-slate-200 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
           >
             {copied ? <CheckCircle2 size={15} className="text-green-500" /> : <LinkIcon size={15} />}
-            {copied ? 'Copied!' : 'Share Link'}
+            {copied ? t('common.processing') : t('ticketing.copy_link')}
           </button>
           <button
             onClick={() => setShowAdd(true)}
@@ -294,7 +297,7 @@ export default function TicketGuestsPage() {
             style={{ backgroundColor: '#7A1F1F' }}
           >
             <Plus size={15} />
-            Add Guest
+            {t('guests.add_guest')}
           </button>
         </div>
       </div>
@@ -309,20 +312,20 @@ export default function TicketGuestsPage() {
                 <div className="p-2 bg-[#FDF5EE] text-[#7A1F1F] rounded-xl">
                   <Ticket size={20} />
                 </div>
-                <h3 className="font-bold text-slate-800">Ticket Details</h3>
+                <h3 className="font-bold text-slate-800">{t('ticket_guests.ticket_details')}</h3>
               </div>
               <div className="space-y-4">
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Description</p>
-                  <p className="text-sm text-slate-700 mt-1 leading-relaxed">{ticket.description || 'No description provided for this ticket.'}</p>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('ticketing.description')}</p>
+                  <p className="text-sm text-slate-700 mt-1 leading-relaxed">{ticket.description || t('common.description')}</p>
                 </div>
                 <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Price</p>
-                    <p className="text-base font-bold text-slate-800 mt-0.5">{ticket.price === 0 ? 'Free' : `$${ticket.price}`}</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('ticketing.price_label')}</p>
+                    <p className="text-base font-bold text-slate-800 mt-0.5">{ticket.price === 0 ? t('ticketing.free') : `$${ticket.price}`}</p>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">Status</p>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">{t('common.status')}</p>
                     <div className="mt-1">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold uppercase tracking-wide ${
                         ticket.status === 'active' ? 'bg-[#FAF7F2] text-[#3FA65B]' :
@@ -340,15 +343,15 @@ export default function TicketGuestsPage() {
             {/* Sales Progress Card */}
             <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm md:col-span-2 flex flex-col justify-center">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="font-bold text-slate-800">Sales Progress</h3>
+                <h3 className="font-bold text-slate-800">{t('ticket_guests.sales_progress')}</h3>
                 <span className="text-sm font-bold text-[#7A1F1F] bg-[#FDF5EE] px-3 py-1 rounded-lg">
                   {Math.round((ticket.sold / (ticket.total || 1)) * 100)}% Sold
                 </span>
               </div>
               
               <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="font-medium text-slate-600">{ticket.sold} tickets sold</span>
-                <span className="font-medium text-slate-400">{ticket.total} total</span>
+                <span className="font-medium text-slate-600">{t('ticket_guests.tickets_sold', { count: ticket.sold })}</span>
+                <span className="font-medium text-slate-400">{t('ticket_guests.total_tickets', { count: ticket.total })}</span>
               </div>
               
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
@@ -361,42 +364,42 @@ export default function TicketGuestsPage() {
               <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-slate-100">
                 <div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Clock size={14}/> Sale Starts
+                    <Clock size={14}/> {t('ticketing.sale_start')}
                   </p>
                   <p className="text-sm text-slate-800 font-bold mt-1.5">
-                    {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'Available Immediately'}
+                    {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : t('common.processing')}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Clock size={14}/> Sale Ends
+                    <Clock size={14}/> {t('ticketing.sale_end')}
                   </p>
                   <p className="text-sm text-slate-800 font-bold mt-1.5">
-                    {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : 'Until Sold Out'}
+                    {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) : t('common.processing')}
                   </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <h2 className="text-lg font-bold text-slate-800 mb-4">Applicants ({ticketGuests.length})</h2>
+          <h2 className="text-lg font-bold text-slate-800 mb-4">{t('ticket_guests.applicants_title', { count: ticketGuests.length })}</h2>
 
           <div className="overflow-x-auto">
           <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-100 bg-slate-50/50">
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Applicant Name</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Contact</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">Check-in</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('ticket_guests.applicant_name')}</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('ticket_guests.contact')}</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('ticket_guests.status')}</th>
+                  <th className="text-left px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wide">{t('ticket_guests.check_in')}</th>
                 </tr>
               </thead>
               <tbody>
                 {ticketGuests.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-6 py-12 text-center">
-                      <p className="text-slate-400 font-medium">No applicants for this ticket yet</p>
+                      <p className="text-slate-400 font-medium">{t('ticket_guests.no_applicants')}</p>
                     </td>
                   </tr>
                 ) : (
@@ -425,7 +428,7 @@ export default function TicketGuestsPage() {
                           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${guest.checkedIn ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
                         >
                           <UserCheck size={14} />
-                          {guest.checkedIn ? 'Checked in' : 'Check in'}
+                          {guest.checkedIn ? t('guests.table.checked_in') : t('guests.table.check_in_action')}
                         </button>
                       </td>
                     </tr>

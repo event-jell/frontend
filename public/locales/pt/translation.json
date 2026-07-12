@@ -1,0 +1,28 @@
+{
+  "landing": {
+    "hero_line1": "Planeje eventos",
+    "hero_line2": "que as pessoas não esquecem",
+    "hero_title": "Planejamento de Eventos, Lindamente Simplificado",
+    "hero_subtitle": "Crie plantas baixas impressionantes, gerencie ingressos, coordene fornecedores e acompanhe cada detalhe — tudo em uma plataforma feita para eventos memoráveis.",
+    "start_free": "Começar grátis",
+    "sign_in": "Entrar"
+  },
+  "dashboard": {
+    "events": "Eventos",
+    "create_event": "Criar evento",
+    "revenue": "Receita total",
+    "tickets": "Ingressos vendidos",
+    "guests": "Convidados",
+    "upcoming": "Próximos eventos",
+    "search": "Pesquisar eventos..."
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "loading": "Carregando...",
+    "settings": "Configurações",
+    "language": "Idioma",
+    "currency": "Moeda",
+    "timezone": "Fuso horário"
+  }
+}

@@ -1,13 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink, useLocation, useParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Home, Calendar, Users, Layout, Ticket, Store,
   MessageSquare, BarChart2, Settings, ChevronRight,
   Menu, X, LayoutGrid, PanelLeftClose, PanelLeftOpen,
-  ChevronsUpDown, Bell, Star,
+  ChevronsUpDown, Bell, Star, Globe,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
+import PreferencesModal from '../components/PreferencesModal';
 
 const R = '#7A1F1F';
 const RD = '#3D0F0F';
@@ -71,6 +73,7 @@ function SectionLabel({ children, collapsed }: { children: React.ReactNode; coll
 interface Props { children: React.ReactNode }
 
 export default function AppShell({ children }: Props) {
+  const { t } = useTranslation();
   const location = useLocation();
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -78,6 +81,7 @@ export default function AppShell({ children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [prefsOpen, setPrefsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -182,6 +186,14 @@ export default function AppShell({ children }: Props) {
       <div className={`p-2 space-y-0.5 relative`}
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} ref={menuRef}>
         <NavItem icon={Settings} label="Settings" to="/settings" onClick={closeMobile} collapsed={collapsed} />
+        <button
+          onClick={() => setPrefsOpen(true)}
+          title={collapsed ? t('common.language') : undefined}
+          className={`w-full group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-white/50 hover:text-white/80 hover:bg-white/8 ${collapsed ? 'justify-center px-0' : ''}`}
+        >
+          <Globe size={15} className="flex-shrink-0" />
+          {!collapsed && <span className="flex-1 truncate text-left">{t('common.language')}</span>}
+        </button>
 
         {/* User menu popup */}
         {userMenuOpen && (
@@ -194,7 +206,7 @@ export default function AppShell({ children }: Props) {
                 {userInitials}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : 'Guest'}</p>
+                <p className="text-sm font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : t('common.guest')}</p>
                 <p className="text-xs truncate" style={{ color: 'rgba(255,255,255,0.5)' }}>{user?.email || ''}</p>
               </div>
               <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-semibold"
@@ -212,7 +224,7 @@ export default function AppShell({ children }: Props) {
             <div className="py-1" style={{ borderTop: '1px solid rgba(122,31,31,0.08)' }}>
               <button onClick={handleLogout}
                 className="w-full text-left px-4 py-2 text-sm font-medium transition-colors hover:bg-red-50"
-                style={{ color: R }}>Sign out</button>
+                style={{ color: R }}>{t('common.sign_out')}</button>
             </div>
           </div>
         )}
@@ -227,14 +239,14 @@ export default function AppShell({ children }: Props) {
         >
           <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
             style={{ background: `linear-gradient(135deg,${R},${G})` }}
-            title={collapsed ? (user ? `${user.firstName} ${user.lastName}` : 'Guest') : undefined}>
+            title={collapsed ? (user ? `${user.firstName} ${user.lastName}` : t('common.guest')) : undefined}>
             {userInitials}
           </div>
           {!collapsed && (
             <>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : 'Guest'}</p>
-                <p className="text-[9px] truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>Account</p>
+                <p className="text-xs font-bold text-white truncate">{user ? `${user.firstName} ${user.lastName}` : t('common.guest')}</p>
+                <p className="text-[9px] truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('common.account')}</p>
               </div>
               <ChevronsUpDown size={13} style={{ color: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
             </>
@@ -247,6 +259,7 @@ export default function AppShell({ children }: Props) {
           </div>
         )}
       </div>
+      <PreferencesModal isOpen={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </aside>
   );
 

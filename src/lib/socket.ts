@@ -1,7 +1,11 @@
 import { io } from 'socket.io-client';
 
-// Since frontend is on 5173 and backend is on 3000 during dev
-const SOCKET_URL = import.meta.env.MODE === 'production' ? '/' : 'http://localhost:3001';
+// VITE_SOCKET_URL:
+//   - local dev  → leave blank; falls back to http://localhost:3000
+//   - docker/prod → set to backend origin e.g. http://localhost:3000 or https://api.eventjelly.com
+const SOCKET_URL =
+  (import.meta.env.VITE_SOCKET_URL as string | undefined)?.replace(/\/$/, '') ||
+  (import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:3000');
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import i18n from '../i18n';
-import axios from 'axios';
+import { http } from '../lib/api';
 
 interface Preferences {
   language: string;
@@ -74,10 +74,7 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
 
       // If user is logged in, sync with backend
       if (user) {
-        const token = localStorage.getItem('ej_token');
-        await axios.patch('/api/preferences', newPrefs, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
+        await http.patch('/preferences', newPrefs);
       }
     } catch (e) {
       console.error('Failed to update preferences', e);

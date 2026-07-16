@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { useMutation } from '@tanstack/react-query';
 import { Mail, Lock, Eye, EyeOff, Star } from 'lucide-react';
 import { authApi } from '../lib/api';
@@ -40,6 +41,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex" style={{ background: '#FAF7F2' }}>
+      <SEO title="Sign In" />
       {/* Left panel — brand */}
       <div className="hidden lg:flex flex-col justify-between w-[420px] flex-shrink-0 p-10 relative overflow-hidden"
         style={{ background: `linear-gradient(160deg,${RD} 0%,${R} 55%,#4a1010 100%)` }}>

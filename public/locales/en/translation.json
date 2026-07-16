@@ -227,7 +227,7 @@
     "select_element_prompt": "Select an element to edit its properties",
     "share_title": "Share Floor Plan",
     "share_view_desc": "Anyone with the link can view this floor plan.",
-    "share_invite_desc": "Invite team members or clients to edit this plan.",
+    "share_invite_desc": "Invite people to view this floor plan. They'll get view-only access.",
     "share_can_edit": "Can edit",
     "share_can_view": "Can view",
     "share_success": "Invitation sent successfully!",

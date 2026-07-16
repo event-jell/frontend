@@ -1,13 +1,14 @@
+import { Toaster, toast } from 'sonner';
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import AppShell from './layouts/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import EventsPage from './pages/EventsPage';
-import HomePage from './pages/HomePage';
+import CreateEventPage from './pages/CreateEventPage';
 import PlannerPage from './pages/PlannerPage';
 import EventDashboardPage from './pages/EventDashboardPage';
 import GuestsPage from './pages/GuestsPage';
@@ -19,7 +20,6 @@ import SettingsPage from './pages/SettingsPage';
 import EventInvitePage from './pages/EventInvitePage';
 import TicketGuestsPage from './pages/TicketGuestsPage';
 import GuestDetailPage from './pages/GuestDetailPage';
-import NewFloorPlanPage from './pages/NewFloorPlanPage';
 import EventSettingsPage from './pages/EventSettingsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -28,8 +28,22 @@ import ResetPasswordPage from './pages/ResetPasswordPage';
 import LandingPage from './pages/LandingPage';
 import { socket } from './lib/socket';
 
+const handleError = (error: any) => {
+  const message = error.response?.data?.message || error.message || 'An error occurred';
+  toast.error(message);
+};
+
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
+  mutationCache: new MutationCache({ 
+    onError: handleError,
+    onSuccess: (_, __, ___, mutation) => {
+      if (mutation.meta?.successMessage) {
+        toast.success(mutation.meta.successMessage as string);
+      }
+    }
+  }),
+  queryCache: new QueryCache({ onError: handleError }),
 });
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -107,8 +121,7 @@ function AppRoutes() {
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/events" element={<Shell><EventsPage /></Shell>} />
-        <Route path="/floor-plans" element={<Shell><HomePage /></Shell>} />
-        <Route path="/floor-plans/new" element={<Shell><NewFloorPlanPage /></Shell>} />
+        <Route path="/events/new" element={<Shell><CreateEventPage /></Shell>} />
         <Route path="/settings" element={<Shell><SettingsPage /></Shell>} />
 
         <Route path="/events/:id" element={<Shell><EventDashboardPage /></Shell>} />
@@ -130,17 +143,22 @@ function AppRoutes() {
   );
 }
 
+import { HelmetProvider } from 'react-helmet-async';
+
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <PreferencesProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </PreferencesProvider>
-      </AuthProvider>
-      <ReactQueryDevtools initialIsOpen={false} />
-    </QueryClientProvider>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <PreferencesProvider>
+            <BrowserRouter>
+              <AppRoutes />
+              <Toaster position="top-right" richColors closeButton />
+            </BrowserRouter>
+          </PreferencesProvider>
+        </AuthProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </HelmetProvider>
   );
 }

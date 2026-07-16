@@ -13,6 +13,9 @@ const SOCKET_URL =
 export const socket = io(SOCKET_URL, {
   autoConnect: true,
   transports: ['websocket'],
+  // Re-read the token on every (re)connect attempt rather than baking in a
+  // stale value, since this socket is a singleton created before login.
+  auth: (cb) => cb({ token: localStorage.getItem('ej_token') }),
 });
 
 socket.on('connect', () => {

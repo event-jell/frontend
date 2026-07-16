@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEvent, useUpdateEvent, useDeleteEvent, useCollaborators, useAddCollaborator, useRemoveCollaborator } from '../hooks/useEvents';
+import { useEvent, useUpdateEvent, useDeleteEvent, useCollaborators, useAddCollaborator, useRemoveCollaborator, useUpdateCollaboratorRole } from '../hooks/useEvents';
 import { Save, AlertTriangle, Loader2, Calendar, MapPin, Clock, AlignLeft, Users, UserPlus, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -14,7 +14,9 @@ export default function EventSettingsPage() {
   const { data: collaborators, isLoading: isLoadingCollaborators } = useCollaborators(id!);
   const addCollaborator = useAddCollaborator();
   const removeCollaborator = useRemoveCollaborator();
+  const updateCollaboratorRole = useUpdateCollaboratorRole();
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -247,7 +249,7 @@ export default function EventSettingsPage() {
               <div className="p-8 space-y-8">
                 <div>
                   <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
-                    Invite team members to help manage this event. They will be able to view and edit event details, guests, tickets, vendors, and the floor plan.
+                    Invite team members to help manage this event. Choose whether they can edit event details, guests, tickets, vendors, and the floor plan, or only view them.
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <div className="relative flex-1">
@@ -260,7 +262,7 @@ export default function EventSettingsPage() {
                         onKeyDown={e => {
                           if (e.key === 'Enter' && inviteEmail) {
                             e.preventDefault();
-                            addCollaborator.mutate({ eventId: id!, email: inviteEmail }, {
+                            addCollaborator.mutate({ eventId: id!, email: inviteEmail, role: inviteRole }, {
                               onSuccess: () => setInviteEmail('')
                             });
                           }
@@ -270,10 +272,18 @@ export default function EventSettingsPage() {
                         <Users size={16} className="text-slate-400" />
                       </div>
                     </div>
+                    <select
+                      value={inviteRole}
+                      onChange={e => setInviteRole(e.target.value as 'editor' | 'viewer')}
+                      className="px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 text-sm font-medium focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                    >
+                      <option value="editor">Can edit</option>
+                      <option value="viewer">Can view</option>
+                    </select>
                     <button
                       onClick={() => {
                         if (inviteEmail) {
-                          addCollaborator.mutate({ eventId: id!, email: inviteEmail }, {
+                          addCollaborator.mutate({ eventId: id!, email: inviteEmail, role: inviteRole }, {
                             onSuccess: () => setInviteEmail('')
                           });
                         }
@@ -285,6 +295,11 @@ export default function EventSettingsPage() {
                       Send Invite
                     </button>
                   </div>
+                  {addCollaborator.isError && (
+                    <p className="text-xs text-red-600 font-medium mt-2">
+                      {(addCollaborator.error as any)?.response?.data?.message ?? 'Could not send invite.'}
+                    </p>
+                  )}
                 </div>
 
                 {isLoadingCollaborators ? (
@@ -308,18 +323,35 @@ export default function EventSettingsPage() {
                               <p className="text-xs font-medium text-slate-500 mt-0.5">{collab.email}</p>
                             </div>
                           </div>
-                          <button
-                            onClick={() => {
-                              if (window.confirm(`Remove ${collab.first_name} from collaborators?`)) {
-                                removeCollaborator.mutate({ eventId: id!, userId: collab._id });
-                              }
-                            }}
-                            disabled={removeCollaborator.isPending}
-                            className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
-                            title="Remove collaborator"
-                          >
-                            <X size={18} />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={collab.role ?? 'editor'}
+                              onChange={e => {
+                                updateCollaboratorRole.mutate({
+                                  eventId: id!,
+                                  userId: collab._id,
+                                  role: e.target.value as 'editor' | 'viewer',
+                                });
+                              }}
+                              disabled={updateCollaboratorRole.isPending}
+                              className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
+                            >
+                              <option value="editor">Can edit</option>
+                              <option value="viewer">Can view</option>
+                            </select>
+                            <button
+                              onClick={() => {
+                                if (window.confirm(`Remove ${collab.first_name} from collaborators?`)) {
+                                  removeCollaborator.mutate({ eventId: id!, userId: collab._id });
+                                }
+                              }}
+                              disabled={removeCollaborator.isPending}
+                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                              title="Remove collaborator"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
                         </li>
                       ))}
                     </ul>

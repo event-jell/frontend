@@ -1,10 +1,32 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { useMutation } from '@tanstack/react-query';
-import { User, Mail, Lock, Eye, EyeOff, MapPin, CheckCircle, ArrowRight, Zap, Search } from 'lucide-react';
+import {
+  User, Mail, Lock, Eye, EyeOff, MapPin, CheckCircle, ArrowRight, Zap, Search,
+  Globe, Users, LayoutGrid, Presentation, Ticket, MessageSquare, Wallet, BarChart3,
+  Contact2, Sparkles, UserPlus, X, Loader2,
+} from 'lucide-react';
 import { authApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useCreateEvent, useAddCollaborator } from '../hooks/useEvents';
 import Logo from '../components/Logo';
+
+const MODULES = [
+  { key: 'guests', label: 'Guest Management', icon: Users },
+  { key: 'floor_plan', label: 'Floor Plan', icon: LayoutGrid },
+  { key: 'stage_plan', label: 'Stage Plan', icon: Presentation },
+  { key: 'ticketing', label: 'Ticketing', icon: Ticket },
+  { key: 'event_com', label: 'Event Com', icon: MessageSquare },
+  { key: 'budget_finance', label: 'Budget & Finance', icon: Wallet },
+  { key: 'reports', label: 'Reports', icon: BarChart3 },
+  { key: 'crm', label: 'CRM', icon: Contact2 },
+  { key: 'ai_assistant', label: 'AI Assistant', icon: Sparkles },
+] as const;
+
+function slugify(s: string): string {
+  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
 
 const COUNTRIES = [
   'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria',
@@ -76,9 +98,10 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
+  const [otp, setOtp] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -92,6 +115,28 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
+
+  // ── Workspace onboarding (steps 4-6) ──
+  const [workspaceName, setWorkspaceName] = useState('');
+  const [workspaceSlug, setWorkspaceSlug] = useState('');
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [slugChecking, setSlugChecking] = useState(false);
+  const [createdEventId, setCreatedEventId] = useState<string | null>(null);
+  const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>(
+    () => Object.fromEntries(MODULES.map(m => [m.key, true]))
+  );
+  const [teammates, setTeammates] = useState<{ email: string; role: 'editor' | 'viewer'; error: string }[]>([
+    { email: '', role: 'editor', error: '' },
+  ]);
+  const createEvent = useCreateEvent();
+  const addCollaborator = useAddCollaborator();
+
+  useEffect(() => {
+    if (!workspaceSlug) return;
+    setSlugChecking(true);
+    const t = setTimeout(() => setSlugChecking(false), 500);
+    return () => clearTimeout(t);
+  }, [workspaceSlug]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -110,11 +155,101 @@ export default function RegisterPage() {
 
   const mutation = useMutation({
     mutationFn: authApi.register,
-    onSuccess: (data) => {
-      login(data.user, data.token);
-      navigate('/events', { replace: true });
+    onSuccess: () => {
+      setValidationError('');
+      setStep(3);
     },
   });
+
+  const verifyMutation = useMutation({
+    mutationFn: authApi.verifyEmail,
+    onSuccess: (data) => {
+      login(data.user, data.token);
+      setValidationError('');
+      setStep(4);
+    },
+  });
+
+  const handleVerify = (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationError('');
+    if (!otp.trim()) {
+      setValidationError('Please enter the code we emailed you.');
+      return;
+    }
+    verifyMutation.mutate({ email, otp: otp.trim() });
+  };
+
+  const handleWorkspaceSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setValidationError('');
+    if (!workspaceName.trim()) {
+      setValidationError('Please name your workspace.');
+      return;
+    }
+    createEvent.mutate({ name: workspaceName.trim() }, {
+      onSuccess: (created) => {
+        setCreatedEventId(created._id);
+        setStep(5);
+      },
+    });
+  };
+
+  const toggleModule = (key: string) => {
+    setSelectedModules(m => ({ ...m, [key]: !m[key] }));
+  };
+
+  const handleModulesSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (user) {
+      const enabled = Object.entries(selectedModules).filter(([, on]) => on).map(([key]) => key);
+      localStorage.setItem(`ej_workspace_modules_${user.id}`, JSON.stringify(enabled));
+    }
+    setStep(6);
+  };
+
+  const updateTeammate = (i: number, patch: Partial<{ email: string; role: 'editor' | 'viewer' }>) => {
+    setTeammates(rows => rows.map((r, idx) => idx === i ? { ...r, ...patch, error: '' } : r));
+  };
+
+  const addTeammateRow = () => {
+    setTeammates(rows => rows.length >= 5 ? rows : [...rows, { email: '', role: 'editor', error: '' }]);
+  };
+
+  const removeTeammateRow = (i: number) => {
+    setTeammates(rows => rows.filter((_, idx) => idx !== i));
+  };
+
+  const finishOnboarding = () => {
+    navigate(createdEventId ? `/events/${createdEventId}` : '/events', { replace: true });
+  };
+
+  const handleSendInvites = async () => {
+    const pending = teammates
+      .map((t, i) => ({ ...t, i }))
+      .filter(t => t.email.trim());
+
+    if (!createdEventId || pending.length === 0) {
+      finishOnboarding();
+      return;
+    }
+
+    const next = [...teammates];
+    await Promise.all(pending.map(async t => {
+      try {
+        await addCollaborator.mutateAsync({ eventId: createdEventId, email: t.email.trim(), role: t.role });
+        next[t.i] = { ...next[t.i], error: '' };
+      } catch (err) {
+        const message = err instanceof Error ? (err as any).response?.data?.message ?? err.message : 'Could not invite this person.';
+        next[t.i] = { ...next[t.i], error: message };
+      }
+    }));
+    setTeammates(next);
+
+    if (next.every(t => !t.email.trim() || !t.error)) {
+      finishOnboarding();
+    }
+  };
 
   const handleStep1 = (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,14 +275,16 @@ export default function RegisterPage() {
     mutation.mutate({ firstName, lastName, email, password, country });
   };
 
+  const activeError = mutation.error ?? verifyMutation.error ?? createEvent.error;
   const errorMessage = validationError || (
-    mutation.error instanceof Error
-      ? (mutation.error as any).response?.data?.message ?? mutation.error.message
+    activeError instanceof Error
+      ? (activeError as any).response?.data?.message ?? activeError.message
       : null
   );
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <SEO title="Create an Account" />
 
       {/* ── Left Panel ── */}
       <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] flex-col justify-between p-12 relative overflow-hidden"
@@ -244,32 +381,48 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
 
           {/* Progress dots */}
-          <div className="flex items-center gap-2 mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white transition-all"
-                style={{ background: step >= 1 ? `linear-gradient(135deg, ${R}, #9c3030)` : '#e2e8f0' }}>
-                {step > 1 ? <CheckCircle size={14} /> : '1'}
+          <div className="flex items-center gap-1.5 mb-6">
+            {([1, 2, 3, 4, 5, 6] as const).map(n => (
+              <div key={n} className="flex items-center flex-1 last:flex-none">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all flex-shrink-0"
+                  style={{
+                    background: step >= n ? `linear-gradient(135deg, ${R}, #9c3030)` : '#e2e8f0',
+                    color: step >= n ? 'white' : '#94a3b8',
+                  }}>
+                  {step > n ? <CheckCircle size={12} /> : n}
+                </div>
+                {n < 6 && (
+                  <div className="flex-1 h-px mx-1" style={{ background: step > n ? `linear-gradient(90deg, ${R}, #9c3030)` : '#e2e8f0' }} />
+                )}
               </div>
-              <span className="text-xs font-medium" style={{ color: step >= 1 ? R : '#94a3b8' }}>Your info</span>
-            </div>
-            <div className="flex-1 h-px" style={{ background: step >= 2 ? `linear-gradient(90deg, ${R}, #9c3030)` : '#e2e8f0' }} />
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all"
-                style={{ background: step >= 2 ? `linear-gradient(135deg, ${R}, #9c3030)` : '#e2e8f0', color: step >= 2 ? 'white' : '#94a3b8' }}>
-                2
-              </div>
-              <span className="text-xs font-medium" style={{ color: step >= 2 ? R : '#94a3b8' }}>Security</span>
-            </div>
+            ))}
           </div>
+          <p className="text-xs font-semibold text-center mb-6 -mt-2" style={{ color: R }}>
+            {['Your info', 'Security', 'Verify', 'Workspace', 'Modules', 'Team'][step - 1]}
+          </p>
 
           {/* Card */}
           <div>
             <div className="px-8 pt-8 pb-2">
               <h2 className="text-2xl font-bold text-slate-900 mb-1">
-                {step === 1 ? 'Create your account' : 'Secure your account'}
+                {{
+                  1: 'Create your account',
+                  2: 'Secure your account',
+                  3: 'Check your email',
+                  4: 'Name your workspace',
+                  5: 'Select your tools & modules',
+                  6: 'Add your teammates',
+                }[step]}
               </h2>
               <p className="text-sm" style={{ color: '#94a3b8' }}>
-                {step === 1 ? 'Tell us a bit about yourself to get started.' : 'Choose a strong password to protect your account.'}
+                {{
+                  1: 'Tell us a bit about yourself to get started.',
+                  2: 'Choose a strong password to protect your account.',
+                  3: `Enter the 6-digit code we sent to ${email}.`,
+                  4: "This is where all your events will live. You can change this later.",
+                  5: 'Pick what you need — you can turn these on or off anytime.',
+                  6: 'Invite people to help you plan. You can always do this later.',
+                }[step]}
               </p>
             </div>
 
@@ -506,15 +659,237 @@ export default function RegisterPage() {
                   </div>
                 </form>
               )}
+
+              {/* ── STEP 3 ── */}
+              {step === 3 && (
+                <form onSubmit={handleVerify} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Verification code</label>
+                    <input
+                      type="text" inputMode="numeric" required autoFocus
+                      value={otp}
+                      onChange={e => setOtp(e.target.value)}
+                      placeholder="123456"
+                      maxLength={6}
+                      className="w-full h-12 px-4 rounded-xl border text-center text-lg tracking-[0.5em] text-slate-800 placeholder:text-slate-300 placeholder:tracking-[0.5em] transition-all outline-none"
+                      style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
+                      onFocus={e => (e.target.style.borderColor = R)}
+                      onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={verifyMutation.isPending}
+                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                    style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
+                  >
+                    {verifyMutation.isPending ? (
+                      <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Verifying…</>
+                    ) : (
+                      <><CheckCircle size={15} /> Verify & continue</>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => mutation.mutate({ firstName, lastName, email, password, country })}
+                    disabled={mutation.isPending}
+                    className="w-full text-xs font-medium text-center transition-colors disabled:opacity-50"
+                    style={{ color: R }}
+                  >
+                    {mutation.isPending ? 'Resending…' : "Didn't get a code? Resend"}
+                  </button>
+                </form>
+              )}
+
+              {/* ── STEP 4: Name your workspace ── */}
+              {step === 4 && (
+                <form onSubmit={handleWorkspaceSubmit} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Workspace name</label>
+                    <div className="relative">
+                      <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
+                      <input
+                        type="text" required autoFocus
+                        value={workspaceName}
+                        onChange={e => {
+                          setWorkspaceName(e.target.value);
+                          if (!slugEdited) setWorkspaceSlug(slugify(e.target.value));
+                        }}
+                        placeholder="Luxe Wedding Planning"
+                        className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
+                        style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
+                        onFocus={e => (e.target.style.borderColor = R)}
+                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Workspace URL</label>
+                    <div className="flex items-center rounded-xl border overflow-hidden" style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}>
+                      <input
+                        type="text"
+                        value={workspaceSlug}
+                        onChange={e => { setSlugEdited(true); setWorkspaceSlug(slugify(e.target.value)); }}
+                        placeholder="luxe-wedding"
+                        className="flex-1 h-11 pl-4 pr-2 bg-transparent text-sm text-slate-800 placeholder:text-slate-300 outline-none min-w-0"
+                      />
+                      <span className="text-sm text-slate-400 pr-2 whitespace-nowrap">.eventdesk.com</span>
+                      <div className="pr-3.5 flex-shrink-0">
+                        {workspaceSlug && (slugChecking
+                          ? <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin block" />
+                          : <CheckCircle size={16} className="text-green-500" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={createEvent.isPending}
+                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                    style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
+                  >
+                    {createEvent.isPending ? (
+                      <><Loader2 size={15} className="animate-spin" /> Creating workspace…</>
+                    ) : (
+                      <>Continue <ArrowRight size={15} /></>
+                    )}
+                  </button>
+                </form>
+              )}
+
+              {/* ── STEP 5: Select tools & modules ── */}
+              {step === 5 && (
+                <form onSubmit={handleModulesSubmit} className="space-y-5">
+                  <div className="grid grid-cols-2 gap-3">
+                    {MODULES.map(({ key, label, icon: Icon }) => {
+                      const on = !!selectedModules[key];
+                      return (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => toggleModule(key)}
+                          className="flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all"
+                          style={{
+                            borderColor: on ? R : '#e2e8f0',
+                            background: on ? 'rgba(122,31,31,0.04)' : '#f8fafc',
+                          }}
+                        >
+                          <Icon size={16} style={{ color: on ? R : '#94a3b8' }} className="flex-shrink-0" />
+                          <span className="text-xs font-semibold flex-1" style={{ color: on ? '#1e293b' : '#64748b' }}>{label}</span>
+                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
+                            style={{ background: on ? '#22c55e' : '#e2e8f0' }}>
+                            {on && <CheckCircle size={12} className="text-white" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2"
+                    style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
+                  >
+                    Continue <ArrowRight size={15} />
+                  </button>
+                </form>
+              )}
+
+              {/* ── STEP 6: Add teammates ── */}
+              {step === 6 && (
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    {teammates.map((t, i) => (
+                      <div key={i}>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
+                            <input
+                              type="email"
+                              value={t.email}
+                              onChange={e => updateTeammate(i, { email: e.target.value })}
+                              placeholder="teammate@company.com"
+                              className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
+                              style={{ borderColor: t.error ? '#ef4444' : '#e2e8f0', background: '#f8fafc' }}
+                              onFocus={e => { if (!t.error) e.target.style.borderColor = R; }}
+                              onBlur={e => { if (!t.error) e.target.style.borderColor = '#e2e8f0'; }}
+                            />
+                          </div>
+                          <select
+                            value={t.role}
+                            onChange={e => updateTeammate(i, { role: e.target.value as 'editor' | 'viewer' })}
+                            className="h-11 px-3 rounded-xl border text-sm text-slate-600 outline-none cursor-pointer"
+                            style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
+                          >
+                            <option value="editor">Can edit</option>
+                            <option value="viewer">Can view</option>
+                          </select>
+                          {teammates.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeTeammateRow(i)}
+                              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-red-500 transition-colors"
+                            >
+                              <X size={15} />
+                            </button>
+                          )}
+                        </div>
+                        {t.error && <p className="text-xs text-red-600 mt-1 ml-1">{t.error}</p>}
+                      </div>
+                    ))}
+                  </div>
+
+                  {teammates.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={addTeammateRow}
+                      className="text-xs font-semibold flex items-center gap-1.5"
+                      style={{ color: R }}
+                    >
+                      <UserPlus size={13} /> Add another
+                    </button>
+                  )}
+
+                  <div className="flex gap-3 mt-2">
+                    <button
+                      type="button"
+                      onClick={finishOnboarding}
+                      className="h-12 px-5 rounded-xl text-sm font-semibold border transition-all hover:bg-slate-50"
+                      style={{ borderColor: '#e2e8f0', color: '#64748b' }}
+                    >
+                      Skip for now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSendInvites}
+                      disabled={addCollaborator.isPending}
+                      className="flex-1 h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
+                      style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
+                    >
+                      {addCollaborator.isPending ? (
+                        <><Loader2 size={15} className="animate-spin" /> Sending invites…</>
+                      ) : (
+                        <><CheckCircle size={15} /> Finish</>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <p className="text-center text-sm mt-6" style={{ color: '#94a3b8' }}>
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold hover:underline" style={{ color: R }}>
-              Sign in
-            </Link>
-          </p>
+          {step <= 3 && (
+            <p className="text-center text-sm mt-6" style={{ color: '#94a3b8' }}>
+              Already have an account?{' '}
+              <Link to="/login" className="font-semibold hover:underline" style={{ color: R }}>
+                Sign in
+              </Link>
+            </p>
+          )}
         </div>
       </div>
     </div>

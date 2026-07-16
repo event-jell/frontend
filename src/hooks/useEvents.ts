@@ -79,8 +79,20 @@ export function useCollaborators(eventId: string) {
 export function useAddCollaborator() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ eventId, email }: { eventId: string; email: string }) =>
-      eventsApi.addCollaborator(eventId, email),
+    mutationFn: ({ eventId, email, role }: { eventId: string; email: string; role?: 'editor' | 'viewer' }) =>
+      eventsApi.addCollaborator(eventId, email, role),
+    onSuccess: (_, { eventId }) => {
+      qc.invalidateQueries({ queryKey: eventKeys.collaborators(eventId) });
+      qc.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+    },
+  });
+}
+
+export function useUpdateCollaboratorRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ eventId, userId, role }: { eventId: string; userId: string; role: 'editor' | 'viewer' }) =>
+      eventsApi.updateCollaboratorRole(eventId, userId, role),
     onSuccess: (_, { eventId }) => {
       qc.invalidateQueries({ queryKey: eventKeys.collaborators(eventId) });
       qc.invalidateQueries({ queryKey: eventKeys.detail(eventId) });

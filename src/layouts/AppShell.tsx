@@ -4,12 +4,11 @@ import { useTranslation } from 'react-i18next';
 import {
   Home, Calendar, Users, Layout, Ticket, Store,
   MessageSquare, BarChart2, Settings, ChevronRight,
-  Menu, X, LayoutGrid, PanelLeftClose, PanelLeftOpen,
-  ChevronsUpDown, Bell, Star, Globe,
+  Menu, X, PanelLeftClose, PanelLeftOpen,
+  ChevronsUpDown, Bell, Star,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
-import PreferencesModal from '../components/PreferencesModal';
 
 const R = '#7A1F1F';
 const RD = '#3D0F0F';
@@ -81,7 +80,6 @@ export default function AppShell({ children }: Props) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [prefsOpen, setPrefsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -106,12 +104,13 @@ export default function AppShell({ children }: Props) {
     : 'U';
 
   const eventMatch = location.pathname.match(/^\/events\/([^/]+)/);
-  const eventId = eventMatch?.[1] ?? params.id;
+  const matchedId = eventMatch?.[1] === 'new' ? undefined : eventMatch?.[1];
+  const eventId = matchedId ?? params.id;
   const inEventSuite = Boolean(eventId);
 
   const GLOBAL_NAV = [
-    { icon: LayoutGrid, label: 'Floor Plans', to: '/floor-plans', end: true },
-    { icon: Calendar,   label: 'All Events',  to: '/events',      end: true },
+    { icon: Calendar, label: 'Events', to: '/events', end: true },
+    { icon: Settings, label: 'Settings', to: '/settings', end: true },
   ];
 
   const SUITE_NAV = eventId ? [
@@ -168,8 +167,7 @@ export default function AppShell({ children }: Props) {
               <NavItem key={item.to} {...item} onClick={closeMobile} collapsed={collapsed} />
             ))}
             <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-              <NavItem icon={LayoutGrid} label="All Plans"  to="/floor-plans" end onClick={closeMobile} collapsed={collapsed} />
-              <NavItem icon={Calendar}   label="All Events" to="/events"      end onClick={closeMobile} collapsed={collapsed} />
+              <NavItem icon={Calendar} label="All Events" to="/events" end onClick={closeMobile} collapsed={collapsed} />
             </div>
           </>
         ) : (
@@ -185,16 +183,6 @@ export default function AppShell({ children }: Props) {
       {/* Bottom */}
       <div className={`p-2 space-y-0.5 relative`}
         style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} ref={menuRef}>
-        <NavItem icon={Settings} label="Settings" to="/settings" onClick={closeMobile} collapsed={collapsed} />
-        <button
-          onClick={() => setPrefsOpen(true)}
-          title={collapsed ? t('common.language') : undefined}
-          className={`w-full group flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 text-white/50 hover:text-white/80 hover:bg-white/8 ${collapsed ? 'justify-center px-0' : ''}`}
-        >
-          <Globe size={15} className="flex-shrink-0" />
-          {!collapsed && <span className="flex-1 truncate text-left">{t('common.language')}</span>}
-        </button>
-
         {/* User menu popup */}
         {userMenuOpen && (
           <div className={`absolute bottom-full mb-2 ${collapsed ? 'left-2 w-64' : 'left-2 right-2'} rounded-xl overflow-hidden z-50 shadow-2xl`}
@@ -259,7 +247,6 @@ export default function AppShell({ children }: Props) {
           </div>
         )}
       </div>
-      <PreferencesModal isOpen={prefsOpen} onClose={() => setPrefsOpen(false)} />
     </aside>
   );
 

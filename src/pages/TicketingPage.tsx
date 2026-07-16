@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Ticket, TrendingUp, DollarSign, Users, MoreHorizontal, Link as LinkIcon, CheckCircle2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 import { useTickets, useCreateTicket, useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
 import type { Ticket as TicketType } from '../types';
 
@@ -112,6 +113,7 @@ export default function TicketingPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      <SEO title="Ticketing" />
       {showAdd && (
         <AddTicketModal
           onClose={() => setShowAdd(false)}

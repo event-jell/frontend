@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { nanoid } from 'nanoid';
 import { LayoutGrid, X, Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 import FloorCanvas from '../components/FloorCanvas';
 import ElementPanel from '../components/planner/ElementPanel';
 import RightPanel from '../components/planner/RightPanel';
@@ -11,7 +12,8 @@ import StatusBar, { type Room } from '../components/planner/StatusBar';
 import ExportModal from '../components/planner/ExportModal';
 import ShareModal from '../components/planner/ShareModal';
 import TemplatesModal from '../components/planner/TemplatesModal';
-import { useFloorPlan, useUpdateFloorPlan, useSaveElements, useCreateFloorPlan, useTemplates } from '../hooks/useFloorPlans';
+import { useFloorPlan, useUpdateFloorPlan, useCreateFloorPlan, useTemplates } from '../hooks/useFloorPlans';
+import { useEvent } from '../hooks/useEvents';
 import { usePresence } from '../hooks/usePresence';
 import { useAuth } from '../contexts/AuthContext';
 import { socket } from '../lib/socket';
@@ -48,9 +50,10 @@ export default function PlannerPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const { data: plan, isLoading } = useFloorPlan(id!);
+  const eventId = plan?.eventId ?? plan?._id;
+  const { data: event } = useEvent(eventId ?? '');
   const onlineUsers = usePresence(id ? `floor-plan:${id}` : undefined, user);
   const updatePlan = useUpdateFloorPlan();
-  const saveElements = useSaveElements();
   const createPlan = useCreateFloorPlan();
   const { data: templates = [] } = useTemplates();
 
@@ -221,15 +224,23 @@ export default function PlannerPage() {
       }
     };
     
+    const handlePlannerSaveError = (payload: { planId: string; message: string }) => {
+      if (payload.planId === id) {
+        console.error('Autosave failed:', payload.message);
+      }
+    };
+
     socket.on('planner:updated', handlePlannerUpdated);
     socket.on('planner:cursor_moved', handlePlannerCursor);
     socket.on('planner:element_moved', handlePlannerElementMoved);
-    
+    socket.on('planner:save_error', handlePlannerSaveError);
+
     return () => {
       socket.emit('planner:leave', { planId: id });
       socket.off('planner:updated', handlePlannerUpdated);
       socket.off('planner:cursor_moved', handlePlannerCursor);
       socket.off('planner:element_moved', handlePlannerElementMoved);
+      socket.off('planner:save_error', handlePlannerSaveError);
     };
   }, [id, pushHistory, user]);
 
@@ -471,21 +482,30 @@ export default function PlannerPage() {
     setShowTemplates(false);
   }, [updateFloor, activeCanvasWidth, activeCanvasHeight]);
 
-  const handleAutoSave = useCallback(async () => {
+  const planCanvasWidth = plan?.canvasWidth ?? 1200;
+  const planCanvasHeight = plan?.canvasHeight ?? 800;
+
+  const handleAutoSave = useCallback(() => {
     if (!id) return;
     // Save all floors flattened for backwards compatibility
     const allElements = Object.values(floorMap).flat();
-    await saveElements.mutateAsync({ id, elements: allElements });
-    
+
     // Save the rooms array to the plan as well
     const updatedRooms = rooms.map(r => ({
       ...r,
-      canvasWidth: plan?.canvasWidth ?? 1200,
-      canvasHeight: plan?.canvasHeight ?? 800,
+      canvasWidth: planCanvasWidth,
+      canvasHeight: planCanvasHeight,
       elements: floorMap[r.id] || []
     }));
-    await updatePlan.mutateAsync({ id, data: { name: planName, rooms: updatedRooms as any } });
-  }, [id, floorMap, planName, plan, saveElements, updatePlan, rooms]);
+
+    // Persisted over the socket (not REST) so autosave doesn't round-trip
+    // through the query cache at all — fixes the save -> invalidate ->
+    // refetch -> new `plan` ref -> save loop this used to cause, and keeps
+    // the debounce below cheap since there's no HTTP request/response cycle.
+    socket.emit('planner:save', { planId: id, name: planName, rooms: updatedRooms, elements: allElements });
+    // Depends on the primitive canvas dimensions, not the `plan` object itself,
+    // to avoid recreating this callback whenever `plan`'s identity changes.
+  }, [id, floorMap, planName, planCanvasWidth, planCanvasHeight, rooms]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -519,6 +539,7 @@ export default function PlannerPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden relative">
+      <SEO title="Floor Plan Builder" />
       {/* Mobile Block Overlay */}
       <div className="md:hidden absolute inset-0 z-20 bg-white flex flex-col items-center justify-center p-6 text-center">
         <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
@@ -547,7 +568,7 @@ export default function PlannerPage() {
       )}
 
       {showExport && <ExportModal planName={planName} onClose={() => setShowExport(false)} />}
-      {showShare && <ShareModal planName={planName} onClose={() => setShowShare(false)} />}
+      {showShare && <ShareModal planName={planName} eventId={eventId} onClose={() => setShowShare(false)} />}
 
       {/* Floor name modal */}
       {showFloorModal && (
@@ -761,7 +782,7 @@ export default function PlannerPage() {
         onExport={() => setShowExport(true)}
         onShare={() => setShowShare(true)}
         planName={planName}
-        eventName="Lumen Conf"
+        eventName={event?.name ?? planName}
         onAlignLeft={handleAlignLeft}
         onAlignCenter={handleAlignCenter}
         onToggleLock={handleToggleLock}
@@ -772,6 +793,18 @@ export default function PlannerPage() {
         onlineUsers={onlineUsers}
         onSaveTemplate={handleSaveTemplateClick}
         onLoadTemplate={() => setShowTemplates(true)}
+        onNewRoom={openFloorModal}
+        onDeleteSelected={() => selectedId && handleDelete(selectedId)}
+        onDuplicateSelected={() => selectedId && handleDuplicate(selectedId)}
+        onAddElement={handleAddElement}
+        eventId={eventId}
+        isOwner={!!user && !!plan && user.id === plan.ownerId}
+        currentUserId={user?.id}
+        rooms={rooms}
+        activeRoomId={activeRoomId}
+        onRoomChange={handleRoomChange}
+        onAddRoom={openFloorModal}
+        onDeleteRoom={setDeleteRoomId}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -789,6 +822,7 @@ export default function PlannerPage() {
             onChange={handleCanvasChange}
             toolMode={activeTool}
             snapEnabled={snapEnabled}
+            rulersEnabled={rulersEnabled}
             onZoomChange={setZoom}
             externalZoom={zoom}
             darkMode={darkMode}

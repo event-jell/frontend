@@ -58,8 +58,12 @@ function normalizeAuth(raw: any): AuthResponse {
 }
 
 export const authApi = {
+  // Registration now sends an OTP to the user's email instead of logging them
+  // in directly — it returns a plain status message, not a session.
   register: ({ firstName, lastName, country, ...rest }: { firstName: string; lastName: string; email: string; password: string; country?: string }) =>
-    http.post('/auth/register', { first_name: firstName, last_name: lastName, ...(country && { country }), ...rest }).then(r => normalizeAuth(r.data)),
+    http.post<{ message: string }>('/auth/register', { first_name: firstName, last_name: lastName, ...(country && { country }), ...rest }).then(r => r.data),
+  verifyEmail: (data: { email: string; otp: string }) =>
+    http.post('/auth/verify-email', data).then(r => normalizeAuth(r.data)),
   login: (data: { email: string; password: string }) =>
     http.post('/auth/login', data).then(r => normalizeAuth(r.data)),
   forgotPassword: (data: { email: string }) =>
@@ -134,6 +138,7 @@ function normalizeEvent(raw: any): Event {
     startTime: raw.start_time ?? raw.startTime,
     endTime: raw.end_time ?? raw.endTime,
     status: raw.status ?? 'draft',
+    type: raw.type ?? 'other',
     guestCount: raw.guest_count ?? raw.guestCount ?? 0,
     guestRsvp: raw.guest_rsvp ?? raw.guestRsvp ?? 0,
     ticketsSold: raw.tickets_sold ?? raw.ticketsSold ?? 0,
@@ -275,10 +280,11 @@ function denormalizeEvent(data: Partial<Event>): Record<string, unknown> {
   if (data.name !== undefined) out.name = data.name;
   if (data.description !== undefined) out.description = data.description;
   if (data.venue !== undefined) out.venue = data.venue;
-  if (data.date !== undefined) out.date = data.date;
+  if (data.date) out.date = data.date;
   if (data.startTime !== undefined) out.start_time = data.startTime;
   if (data.endTime !== undefined) out.end_time = data.endTime;
   if (data.status !== undefined) out.status = data.status;
+  if (data.type !== undefined) out.type = data.type;
   if (data.guestCount !== undefined) out.guest_count = data.guestCount;
   if (data.guestRsvp !== undefined) out.guest_rsvp = data.guestRsvp;
   if (data.ticketsSold !== undefined) out.tickets_sold = data.ticketsSold;
@@ -356,17 +362,27 @@ function denormalizeComm(data: Partial<Comm>): Record<string, unknown> {
 // ─── API clients ──────────────────────────────────────────────────────────────
 
 export const floorPlansApi = {
-  list: () => http.get('/floor-plans').then(r => (r.data as unknown[]).map(normalizeFloorPlan)),
   listTemplates: () => http.get('/floor-plans/templates/all').then(r => (r.data as unknown[]).map(normalizeFloorPlan)),
   get: (id: string) => http.get(`/floor-plans/${id}`).then(r => normalizeFloorPlan(r.data)),
   create: (data: Partial<FloorPlan>) =>
     http.post('/floor-plans', denormalizeFloorPlan(data)).then(r => normalizeFloorPlan(r.data)),
   update: (id: string, data: Partial<FloorPlan>) =>
     http.put(`/floor-plans/${id}`, denormalizeFloorPlan(data)).then(r => normalizeFloorPlan(r.data)),
-  delete: (id: string) => http.delete(`/floor-plans/${id}`),
-  duplicate: (id: string) => http.post(`/floor-plans/${id}/duplicate`).then(r => normalizeFloorPlan(r.data)),
-  saveElements: (id: string, elements: PlacedElement[]) =>
-    http.put(`/floor-plans/${id}`, denormalizeFloorPlan({ elements })).then(r => normalizeFloorPlan(r.data)),
+};
+
+export const usersApi = {
+  updateProfile: (data: { firstName?: string; lastName?: string }) =>
+    http.patch('/users/me', {
+      ...(data.firstName !== undefined && { first_name: data.firstName }),
+      ...(data.lastName !== undefined && { last_name: data.lastName }),
+    }).then(r => ({
+      id: r.data.id,
+      firstName: r.data.first_name,
+      lastName: r.data.last_name,
+      email: r.data.email,
+    })),
+  changePassword: (data: { currentPassword: string; newPassword: string }) =>
+    http.patch<{ message: string }>('/users/me/password', data).then(r => r.data),
 };
 
 export const eventsApi = {
@@ -377,12 +393,14 @@ export const eventsApi = {
   update: (id: string, data: Partial<Event>) =>
     http.put(`/events/${id}`, denormalizeEvent(data)).then(r => normalizeEvent(r.data)),
   delete: (id: string) => http.delete(`/events/${id}`),
-  addCollaborator: (id: string, email: string) =>
-    http.post(`/events/${id}/collaborators`, { email }).then(r => normalizeEvent(r.data)),
+  addCollaborator: (id: string, email: string, role: 'editor' | 'viewer' = 'editor') =>
+    http.post(`/events/${id}/collaborators`, { email, role }).then(r => normalizeEvent(r.data)),
+  updateCollaboratorRole: (id: string, userId: string, role: 'editor' | 'viewer') =>
+    http.patch(`/events/${id}/collaborators/${userId}`, { role }).then(r => normalizeEvent(r.data)),
   removeCollaborator: (id: string, userId: string) =>
     http.delete(`/events/${id}/collaborators/${userId}`).then(r => normalizeEvent(r.data)),
   getCollaborators: (id: string) =>
-    http.get(`/events/${id}/collaborators`).then(r => r.data as { _id: string; first_name: string; last_name: string; email: string }[]),
+    http.get(`/events/${id}/collaborators`).then(r => r.data as { _id: string; first_name: string; last_name: string; email: string; role: 'editor' | 'viewer' }[]),
 };
 
 export const guestsApi = {

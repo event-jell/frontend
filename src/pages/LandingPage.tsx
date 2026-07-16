@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -678,6 +679,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'white' }}>
+      <SEO />
 
       {/* ── Navbar ─────────────────────────────────────────────── */}
       <nav className="fixed top-0 inset-x-0 z-50 border-b"

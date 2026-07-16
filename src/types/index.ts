@@ -96,6 +96,7 @@ export interface Event {
   startTime?: string;
   endTime?: string;
   status: 'draft' | 'planning' | 'confirmed' | 'live';
+  type?: 'wedding' | 'conference' | 'gala' | 'concert' | 'festival' | 'fundraiser' | 'corporate' | 'other';
   guestCount: number;
   guestRsvp: number;
   ticketsSold: number;

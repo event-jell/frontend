@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, Store, DollarSign, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import SEO from '../components/SEO';
 import { useVendors, useCreateVendor, useUpdateVendor, useDeleteVendor } from '../hooks/useVendors';
 import type { Vendor } from '../types';
 
@@ -113,6 +114,7 @@ export default function VendorsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      <SEO title="Vendors" />
       {showAdd && (
         <AddVendorModal
           onClose={() => setShowAdd(false)}

@@ -1,4 +1,5 @@
 import { useParams, useNavigate } from 'react-router-dom';
+import SEO from '../components/SEO';
 import { useEvent } from '../hooks/useEvents';
 import {
   Layout, Users, Ticket, Store, MessageSquare,
@@ -100,6 +101,7 @@ export default function EventDashboardPage() {
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50">
+      <SEO title={event?.name ? `${event.name} Dashboard` : 'Event Dashboard'} />
       {/* Banner */}
       <div
         className="relative px-8 pt-10 pb-8 overflow-hidden"

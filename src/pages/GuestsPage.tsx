@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import SEO from '../components/SEO';
 import {
   Search, Plus, Filter, Download, CheckCircle2, Clock, XCircle,
   HelpCircle, UserCheck, Link as LinkIcon, Upload, Trash2, ChevronDown,
@@ -197,6 +198,7 @@ export default function GuestsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      <SEO title="Manage Guests" />
       {showAdd && (
         <AddGuestModal onClose={() => setShowAdd(false)}
           onSave={data => createGuest.mutate({ ...data, eventId })} />

@@ -18,6 +18,7 @@ interface Props {
   onChange: (elements: PlacedElement[]) => void;
   toolMode?: ToolMode;
   snapEnabled?: boolean;
+  rulersEnabled?: boolean;
   onZoomChange?: (zoom: number) => void;
   externalZoom?: number;
   darkMode?: boolean;
@@ -74,6 +75,12 @@ function ElementShape({ el, isSelected, onSelect, onChange, onDragMove, onTransf
     if (!node) return;
     const x = snap ? snapToGrid(node.x(), gridSize) : node.x();
     const y = snap ? snapToGrid(node.y(), gridSize) : node.y();
+    // Apply the snapped position back to the node itself so the element visibly
+    // snaps to the grid while dragging, not just once on release.
+    if (snap) {
+      node.x(x);
+      node.y(y);
+    }
     onDragMove?.(x, y);
 
     const stage = node.getStage();
@@ -341,12 +348,90 @@ function ElementShape({ el, isSelected, onSelect, onChange, onDragMove, onTransf
   );
 }
 
+const RULER_THICKNESS = 20;
+
+function Ruler({ orientation, view, length, canvasLength, gridSize, darkMode }: {
+  orientation: 'horizontal' | 'vertical';
+  view: ViewState;
+  length: number;
+  canvasLength: number;
+  gridSize: number;
+  darkMode: boolean;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isH = orientation === 'horizontal';
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = isH ? length : RULER_THICKNESS;
+    const h = isH ? RULER_THICKNESS : length;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    ctx.fillStyle = darkMode ? '#1e293b' : '#f8fafc';
+    ctx.fillRect(0, 0, w, h);
+    ctx.strokeStyle = darkMode ? '#475569' : '#cbd5e1';
+    ctx.fillStyle = darkMode ? '#94a3b8' : '#64748b';
+    ctx.font = '9px sans-serif';
+    ctx.lineWidth = 1;
+
+    const offset = isH ? view.x : view.y;
+    const step = gridSize;
+    const startUnit = Math.max(0, Math.floor(-offset / view.scale / step) * step);
+    const endUnit = Math.min(canvasLength, Math.ceil((length - offset) / view.scale / step) * step);
+
+    for (let u = startUnit; u <= endUnit; u += step) {
+      const pos = u * view.scale + offset;
+      const isMajor = Math.round(u / step) % 5 === 0;
+      const tickLen = isMajor ? 9 : 4;
+
+      ctx.beginPath();
+      if (isH) {
+        ctx.moveTo(pos + 0.5, RULER_THICKNESS);
+        ctx.lineTo(pos + 0.5, RULER_THICKNESS - tickLen);
+      } else {
+        ctx.moveTo(RULER_THICKNESS, pos + 0.5);
+        ctx.lineTo(RULER_THICKNESS - tickLen, pos + 0.5);
+      }
+      ctx.stroke();
+
+      if (isMajor) {
+        const label = String(Math.round(u));
+        if (isH) {
+          ctx.fillText(label, pos + 2, 9);
+        } else {
+          ctx.save();
+          ctx.translate(9, pos - 2);
+          ctx.rotate(-Math.PI / 2);
+          ctx.fillText(label, 0, 0);
+          ctx.restore();
+        }
+      }
+    }
+  }, [isH, view, length, canvasLength, gridSize, darkMode]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className={`absolute pointer-events-none z-10 ${
+        isH ? 'top-0 left-5 border-b' : 'top-5 left-0 border-r'
+      } ${darkMode ? 'border-slate-700' : 'border-slate-200'}`}
+      style={{ width: isH ? length : RULER_THICKNESS, height: isH ? RULER_THICKNESS : length }}
+    />
+  );
+}
+
 const MIN_SCALE = 0.15, MAX_SCALE = 4, ZOOM_FACTOR = 1.12;
 
 export default function FloorCanvas({
   elements = [], canvasWidth, canvasHeight, gridSize,
   selectedId, onSelect, onChange,
-  toolMode = 'select', snapEnabled = true,
+  toolMode = 'select', snapEnabled = true, rulersEnabled = false,
   onZoomChange, externalZoom,
   darkMode = false,
   onCursorMove, otherCursors,
@@ -627,6 +712,17 @@ export default function FloorCanvas({
           </Group>
         </Layer>
       </Stage>
+
+      {rulersEnabled && (
+        <>
+          <div
+            className={`absolute top-0 left-0 z-10 ${darkMode ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'} border-r border-b`}
+            style={{ width: RULER_THICKNESS, height: RULER_THICKNESS }}
+          />
+          <Ruler orientation="horizontal" view={view} length={size.w} canvasLength={canvasWidth} gridSize={gridSize} darkMode={darkMode} />
+          <Ruler orientation="vertical" view={view} length={size.h} canvasLength={canvasHeight} gridSize={gridSize} darkMode={darkMode} />
+        </>
+      )}
 
       {/* Mini zoom controls */}
       <div className="absolute bottom-3 right-3 flex items-center gap-1 bg-white rounded-xl shadow-md border border-slate-100 px-2 py-1.5">

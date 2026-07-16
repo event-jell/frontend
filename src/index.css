@@ -18,6 +18,13 @@
   box-sizing: border-box;
 }
 
+:root {
+  /* This app is light-only. Without this, Safari on a Dark Mode system can
+     render native form control text (inputs, selects) in its dark-theme
+     default color, making typed text invisible against our white fields. */
+  color-scheme: light;
+}
+
 body {
   margin: 0;
   font-family: var(--font-sans);

@@ -62,6 +62,8 @@ export const authApi = {
   // in directly — it returns a plain status message, not a session.
   register: ({ firstName, lastName, country, ...rest }: { firstName: string; lastName: string; email: string; password: string; country?: string }) =>
     http.post<{ message: string }>('/auth/register', { first_name: firstName, last_name: lastName, ...(country && { country }), ...rest }).then(r => r.data),
+  checkEmail: (email: string) =>
+    http.post<{ inUse: boolean }>('/auth/check-email', { email }).then(r => r.data),
   verifyEmail: (data: { email: string; otp: string }) =>
     http.post('/auth/verify-email', data).then(r => normalizeAuth(r.data)),
   login: (data: { email: string; password: string }) =>
@@ -131,12 +133,20 @@ function normalizeFloorPlan(raw: any): FloorPlan {
 function normalizeEvent(raw: any): Event {
   return {
     _id: raw._id,
+    slug: raw.slug ?? '',
     name: raw.name,
     description: raw.description,
     venue: raw.venue,
     date: raw.date,
     startTime: raw.start_time ?? raw.startTime,
     endTime: raw.end_time ?? raw.endTime,
+    isVirtual: raw.is_virtual ?? raw.isVirtual ?? false,
+    virtualLink: raw.virtual_link ?? raw.virtualLink ?? '',
+    dates: (raw.dates ?? []).map((d: any) => ({
+      date: d.date,
+      startTime: d.start_time ?? d.startTime ?? '',
+      endTime: d.end_time ?? d.endTime ?? '',
+    })),
     status: raw.status ?? 'draft',
     type: raw.type ?? 'other',
     guestCount: raw.guest_count ?? raw.guestCount ?? 0,
@@ -150,6 +160,9 @@ function normalizeEvent(raw: any): Event {
     floorPlanId: raw.floor_plan_id ?? raw.floorPlanId,
     coverImage: raw.cover_image ?? raw.coverImage,
     allowGuestSeatSelection: raw.allow_guest_seat_selection ?? raw.allowGuestSeatSelection ?? false,
+    rsvpFields: raw.rsvp_fields ?? raw.rsvpFields ?? [],
+    rsvpDisabled: raw.rsvp_disabled ?? raw.rsvpDisabled ?? false,
+    qrScans: raw.qr_scans ?? raw.qrScans ?? 0,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     owner_id: raw.owner_id,
@@ -173,6 +186,8 @@ function normalizeGuest(raw: any): Guest {
     group: raw.group,
     plusOnes: raw.plus_ones ?? raw.plusOnes ?? 0,
     ticketId: raw.ticket_id ?? raw.ticketId,
+    customFields: raw.custom_fields ?? raw.customFields,
+    dateResponded: raw.date_responded ?? raw.dateResponded,
     createdAt: raw.createdAt,
   };
 }
@@ -278,11 +293,21 @@ function denormalizeFloorPlan(data: Partial<FloorPlan>): Record<string, unknown>
 function denormalizeEvent(data: Partial<Event>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   if (data.name !== undefined) out.name = data.name;
+  if (data.slug !== undefined) out.slug = data.slug;
   if (data.description !== undefined) out.description = data.description;
   if (data.venue !== undefined) out.venue = data.venue;
   if (data.date) out.date = data.date;
   if (data.startTime !== undefined) out.start_time = data.startTime;
   if (data.endTime !== undefined) out.end_time = data.endTime;
+  if (data.isVirtual !== undefined) out.is_virtual = data.isVirtual;
+  if (data.virtualLink !== undefined) out.virtual_link = data.virtualLink;
+  if (data.dates !== undefined) {
+    out.dates = data.dates.map((d: any) => ({
+      date: d.date,
+      start_time: d.startTime,
+      end_time: d.endTime,
+    }));
+  }
   if (data.status !== undefined) out.status = data.status;
   if (data.type !== undefined) out.type = data.type;
   if (data.guestCount !== undefined) out.guest_count = data.guestCount;
@@ -296,6 +321,9 @@ function denormalizeEvent(data: Partial<Event>): Record<string, unknown> {
   if (data.floorPlanId !== undefined) out.floor_plan_id = data.floorPlanId;
   if (data.coverImage !== undefined) out.cover_image = data.coverImage;
   if (data.allowGuestSeatSelection !== undefined) out.allow_guest_seat_selection = data.allowGuestSeatSelection;
+  if (data.rsvpFields !== undefined) out.rsvp_fields = data.rsvpFields;
+  if (data.rsvpDisabled !== undefined) out.rsvp_disabled = data.rsvpDisabled;
+  if (data.qrScans !== undefined) out.qr_scans = data.qrScans;
   return out;
 }
 
@@ -313,6 +341,8 @@ function denormalizeGuest(data: Partial<Guest>): Record<string, unknown> {
   if (data.group !== undefined) out.group = data.group;
   if (data.plusOnes !== undefined) out.plus_ones = data.plusOnes;
   if (data.ticketId !== undefined) out.ticket_id = data.ticketId;
+  if (data.customFields !== undefined) out.custom_fields = data.customFields;
+  if (data.dateResponded !== undefined) out.date_responded = data.dateResponded;
   return out;
 }
 
@@ -385,9 +415,23 @@ export const usersApi = {
     http.patch<{ message: string }>('/users/me/password', data).then(r => r.data),
 };
 
+export const uploadApi = {
+  upload: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return http.post<{ url: string }>('/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    }).then(r => r.data);
+  },
+};
+
 export const eventsApi = {
   list: () => http.get('/events').then(r => (r.data as unknown[]).map(normalizeEvent)),
   get: (id: string) => http.get(`/events/${id}`).then(r => normalizeEvent(r.data)),
+  /** Public endpoint — no auth token needed; used by the RSVP invite page */
+  publicGet: (id: string) => http.get(`/events/${id}/public`).then(r => normalizeEvent(r.data)),
   create: (data: Partial<Event>) =>
     http.post('/events', denormalizeEvent(data)).then(r => normalizeEvent(r.data)),
   update: (id: string, data: Partial<Event>) =>
@@ -428,6 +472,8 @@ export const ticketsApi = {
   update: (id: string, data: Partial<Ticket>) =>
     http.put(`/tickets/${id}`, denormalizeTicket(data)).then(r => normalizeTicket(r.data)),
   delete: (id: string) => http.delete(`/tickets/${id}`),
+  exportEmail: (ticketId: string, data: { email: string; csvContent: string; ticketName: string }) =>
+    http.post(`/tickets/${ticketId}/export-email`, data).then(r => r.data),
 };
 
 export const vendorsApi = {

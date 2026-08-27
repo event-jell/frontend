@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { useMutation } from '@tanstack/react-query';
-import { Mail, Lock, Eye, EyeOff, Star } from 'lucide-react';
-import { authApi } from '../lib/api';
+import { Mail, Lock, Eye, EyeOff, Star, CheckCircle } from 'lucide-react';
+import { authApi, eventsApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
+import { toast } from 'sonner';
 
 const R  = '#7A1F1F';
 const RD = '#3D0F0F';
@@ -13,26 +14,46 @@ const G  = '#D4A24C';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const resetSuccess = searchParams.get('reset') === 'success';
+  const justCreated = searchParams.get('created') === 'true' || location.state?.registered;
+  const initialEmail = location.state?.email || '';
   const { login } = useAuth();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   const mutation = useMutation({
     mutationFn: authApi.login,
-    onSuccess: (data) => {
+    meta: { suppressGlobalErrorToast: true },
+    onSuccess: async (data) => {
       login(data.user, data.token);
+
+      // Check if user is logging in for the first time / has 0 events
+      try {
+        const userEvents = await eventsApi.list();
+        if (!userEvents || userEvents.length === 0) {
+          navigate('/events/onboarding', { replace: true });
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking user events on login:', err);
+      }
+
       navigate('/events', { replace: true });
     },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate({ email, password });
+    mutation.mutate({ email, password }, {
+      onError: () => {
+        toast.error("email or password is not correrct, please register");
+      }
+    });
   };
 
   const errorMessage = mutation.error instanceof Error
@@ -109,6 +130,14 @@ export default function LoginPage() {
             Welcome back
           </h1>
           <p className="text-sm mb-8" style={{ color: '#8A8A8A' }}>Sign in to your EventJelly account</p>
+
+          {justCreated && (
+            <div className="mb-5 px-4 py-3 rounded-xl border text-sm flex items-center gap-2.5"
+              style={{ background: 'rgba(16,185,129,0.08)', borderColor: 'rgba(16,185,129,0.25)', color: '#059669' }}>
+              <CheckCircle size={18} className="shrink-0 text-emerald-600" />
+              <span>Account created & verified! Please sign in to set up your event.</span>
+            </div>
+          )}
 
           {resetSuccess && (
             <div className="mb-5 px-4 py-3 rounded-xl border text-sm"

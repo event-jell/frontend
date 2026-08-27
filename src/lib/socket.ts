@@ -8,7 +8,7 @@ const envSocketUrl = runtimeEnv.VITE_SOCKET_URL || import.meta.env.VITE_SOCKET_U
 //   - docker/prod → set to backend origin e.g. http://localhost:3000 or https://api.eventjelly.com
 const SOCKET_URL =
   envSocketUrl.replace(/\/$/, '') ||
-  (import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:3000');
+  (import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:3001');
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,

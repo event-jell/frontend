@@ -1,8 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useEvent, useUpdateEvent, useDeleteEvent, useCollaborators, useAddCollaborator, useRemoveCollaborator, useUpdateCollaboratorRole } from '../hooks/useEvents';
-import { Save, AlertTriangle, Loader2, Calendar, MapPin, Clock, AlignLeft, Users, UserPlus, X } from 'lucide-react';
+import { Save, AlertTriangle, Loader2, Calendar, MapPin, Clock, AlignLeft, Users, UserPlus, X, ClipboardList, Plus, Trash2, GripVertical, ChevronDown, Upload, Video } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import type { RsvpField } from '../types';
+import { uploadApi } from '../lib/api';
+import DatePicker from '../components/DatePicker';
+import TimePicker from '../components/TimePicker';
 
 export default function EventSettingsPage() {
   const { user } = useAuth();
@@ -27,7 +31,38 @@ export default function EventSettingsPage() {
     endTime: '',
     status: 'draft' as 'draft' | 'planning' | 'confirmed' | 'live',
     allowGuestSeatSelection: false,
+    coverImage: '',
+    isVirtual: false,
+    virtualLink: '',
+    dates: [] as { date: string; startTime: string; endTime: string }[],
   });
+
+  const [rsvpFields, setRsvpFields] = useState<RsvpField[]>([]);
+  const [newField, setNewField] = useState<Partial<RsvpField>>({
+    label: '',
+    type: 'text',
+    required: false,
+    placeholder: '',
+    options: [],
+  });
+  const [newOption, setNewOption] = useState('');
+  const [showFieldBuilder, setShowFieldBuilder] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const res = await uploadApi.upload(file);
+      setFormData(prev => ({ ...prev, coverImage: res.url }));
+    } catch (err) {
+      console.error('File upload failed:', err);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (event) {
@@ -40,7 +75,12 @@ export default function EventSettingsPage() {
         endTime: event.endTime || '',
         status: event.status || 'draft',
         allowGuestSeatSelection: event.allowGuestSeatSelection || false,
+        coverImage: event.coverImage || '',
+        isVirtual: event.isVirtual || false,
+        virtualLink: event.virtualLink || '',
+        dates: event.dates || [],
       });
+      setRsvpFields(event.rsvpFields ?? []);
     }
   }, [event]);
 
@@ -69,7 +109,7 @@ export default function EventSettingsPage() {
   }
 
   const handleSave = () => {
-    updateEvent.mutate({ id: id!, data: formData });
+    updateEvent.mutate({ id: id!, data: { ...formData, rsvpFields } });
   };
 
   const handleDelete = () => {
@@ -135,19 +175,82 @@ export default function EventSettingsPage() {
                 />
               </div>
 
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700">Event Banner (Optional)</label>
+                {formData.coverImage ? (
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 aspect-[21/9] max-w-xl">
+                    <img src={formData.coverImage} alt="Cover Preview" className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, coverImage: '' })}
+                      className="absolute top-3 right-3 p-2 bg-black/60 rounded-xl text-white hover:bg-black/80 transition-colors shadow-md"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl py-8 cursor-pointer hover:bg-slate-50 transition-colors max-w-xl"
+                  >
+                    {uploading ? (
+                      <>
+                        <Loader2 className="animate-spin text-[#7A1F1F] mb-2" size={24} />
+                        <span className="text-sm text-slate-500 font-medium">Uploading image...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="text-slate-400 mb-2" size={24} />
+                        <span className="text-sm text-slate-550 font-bold">Upload new event banner</span>
+                        <span className="text-xs text-slate-400 mt-1">JPEG or PNG, up to 5MB</span>
+                      </>
+                    )}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      disabled={uploading}
+                      className="hidden"
+                      onChange={handleFileUpload}
+                    />
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Event Location Type Toggle */}
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                    <Calendar size={16} className="text-indigo-400" />
-                    Date
+                    <MapPin size={16} className="text-[#7A1F1F]" />
+                    Event Type / Location
                   </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={e => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
-                  />
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isVirtual: false }))}
+                      className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                        !formData.isVirtual
+                          ? 'bg-[#FAF0E8] border-[#7A1F1F] text-[#7A1F1F] shadow-sm'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      Physical Venue
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData(prev => ({ ...prev, isVirtual: true }))}
+                      className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                        formData.isVirtual
+                          ? 'bg-[#FAF0E8] border-[#7A1F1F] text-[#7A1F1F] shadow-sm'
+                          : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
+                      }`}
+                    >
+                      Virtual Event
+                    </button>
+                  </div>
                 </div>
+
+                {/* Event Status selector */}
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                     <AlertTriangle size={16} className="text-indigo-400" />
@@ -173,45 +276,138 @@ export default function EventSettingsPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Conditional Location Details Input */}
+              {formData.isVirtual ? (
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                    <Clock size={16} className="text-indigo-400" />
-                    Start Time
+                    <Video size={16} className="text-emerald-500" />
+                    Virtual Join Link
                   </label>
                   <input
-                    type="time"
-                    value={formData.startTime}
-                    onChange={e => setFormData({ ...formData, startTime: e.target.value })}
+                    type="text"
+                    value={formData.virtualLink}
+                    onChange={e => setFormData({ ...formData, virtualLink: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                    placeholder="e.g. https://zoom.us/j/1234567890"
                   />
                 </div>
+              ) : (
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                    <Clock size={16} className="text-indigo-400" />
-                    End Time
+                    <MapPin size={16} className="text-indigo-400" />
+                    Venue / Location
                   </label>
                   <input
-                    type="time"
-                    value={formData.endTime}
-                    onChange={e => setFormData({ ...formData, endTime: e.target.value })}
+                    type="text"
+                    value={formData.venue}
+                    onChange={e => setFormData({ ...formData, venue: e.target.value })}
                     className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
+                    placeholder="e.g. Grand Convention Center"
                   />
                 </div>
-              </div>
+              )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
-                  <MapPin size={16} className="text-indigo-400" />
-                  Venue / Location
-                </label>
-                <input
-                  type="text"
-                  value={formData.venue}
-                  onChange={e => setFormData({ ...formData, venue: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-slate-400 placeholder:font-normal"
-                  placeholder="e.g. Grand Convention Center"
-                />
+              {/* Dates & Times Section */}
+              <div className="space-y-4 pt-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <Calendar size={16} className="text-[#7A1F1F]" />
+                    Event Date & Time (Multiple Dates Supported)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      dates: [...prev.dates, { date: prev.date || '', startTime: prev.startTime || '', endTime: prev.endTime || '' }]
+                    }))}
+                    className="text-xs text-[#7A1F1F] bg-[#FAF0E8] border border-[#7A1F1F]/20 hover:bg-[#FAF0E8]/80 font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 transition-all"
+                  >
+                    <Plus size={14} /> Add Date Row
+                  </button>
+                </div>
+
+                {formData.dates.length === 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 bg-slate-50/30 p-5 rounded-2xl border border-slate-200/60">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-slate-500">Date</label>
+                      <DatePicker
+                        value={formData.date}
+                        onChange={val => setFormData({ ...formData, date: val })}
+                        placeholder="Select event date"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500">Start Time</label>
+                        <TimePicker
+                          value={formData.startTime}
+                          onChange={val => setFormData({ ...formData, startTime: val })}
+                          placeholder="Start time"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-slate-500">End Time</label>
+                        <TimePicker
+                          value={formData.endTime}
+                          onChange={val => setFormData({ ...formData, endTime: val })}
+                          placeholder="End time"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3.5">
+                    {formData.dates.map((d, index) => (
+                      <div key={index} className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3.5 bg-slate-50/30 p-5 rounded-2xl border border-slate-200/60 relative group">
+                        <div className="flex-1 space-y-1.5 min-w-0">
+                          <label className="text-xs font-bold text-slate-500 block">Date {index + 1}</label>
+                          <DatePicker
+                            value={d.date}
+                            onChange={val => {
+                              const copy = [...formData.dates];
+                              copy[index].date = val;
+                              setFormData({ ...formData, dates: copy });
+                            }}
+                            placeholder="Select date"
+                          />
+                        </div>
+                        <div className="w-full sm:w-3/12 space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 block">Start Time</label>
+                          <TimePicker
+                            value={d.startTime}
+                            onChange={val => {
+                              const copy = [...formData.dates];
+                              copy[index].startTime = val;
+                              setFormData({ ...formData, dates: copy });
+                            }}
+                          />
+                        </div>
+                        <div className="w-full sm:w-3/12 space-y-1.5">
+                          <label className="text-xs font-bold text-slate-500 block">End Time</label>
+                          <TimePicker
+                            value={d.endTime}
+                            onChange={val => {
+                              const copy = [...formData.dates];
+                              copy[index].endTime = val;
+                              setFormData({ ...formData, dates: copy });
+                            }}
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const copy = formData.dates.filter((_, i) => i !== index);
+                            setFormData({ ...formData, dates: copy });
+                          }}
+                          className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all sm:mb-0.5 shrink-0 flex items-center justify-center border border-slate-200 bg-white"
+                          title="Remove Date Row"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
@@ -229,6 +425,211 @@ export default function EventSettingsPage() {
                   <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.allowGuestSeatSelection ? 'translate-x-5' : 'translate-x-0'}`} />
                 </button>
               </div>
+            </div>
+          </div>
+
+          {/* ─── RSVP Form Builder ─── */}
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden">
+            <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#FDF5EE] flex items-center justify-center text-[#7A1F1F]">
+                    <ClipboardList size={16} />
+                  </div>
+                  RSVP Form Fields
+                </h2>
+                <span className="text-xs font-medium text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                  {rsvpFields.length} custom field{rsvpFields.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <p className="text-sm text-slate-500 mt-2">
+                Define the questions guests must answer when they RSVP. Name and Email are always collected automatically.
+              </p>
+            </div>
+            <div className="p-8 space-y-4">
+
+              {/* Default locked fields */}
+              <div className="space-y-2">
+                {[{ label: 'Full Name', type: 'text' }, { label: 'Email Address', type: 'email' }].map(f => (
+                  <div key={f.label} className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl opacity-60 cursor-not-allowed">
+                    <GripVertical size={14} className="text-slate-300" />
+                    <span className="text-sm font-medium text-slate-700 flex-1">{f.label}</span>
+                    <span className="text-xs bg-slate-200 text-slate-500 px-2 py-0.5 rounded-full">{f.type}</span>
+                    <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Always required</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Custom fields list */}
+              {rsvpFields.length > 0 && (
+                <div className="space-y-2">
+                  {rsvpFields.map((field, idx) => (
+                    <div key={field.id} className="flex items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl hover:border-[#7A1F1F]/30 transition-colors group">
+                      <GripVertical size={14} className="text-slate-300 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-sm font-semibold text-slate-800">{field.label}</span>
+                          <span className="text-xs bg-[#FDF5EE] text-[#7A1F1F] px-2 py-0.5 rounded-full">{field.type}</span>
+                          {field.required && (
+                            <span className="text-xs bg-red-50 text-red-500 px-2 py-0.5 rounded-full">Required</span>
+                          )}
+                        </div>
+                        {field.placeholder && (
+                          <p className="text-xs text-slate-400 mt-0.5">Placeholder: {field.placeholder}</p>
+                        )}
+                        {field.type === 'select' && field.options && field.options.length > 0 && (
+                          <p className="text-xs text-slate-400 mt-0.5">Options: {field.options.join(', ')}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => setRsvpFields(prev => prev.filter((_, i) => i !== idx))}
+                        className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Add new field builder */}
+              <div className="border border-dashed border-slate-200 rounded-2xl overflow-hidden">
+                <button
+                  onClick={() => setShowFieldBuilder(v => !v)}
+                  className="w-full flex items-center gap-2 px-5 py-3.5 text-sm font-semibold text-[#7A1F1F] hover:bg-[#FDF5EE]/50 transition-colors"
+                >
+                  <Plus size={16} />
+                  Add a field
+                  <ChevronDown size={14} className={`ml-auto transition-transform ${showFieldBuilder ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showFieldBuilder && (
+                  <div className="border-t border-slate-100 p-5 bg-slate-50/50 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 mb-1.5 block">Field Label *</label>
+                        <input
+                          value={newField.label ?? ''}
+                          onChange={e => setNewField(f => ({ ...f, label: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20"
+                          placeholder='e.g. "Dietary Requirement"'
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 mb-1.5 block">Field Type</label>
+                        <select
+                          value={newField.type ?? 'text'}
+                          onChange={e => setNewField(f => ({ ...f, type: e.target.value as RsvpField['type'] }))}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20"
+                        >
+                          <option value="text">Short Text</option>
+                          <option value="textarea">Long Text</option>
+                          <option value="select">Dropdown / Select</option>
+                          <option value="checkbox">Checkbox (Yes/No)</option>
+                          <option value="number">Number</option>
+                          <option value="phone">Phone Number</option>
+                          <option value="email">Email</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {newField.type !== 'checkbox' && newField.type !== 'select' && (
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 mb-1.5 block">Placeholder text</label>
+                        <input
+                          value={newField.placeholder ?? ''}
+                          onChange={e => setNewField(f => ({ ...f, placeholder: e.target.value }))}
+                          className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20"
+                          placeholder='e.g. "Enter your dietary needs…"'
+                        />
+                      </div>
+                    )}
+
+                    {newField.type === 'select' && (
+                      <div>
+                        <label className="text-xs font-bold text-slate-600 mb-1.5 block">Options</label>
+                        <div className="space-y-2">
+                          {(newField.options ?? []).map((opt, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className="flex-1 text-sm text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200">{opt}</span>
+                              <button onClick={() => setNewField(f => ({ ...f, options: (f.options ?? []).filter((_, j) => j !== i) }))}
+                                className="p-1 text-slate-400 hover:text-red-500"><X size={14} /></button>
+                            </div>
+                          ))}
+                          <div className="flex gap-2">
+                            <input
+                              value={newOption}
+                              onChange={e => setNewOption(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && newOption.trim()) {
+                                  e.preventDefault();
+                                  setNewField(f => ({ ...f, options: [...(f.options ?? []), newOption.trim()] }));
+                                  setNewOption('');
+                                }
+                              }}
+                              className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20"
+                              placeholder='Type an option, press Enter'
+                            />
+                            <button
+                              onClick={() => { if (newOption.trim()) { setNewField(f => ({ ...f, options: [...(f.options ?? []), newOption.trim()] })); setNewOption(''); } }}
+                              className="px-3 py-2 bg-[#7A1F1F] text-white text-sm rounded-xl hover:opacity-90"
+                            >Add</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="flex items-center gap-3">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newField.required ?? false}
+                          onChange={e => setNewField(f => ({ ...f, required: e.target.checked }))}
+                          className="w-4 h-4 accent-[#7A1F1F] rounded"
+                        />
+                        <span className="text-sm font-medium text-slate-700">Required field</span>
+                      </label>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                      <button
+                        onClick={() => {
+                          if (!newField.label?.trim()) return;
+                          const field: RsvpField = {
+                            id: `field_${Date.now()}`,
+                            label: newField.label!.trim(),
+                            type: newField.type ?? 'text',
+                            required: newField.required ?? false,
+                            placeholder: newField.placeholder,
+                            options: newField.type === 'select' ? (newField.options ?? []) : undefined,
+                          };
+                          setRsvpFields(prev => [...prev, field]);
+                          setNewField({ label: '', type: 'text', required: false, placeholder: '', options: [] });
+                          setNewOption('');
+                          setShowFieldBuilder(false);
+                        }}
+                        disabled={!newField.label?.trim()}
+                        className="px-4 py-2 text-sm font-bold text-white rounded-xl disabled:opacity-40 hover:opacity-90 transition-opacity"
+                        style={{ backgroundColor: '#7A1F1F' }}
+                      >
+                        Add Field
+                      </button>
+                      <button
+                        onClick={() => { setShowFieldBuilder(false); setNewField({ label: '', type: 'text', required: false, placeholder: '', options: [] }); }}
+                        className="px-4 py-2 text-sm text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {rsvpFields.length > 0 && (
+                <p className="text-xs text-slate-400">
+                  Click <strong>Save Changes</strong> at the top to apply your RSVP form updates.
+                </p>
+              )}
             </div>
           </div>
 

@@ -115,6 +115,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [checkingEmail, setCheckingEmail] = useState(false);
 
   // ── Workspace onboarding (steps 4-6) ──
   const [workspaceName, setWorkspaceName] = useState('');
@@ -164,9 +165,12 @@ export default function RegisterPage() {
   const verifyMutation = useMutation({
     mutationFn: authApi.verifyEmail,
     onSuccess: (data) => {
-      login(data.user, data.token);
       setValidationError('');
-      setStep(4);
+      // Navigate to login page so first-time login flow is triggered on sign in
+      navigate('/login?created=true', {
+        state: { registered: true, email },
+        replace: true,
+      });
     },
   });
 
@@ -251,14 +255,27 @@ export default function RegisterPage() {
     }
   };
 
-  const handleStep1 = (e: React.FormEvent) => {
+  const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError('');
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
       setValidationError('Please fill in all fields.');
       return;
     }
-    setStep(2);
+    setCheckingEmail(true);
+    try {
+      const res = await authApi.checkEmail(email.trim());
+      if (res.inUse) {
+        setValidationError('Email already in use');
+        return;
+      }
+      setStep(2);
+    } catch (err) {
+      console.error(err);
+      setValidationError('Email verification failed. Please try again.');
+    } finally {
+      setCheckingEmail(false);
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -563,10 +580,20 @@ export default function RegisterPage() {
 
                   <button
                     type="submit"
-                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2"
+                    disabled={checkingEmail}
+                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2 disabled:opacity-50 disabled:pointer-events-none"
                     style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
                   >
-                    Continue <ArrowRight size={15} />
+                    {checkingEmail ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        Checking email...
+                      </>
+                    ) : (
+                      <>
+                        Continue <ArrowRight size={15} />
+                      </>
+                    )}
                   </button>
                 </form>
               )}

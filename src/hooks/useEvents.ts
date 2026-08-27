@@ -27,6 +27,15 @@ export function useEvent(id: string) {
   });
 }
 
+export function usePublicEvent(id: string) {
+  return useQuery({
+    queryKey: [...eventKeys.all, id, 'public'],
+    queryFn: () => eventsApi.publicGet(id),
+    enabled: !!id,
+    staleTime: 120_000,
+  });
+}
+
 export function useCreateEvent() {
   const qc = useQueryClient();
   return useMutation({

@@ -283,8 +283,6 @@ export default function PlannerToolbar({
             {openMenu === 'file' && (
               <div className="absolute left-0 top-full mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg py-1 z-50">
                 <MenuAction onClick={() => { onNewRoom?.(); setOpenMenu(null); }}>New Room</MenuAction>
-                <MenuAction onClick={() => { onLoadTemplate?.(); setOpenMenu(null); }}>Load Template…</MenuAction>
-                <MenuAction onClick={() => { onSaveTemplate?.(); setOpenMenu(null); }}>Save as Template</MenuAction>
                 <div className="h-px bg-slate-100 my-1" />
                 <MenuAction onClick={() => { onExport(); setOpenMenu(null); }}>Export…</MenuAction>
                 <MenuAction onClick={() => { onShare(); setOpenMenu(null); }}>Share…</MenuAction>
@@ -407,19 +405,6 @@ export default function PlannerToolbar({
           </button>
           
           <div className="w-px h-6 bg-slate-200 mx-1"></div>
-
-          <button
-            onClick={onLoadTemplate}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-          >
-            Templates
-          </button>
-          <button
-            onClick={onSaveTemplate}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-          >
-            Save as Template
-          </button>
 
           <button
             onClick={onExport}

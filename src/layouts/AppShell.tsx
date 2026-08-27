@@ -3,11 +3,13 @@ import { NavLink, useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
   Home, Calendar, Users, Layout, Ticket, Store,
-  MessageSquare, BarChart2, Settings, ChevronRight,
+  MessageSquare, BarChart2, Settings, ChevronRight, ChevronLeft,
   Menu, X, PanelLeftClose, PanelLeftOpen,
-  ChevronsUpDown, Bell, Star,
+  ChevronsUpDown, Bell, Star, QrCode,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { useEvent } from '../hooks/useEvents';
 import Logo from '../components/Logo';
 
 const R = '#7A1F1F';
@@ -77,6 +79,7 @@ export default function AppShell({ children }: Props) {
   const params = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -108,23 +111,45 @@ export default function AppShell({ children }: Props) {
   const eventId = matchedId ?? params.id;
   const inEventSuite = Boolean(eventId);
 
+  // Fetch event details or read from React Query cache
+  const { data: fetchedEvent } = useEvent(eventId || '');
+  const cachedEvent = eventId
+    ? (queryClient.getQueryData<{ name?: string }>(['events', eventId]) ??
+       (queryClient.getQueryData<{ _id?: string; slug?: string; name?: string }[]>(['events']) ?? []).find(
+         (e: any) => e._id === eventId || e.slug === eventId,
+       ))
+    : undefined;
+  const event = fetchedEvent || (cachedEvent as any);
+  const eventName = event?.name;
+
+  // Central Slug URL redirect rewrite: replaces eventObjectID with eventSlug in the browser URL
+  useEffect(() => {
+    if (event?.slug && params.id && params.id !== event.slug) {
+      const newPath = location.pathname.replace(`/events/${params.id}`, `/events/${event.slug}`);
+      navigate(newPath + location.search + location.hash, { replace: true });
+    }
+  }, [event, params.id, location.pathname, location.search, location.hash, navigate]);
+
   const GLOBAL_NAV = [
     { icon: Calendar, label: 'Events', to: '/events', end: true },
     { icon: Settings, label: 'Settings', to: '/settings', end: true },
   ];
 
-  const SUITE_NAV = eventId ? [
-    { icon: Home,          label: 'Dashboard',  to: `/events/${eventId}`,           end: true },
-    { icon: Layout,        label: 'Planner',    to: `/events/${eventId}/planner` },
-    { icon: Users,         label: 'Guests',     to: `/events/${eventId}/guests` },
-    { icon: Ticket,        label: 'Ticketing',  to: `/events/${eventId}/ticketing` },
-    { icon: Store,         label: 'Vendors',    to: `/events/${eventId}/vendors` },
-    { icon: MessageSquare, label: 'Event Com',  to: `/events/${eventId}/event-com` },
-    { icon: BarChart2,     label: 'Reports',    to: `/events/${eventId}/reports` },
-    { icon: Settings,      label: 'Settings',   to: `/events/${eventId}/settings` },
+  const slugOrId = event?.slug || eventId;
+
+  const SUITE_NAV = slugOrId ? [
+    { icon: Home,          label: 'Dashboard',  to: `/events/${slugOrId}`,           end: true },
+    { icon: Layout,        label: 'Planner',    to: `/events/${slugOrId}/planner` },
+    { icon: Users,         label: 'Guests',     to: `/events/${slugOrId}/guests` },
+    { icon: QrCode,        label: 'RSVP & QR',  to: `/events/${slugOrId}/rsvp-mgmt` },
+    { icon: Ticket,        label: 'Ticketing',  to: `/events/${slugOrId}/ticketing` },
+    { icon: Store,         label: 'Vendors',    to: `/events/${slugOrId}/vendors` },
+    { icon: MessageSquare, label: 'Event Com',  to: `/events/${slugOrId}/event-com` },
+    { icon: BarChart2,     label: 'Reports',    to: `/events/${slugOrId}/reports` },
+    { icon: Settings,      label: 'Settings',   to: `/events/${slugOrId}/settings` },
   ] : [];
 
-  const sidebarWidth = collapsed ? 'w-[52px]' : 'w-[172px]';
+  const sidebarWidth = collapsed ? 'w-[52px]' : 'w-[272px]';
 
   const Sidebar = (
     <aside className={[
@@ -162,13 +187,32 @@ export default function AppShell({ children }: Props) {
       <nav className={`flex-1 py-2 flex flex-col overflow-y-auto overflow-x-hidden ${collapsed ? 'px-1' : 'px-2'}`}>
         {inEventSuite ? (
           <>
-            <SectionLabel collapsed={collapsed}>Event</SectionLabel>
+            {/* ← Back to all events — pinned at the top so users are never lost */}
+            <NavLink
+              to="/events"
+              end
+              onClick={closeMobile}
+              title={collapsed ? 'All Events' : undefined}
+              className={({ isActive }) =>
+                `group flex items-center gap-2 px-2.5 py-2 rounded-xl text-sm font-medium transition-all duration-150 outline-none mb-1 ${
+                  collapsed ? 'justify-center px-0' : ''
+                } ${isActive ? 'text-white' : 'text-white/40 hover:text-white/70 hover:bg-white/8'}`
+              }
+            >
+              <ChevronLeft size={13} className="flex-shrink-0" />
+              {!collapsed && <span className="flex-1 truncate text-xs">All Events</span>}
+            </NavLink>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }} />
+
+            {/* Section label shows the actual event name */}
+            <SectionLabel collapsed={collapsed}>
+              {eventName ? eventName : 'Event'}
+            </SectionLabel>
+
             {SUITE_NAV.map(item => (
               <NavItem key={item.to} {...item} onClick={closeMobile} collapsed={collapsed} />
             ))}
-            <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-              <NavItem icon={Calendar} label="All Events" to="/events" end onClick={closeMobile} collapsed={collapsed} />
-            </div>
           </>
         ) : (
           <>

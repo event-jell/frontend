@@ -22,18 +22,18 @@ function StatCard({ icon: Icon, label, value, sub, subColor, gradient }: {
   icon: React.ElementType; label: string; value: string | number; sub?: string; subColor?: string; gradient: string;
 }) {
   return (
-    <div className="group bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
-      <div className="flex items-center gap-3 mb-3">
+    <div className="group bg-white border border-slate-200/80 rounded-2xl p-3 sm:p-5 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 min-w-0">
+      <div className="flex items-center gap-2 sm:gap-3 mb-1.5 sm:mb-3">
         <div
-          className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105"
+          className="w-7 h-7 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105"
           style={{ background: gradient }}
         >
-          <Icon size={16} className="text-white" />
+          <Icon size={14} className="text-white sm:w-4 sm:h-4" />
         </div>
-        <span className="text-sm font-medium text-slate-500">{label}</span>
+        <span className="text-xs sm:text-sm font-semibold text-slate-500 truncate">{label}</span>
       </div>
-      <div className="text-3xl font-bold text-slate-900 tabular-nums">{value}</div>
-      {sub && <div className="text-xs mt-1 font-medium" style={{ color: subColor || '#94a3b8' }}>{sub}</div>}
+      <div className="text-xl sm:text-3xl font-extrabold text-slate-900 tabular-nums leading-none mb-1">{value}</div>
+      {sub && <div className="text-[10px] sm:text-xs font-medium truncate" style={{ color: subColor || '#94a3b8' }}>{sub}</div>}
     </div>
   );
 }
@@ -57,65 +57,77 @@ function EventCard({ event, onClick }: { event: Event; onClick: () => void }) {
   return (
     <div
       onClick={onClick}
-      className={`group bg-white border rounded-2xl p-5 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ${isActive ? 'border-[#7A1F1F]/40 ring-1 ring-[#7A1F1F]/15' : 'border-slate-100'}`}
+      className={`group bg-white border rounded-2xl sm:rounded-3xl overflow-hidden shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ${isActive ? 'border-2 border-[#7A1F1F]' : 'border-slate-200'}`}
     >
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="flex items-center gap-3 min-w-0">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-bold flex-shrink-0 shadow-sm transition-transform duration-200 group-hover:scale-105"
-            style={{ background: `linear-gradient(135deg, ${R} 0%, ${RD} 100%)` }}
-          >
-            {event.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
-          </div>
+      {/* Event banner cover image at the top of the card */}
+      <div className="relative h-28 sm:h-36 w-full overflow-hidden">
+        <img
+          src={event.coverImage || '/default-banner.jpg'}
+          alt={event.name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute top-2.5 right-2.5">
+          {event.status === 'live' ? (
+            <span className="flex items-center gap-1 text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#ECFDF5]/90 backdrop-blur-sm text-[#10B981] shadow-sm uppercase tracking-wide">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
+              {t('events.status.live')}
+            </span>
+          ) : (
+            <span
+              className="text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm uppercase tracking-wide"
+              style={{ color: status.text }}
+            >
+              {t(`events.status.${event.status}`)}
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="p-3.5 sm:p-5 space-y-3 sm:space-y-4">
+        {/* Title Details */}
+        <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-slate-800 text-sm truncate">{event.name}</h3>
-              {event.status === 'live' && (
-                <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-[#ECFDF5] text-[#10B981] flex-shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />{t('events.status.live')}
-                </span>
-              )}
-              {event.status !== 'live' && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: status.bg, color: status.text }}>
-                  {t(`events.status.${event.status}`)}
-                </span>
-              )}
-            </div>
-            {(event.venue || event.date) && (
-              <p className="text-xs text-slate-500 mt-0.5 truncate">
+            <h3 className="font-extrabold text-slate-900 text-sm sm:text-base truncate">{event.name}</h3>
+            {(event.date || event.venue) && (
+              <p className="text-[10px] sm:text-[11px] text-slate-400 font-bold mt-0.5 truncate uppercase tracking-wider">
                 {[event.venue, event.date].filter(Boolean).join(' · ')}
               </p>
             )}
           </div>
+          {(event.commCount ?? 0) > 0 && (
+            <span className="flex items-center gap-1 text-[10px] bg-rose-50 text-rose-500 px-2 py-0.5 rounded-full font-bold shrink-0 shadow-sm border border-rose-100">
+              <MessageCircle size={10} />{event.commCount}
+            </span>
+          )}
         </div>
-        {(event.commCount ?? 0) > 0 && (
-          <span className="flex items-center gap-1 text-xs bg-rose-50 text-rose-500 px-2 py-1 rounded-full font-medium flex-shrink-0">
-            <MessageCircle size={12} />{event.commCount}
+
+        {/* Progress Grid */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          {[
+            { label: t('events.card.guests_rsvp'), value: `${guestPct}%`, sub: `${event.guestRsvp}/${event.guestCount}`, color: R },
+            { label: t('events.card.tickets'), value: `${ticketPct}%`, sub: `${event.ticketsSold}/${event.ticketsTotal}`, color: '#F59E0B' },
+            { label: t('events.card.floor_plan'), value: `${seatPct}%`, sub: t('events.card.seated'), color: R },
+          ].map(({ label, value, sub, color }) => (
+            <div key={label} className="space-y-1 min-w-0">
+              <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">{label}</p>
+              <p className="text-xs font-black text-slate-800 truncate">{value} <span className="text-[9px] sm:text-[10px] font-medium text-slate-400">{sub}</span></p>
+              <ProgressBar value={parseInt(value)} color={color} />
+            </div>
+          ))}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="flex items-center justify-between pt-2.5 border-t border-slate-100/80">
+          <span className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+            🏪 {t('events.card.vendors', { count: event.vendorCount ?? 0 })}
           </span>
-        )}
-      </div>
-
-      <div className="grid grid-cols-3 gap-4 mb-4">
-        {[
-          { label: t('events.card.guests_rsvp'), value: `${guestPct}%`, sub: `${event.guestRsvp}/${event.guestCount}`, color: R },
-          { label: t('events.card.tickets'), value: `${ticketPct}%`, sub: `${event.ticketsSold}/${event.ticketsTotal}`, color: '#EF9F27' },
-          { label: t('events.card.floor_plan'), value: `${seatPct}%`, sub: t('events.card.seated'), color: R },
-        ].map(({ label, value, sub, color }) => (
-          <div key={label}>
-            <p className="text-xs text-slate-500 mb-1">{label}</p>
-            <p className="text-sm font-bold text-slate-800">{value} <span className="text-xs font-normal text-slate-500">{sub}</span></p>
-            <ProgressBar value={parseInt(value)} color={color} />
-          </div>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between text-xs text-slate-500 pt-3 border-t border-slate-50">
-        <span>🏪 {t('events.card.vendors', { count: event.vendorCount ?? 0 })}</span>
-        <span
-          className={`flex items-center gap-1 font-semibold transition-all group-hover:gap-1.5 ${isActive ? 'text-[#7A1F1F]' : 'text-slate-600'}`}
-        >
-          {isActive ? t('events.card.currently_open') : t('events.card.open')}<ChevronRight size={13} />
-        </span>
+          <span
+            className={`flex items-center gap-1 text-xs font-bold transition-all group-hover:gap-1.5 ${isActive ? 'text-[#7A1F1F]' : 'text-slate-600'}`}
+          >
+            {isActive ? t('events.card.currently_open') : t('events.card.open')}
+            <ChevronRight size={12} className="shrink-0" />
+          </span>
+        </div>
       </div>
     </div>
   );
@@ -146,37 +158,40 @@ export default function EventsPage() {
           <div className="absolute -top-20 -right-16 w-72 h-72 rounded-full opacity-20" style={{ background: `radial-gradient(circle, ${G}, transparent)` }} />
           <div className="absolute -bottom-24 left-1/4 w-64 h-64 rounded-full opacity-10" style={{ background: `radial-gradient(circle, white, transparent)` }} />
         </div>
-        <div className="relative px-4 py-6 sm:px-8 sm:py-7">
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1.5 flex items-center gap-1.5" style={{ color: 'rgba(212,162,76,0.85)' }}>
+        <div className="relative px-4 py-4 sm:px-8 sm:py-7">
+          <p className="text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-1 flex items-center gap-1.5" style={{ color: 'rgba(212,162,76,0.85)' }}>
             <Sparkles size={12} />{t('events.welcome', { name: user?.firstName || '' })}
           </p>
-          <div className="flex items-end justify-between flex-wrap gap-4">
-            <h1 className="text-3xl font-extrabold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
+          <div className="flex items-center justify-between flex-wrap gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
               {t('events.title')}
             </h1>
-            <div className="flex items-center gap-2">
-              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-colors"
-                style={{ color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <Filter size={14} />{t('events.filter_status')}
+            <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto max-w-full pb-0.5 sm:pb-0 scrollbar-none">
+              <button className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-colors whitespace-nowrap shrink-0"
+                style={{ color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                <Filter size={13} className="shrink-0" />
+                <span>{t('events.filter_status')}</span>
               </button>
-              <button className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-xl transition-colors"
-                style={{ color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
-                <ArrowUpDown size={14} />{t('events.sort_date')}
+              <button className="flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm font-semibold rounded-xl transition-colors whitespace-nowrap shrink-0"
+                style={{ color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
+                <ArrowUpDown size={13} className="shrink-0" />
+                <span>{t('events.sort_date')}</span>
               </button>
               <button
                 onClick={() => navigate('/events/new')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs sm:text-sm font-bold rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm whitespace-nowrap shrink-0"
                 style={{ background: G, color: '#3D0F0F' }}
               >
-                <Plus size={15} />{t('events.new_event')}
+                <Plus size={14} className="shrink-0" />
+                <span>{t('events.new_event')}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-8 mx-auto max-w-[1200px] w-full">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="flex-1 overflow-y-auto px-3.5 py-4 sm:px-8 mx-auto max-w-[1200px] w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4 mb-5">
           <StatCard icon={Calendar} label={t('events.stats.active')} value={events.length} sub={t('events.stats.live_now', { count: liveCount })}
             gradient={`linear-gradient(135deg, ${R} 0%, ${RD} 100%)`} />
           <StatCard icon={Users} label={t('events.stats.total_guests')} value={totalGuests.toLocaleString()} sub={t('events.stats.across_all')}
@@ -188,38 +203,38 @@ export default function EventsPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3">
-            <Loader2 size={28} className="animate-spin" style={{ color: R }} />
-            <p className="text-sm text-slate-400">{t('events.loading')}</p>
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 size={26} className="animate-spin" style={{ color: R }} />
+            <p className="text-xs text-slate-400">{t('events.loading')}</p>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="relative overflow-hidden bg-white border border-slate-100 rounded-3xl p-14 text-center shadow-sm">
+          <div className="relative overflow-hidden bg-white border border-slate-100 rounded-3xl p-10 sm:p-14 text-center shadow-sm">
             <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
               backgroundImage: `radial-gradient(${R} 1px, transparent 1px)`,
               backgroundSize: '20px 20px',
             }} />
             <div className="relative">
               <div
-                className="w-20 h-20 rounded-3xl mx-auto mb-6 flex items-center justify-center shadow-lg"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl mx-auto mb-4 sm:mb-6 flex items-center justify-center shadow-lg"
                 style={{ background: `linear-gradient(135deg, ${R} 0%, ${RD} 100%)` }}
               >
-                <Calendar size={32} className="text-white" />
+                <Calendar size={28} className="text-white" />
               </div>
-              <h2 className="text-xl font-bold text-slate-800 mb-2">{t('events.empty.title')}</h2>
-              <p className="text-sm text-slate-500 mb-7 max-w-xs mx-auto">{t('events.empty.subtitle')}</p>
+              <h2 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">{t('events.empty.title')}</h2>
+              <p className="text-xs sm:text-sm text-slate-500 mb-6 max-w-xs mx-auto">{t('events.empty.subtitle')}</p>
               <button
                 onClick={() => navigate('/events/new')}
-                className="inline-flex items-center gap-2 px-6 py-3 text-sm text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm"
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-xs sm:text-sm text-white font-semibold rounded-xl transition-all hover:-translate-y-0.5 hover:shadow-lg shadow-sm"
                 style={{ background: `linear-gradient(135deg, ${R} 0%, ${RD} 100%)` }}
               >
-                <Plus size={15} />{t('events.empty.action')}
+                <Plus size={14} />{t('events.empty.action')}
               </button>
             </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filtered.map(event => (
-              <EventCard key={event._id} event={event} onClick={() => navigate(`/events/${event._id}`)} />
+              <EventCard key={event._id} event={event} onClick={() => navigate(`/events/${event.slug || event._id}`)} />
             ))}
           </div>
         )}

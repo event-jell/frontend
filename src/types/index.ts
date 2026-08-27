@@ -87,14 +87,27 @@ export interface ElementTemplate {
   defaultCapacity: number;
 }
 
+export interface RsvpField {
+  id: string;
+  label: string;
+  type: 'text' | 'textarea' | 'select' | 'checkbox' | 'number' | 'phone' | 'email';
+  required: boolean;
+  placeholder?: string;
+  options?: string[];
+}
+
 export interface Event {
   _id: string;
+  slug?: string;
   name: string;
   description?: string;
   venue: string;
   date: string;
   startTime?: string;
   endTime?: string;
+  isVirtual?: boolean;
+  virtualLink?: string;
+  dates?: { date: string; startTime: string; endTime: string }[];
   status: 'draft' | 'planning' | 'confirmed' | 'live';
   type?: 'wedding' | 'conference' | 'gala' | 'concert' | 'festival' | 'fundraiser' | 'corporate' | 'other';
   guestCount: number;
@@ -108,6 +121,9 @@ export interface Event {
   floorPlanId?: string;
   coverImage?: string;
   allowGuestSeatSelection?: boolean;
+  rsvpFields?: RsvpField[];
+  rsvpDisabled?: boolean;
+  qrScans?: number;
   createdAt?: string;
   updatedAt?: string;
   owner_id?: string;
@@ -128,6 +144,8 @@ export interface Guest {
   group?: string;
   plusOnes: number;
   ticketId?: string;
+  customFields?: Record<string, string>;
+  dateResponded?: string;
   createdAt?: string;
 }
 

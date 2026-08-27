@@ -16,6 +16,15 @@ export function useTickets(eventId?: string) {
   });
 }
 
+export function useTicket(id?: string) {
+  return useQuery({
+    queryKey: ticketKeys.detail(id!),
+    queryFn: () => ticketsApi.get(id!),
+    enabled: Boolean(id) && id !== 'new',
+    staleTime: 15_000,
+  });
+}
+
 export function useCreateTicket() {
   const qc = useQueryClient();
   return useMutation({

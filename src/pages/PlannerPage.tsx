@@ -81,6 +81,9 @@ export default function PlannerPage() {
   const [deleteRoomId, setDeleteRoomId] = useState<string | null>(null);
   const [cursors, setCursors] = useState<Record<string, UserCursor>>({});
   const [remoteDrags, setRemoteDrags] = useState<Record<string, { x: number, y: number, width?: number, height?: number, rotation?: number }>>({});
+  const [mobileLeftPanelOpen, setMobileLeftPanelOpen] = useState(false);
+  const [mobileRightPanelOpen, setMobileRightPanelOpen] = useState(false);
+  const [bypassMobileWarning, setBypassMobileWarning] = useState(false);
 
   // History tracks the full per-floor element map
   const { current: floorMap, push: pushHistory, undo, redo, canUndo, canRedo } = useHistory<FloorMap>({});
@@ -520,10 +523,77 @@ export default function PlannerPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="flex items-center gap-3 text-slate-500">
-          <div className="w-5 h-5 border-2 border-[#7A1F1F] border-t-transparent rounded-full animate-spin" />
-          {t('common.loading_floor_plan')}
+      <div className="flex flex-col h-full overflow-hidden bg-slate-50 animate-pulse">
+        {/* Top Navbar Toolbar Skeleton */}
+        <div className="h-14 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="h-4 w-32 bg-slate-200 rounded-full" />
+            <div className="h-3 w-20 bg-slate-200 rounded-full" />
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="h-9 w-24 bg-slate-200 rounded-xl" />
+            <div className="h-9 w-20 bg-slate-200 rounded-xl" />
+          </div>
+        </div>
+
+        {/* Main Workspace split */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Left Elements Panel Skeleton */}
+          <div className="w-64 bg-white border-r border-slate-200/80 p-5 flex-shrink-0 space-y-6">
+            <div className="h-8 w-full bg-slate-100 rounded-xl" />
+            <div className="space-y-4">
+              <div className="h-3.5 w-16 bg-slate-200 rounded-full" />
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="h-16 bg-slate-50 border border-slate-150 rounded-xl flex flex-col items-center justify-center gap-2">
+                    <div className="w-6 h-6 bg-slate-200 rounded-lg" />
+                    <div className="h-2 w-12 bg-slate-200 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4 pt-2">
+              <div className="h-3.5 w-24 bg-slate-200 rounded-full" />
+              <div className="grid grid-cols-2 gap-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="h-16 bg-slate-50 border border-slate-150 rounded-xl flex flex-col items-center justify-center gap-2">
+                    <div className="w-6 h-6 bg-slate-200 rounded-lg" />
+                    <div className="h-2 w-12 bg-slate-200 rounded-full" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Middle Canvas Area Skeleton */}
+          <div className="flex-1 bg-slate-50 p-8 flex items-center justify-center relative">
+            <div className="w-full max-w-4xl h-full max-h-[600px] bg-white border border-slate-200/60 rounded-3xl shadow-sm flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-3">
+                <div className="w-6 h-6 rounded-md bg-slate-200" />
+              </div>
+              <div className="h-4 w-48 bg-slate-200 rounded-full mb-1.5" />
+              <div className="h-3.5 w-64 bg-slate-200 rounded-full" />
+            </div>
+          </div>
+
+          {/* Right Properties Panel Skeleton */}
+          <div className="w-72 bg-white border-l border-slate-200/80 p-5 flex-shrink-0 space-y-6">
+            <div className="h-4.5 w-36 bg-slate-200 rounded-full" />
+            <div className="h-0.5 bg-slate-100 w-full" />
+            <div className="space-y-4">
+              <div className="h-3.5 w-24 bg-slate-200 rounded-full" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <div className="h-3 w-8 bg-slate-200 rounded-full" />
+                  <div className="h-10 bg-slate-50 border border-slate-150 rounded-xl" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-3 w-8 bg-slate-200 rounded-full" />
+                  <div className="h-10 bg-slate-50 border border-slate-150 rounded-xl" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -541,22 +611,32 @@ export default function PlannerPage() {
     <div className="flex flex-col h-full overflow-hidden relative">
       <SEO title="Floor Plan Builder" />
       {/* Mobile Block Overlay */}
-      <div className="md:hidden absolute inset-0 z-20 bg-white flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
-          <LayoutGrid size={32} className="text-slate-400" />
+      {!bypassMobileWarning && (
+        <div className="md:hidden absolute inset-0 z-30 bg-white flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-6">
+            <LayoutGrid size={32} className="text-slate-400" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-850 mb-3">{t('planner.mobile_warning')}</h2>
+          <p className="text-slate-500 mb-8 max-w-[280px]">
+            {t('planner.mobile_desc')}
+          </p>
+          <div className="flex flex-col gap-2 w-full max-w-[200px]">
+            <button 
+              onClick={() => setBypassMobileWarning(true)}
+              className="w-full py-2.5 text-white font-semibold rounded-xl transition-colors shadow-sm text-sm"
+              style={{ backgroundColor: '#7A1F1F' }}
+            >
+              Continue anyway
+            </button>
+            <button 
+              onClick={() => window.history.back()}
+              className="w-full py-2.5 bg-slate-100 text-slate-650 font-semibold rounded-xl hover:bg-slate-200 transition-colors text-sm"
+            >
+              {t('common.go_back')}
+            </button>
+          </div>
         </div>
-        <h2 className="text-xl font-bold text-slate-800 mb-3">{t('planner.mobile_warning')}</h2>
-        <p className="text-slate-500 mb-8 max-w-[280px]">
-          {t('planner.mobile_desc')}
-        </p>
-        <button 
-          onClick={() => window.history.back()}
-          className="px-6 py-3 text-white font-semibold rounded-xl transition-colors shadow-sm"
-          style={{ backgroundColor: '#7A1F1F' }}
-        >
-          {t('common.go_back')}
-        </button>
-      </div>
+      )}
 
       {showTemplates && (
         <TemplatesModal 
@@ -807,8 +887,19 @@ export default function PlannerPage() {
         onDeleteRoom={setDeleteRoomId}
       />
 
-      <div className="flex flex-1 overflow-hidden">
-        <ElementPanel onAdd={handleAddElement} />
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Left Element Panel Backdrop */}
+        {mobileLeftPanelOpen && (
+          <div className="fixed inset-0 bg-black/25 backdrop-blur-sm z-30 lg:hidden" onClick={() => setMobileLeftPanelOpen(false)} />
+        )}
+        
+        {/* Left Elements Panel Sliding Wrapper */}
+        <div className={`
+          fixed lg:static inset-y-0 left-0 z-30 flex-shrink-0 transition-transform duration-200
+          ${mobileLeftPanelOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <ElementPanel onAdd={(template) => { handleAddElement(template); setMobileLeftPanelOpen(false); }} />
+        </div>
 
         {activeRoomId ? (
           <FloorCanvas
@@ -854,18 +945,59 @@ export default function PlannerPage() {
           </div>
         )}
 
-        <RightPanel
-          element={selectedElement}
-          eventId={plan?.eventId ?? ''}
-          onChange={handleElementChange}
-          onDelete={handleDelete}
-          onDuplicate={handleDuplicate}
-          canvasWidth={activeCanvasWidth}
-          canvasHeight={activeCanvasHeight}
-          onUpdateCanvas={(w, h) => {
-            setRooms(rs => rs.map(r => r.id === activeRoomId ? { ...r, width: w, height: h } : r));
-          }}
-        />
+        {/* Mobile Right Properties Panel Backdrop */}
+        {mobileRightPanelOpen && (
+          <div className="fixed inset-0 bg-black/25 backdrop-blur-sm z-30 lg:hidden" onClick={() => setMobileRightPanelOpen(false)} />
+        )}
+
+        {/* Right Properties Panel Sliding Wrapper */}
+        <div className={`
+          fixed lg:static inset-y-0 right-0 z-30 flex-shrink-0 transition-transform duration-200
+          ${mobileRightPanelOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
+        `}>
+          <RightPanel
+            element={selectedElement}
+            eventId={plan?.eventId ?? ''}
+            onChange={handleElementChange}
+            onDelete={handleDelete}
+            onDuplicate={handleDuplicate}
+            canvasWidth={activeCanvasWidth}
+            canvasHeight={activeCanvasHeight}
+            onUpdateCanvas={(w, h) => {
+              setRooms(rs => rs.map(r => r.id === activeRoomId ? { ...r, width: w, height: h } : r));
+            }}
+          />
+        </div>
+
+        {/* Mobile Floating Overlay Toggles */}
+        <div className="absolute bottom-16 left-1/2 -translate-x-1/2 z-20 lg:hidden flex gap-2.5">
+          <button
+            onClick={() => {
+              setMobileLeftPanelOpen(prev => !prev);
+              setMobileRightPanelOpen(false);
+            }}
+            className={`px-4 py-2 text-xs font-extrabold rounded-full shadow-lg border transition-all ${
+              mobileLeftPanelOpen
+                ? 'bg-[#7A1F1F] text-white border-[#7A1F1F]/20'
+                : 'bg-white text-slate-700 border-slate-200'
+            }`}
+          >
+            Elements
+          </button>
+          <button
+            onClick={() => {
+              setMobileRightPanelOpen(prev => !prev);
+              setMobileLeftPanelOpen(false);
+            }}
+            className={`px-4 py-2 text-xs font-extrabold rounded-full shadow-lg border transition-all ${
+              mobileRightPanelOpen
+                ? 'bg-[#7A1F1F] text-white border-[#7A1F1F]/20'
+                : 'bg-white text-slate-700 border-slate-200'
+            }`}
+          >
+            Properties
+          </button>
+        </div>
       </div>
 
       <StatusBar

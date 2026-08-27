@@ -21,14 +21,20 @@ import EventInvitePage from './pages/EventInvitePage';
 import TicketGuestsPage from './pages/TicketGuestsPage';
 import GuestDetailPage from './pages/GuestDetailPage';
 import EventSettingsPage from './pages/EventSettingsPage';
+import CreateTicketPage from './pages/CreateTicketPage';
+import EventOnboardingPage from './pages/EventOnboardingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import LandingPage from './pages/LandingPage';
+import EventRsvpPage from './pages/EventRsvpPage';
+import RsvpManagementPage from './pages/RsvpManagementPage';
 import { socket } from './lib/socket';
 
-const handleError = (error: any) => {
+const handleError = (error: any, v2?: any, v3?: any, v4?: any) => {
+  const meta = v4?.meta || v2?.meta; // v4 is mutation for MutationCache, v2 is query for QueryCache
+  if (meta?.suppressGlobalErrorToast) return;
   const message = error.response?.data?.message || error.message || 'An error occurred';
   toast.error(message);
 };
@@ -117,24 +123,28 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/events/:id/rsvp" element={<EventRsvpPage />} />
+      <Route path="/events/:id/invite" element={<EventInvitePage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         <Route path="/events" element={<Shell><EventsPage /></Shell>} />
         <Route path="/events/new" element={<Shell><CreateEventPage /></Shell>} />
+        <Route path="/events/onboarding" element={<EventOnboardingPage />} />
         <Route path="/settings" element={<Shell><SettingsPage /></Shell>} />
 
         <Route path="/events/:id" element={<Shell><EventDashboardPage /></Shell>} />
-        <Route path="/events/:id/invite" element={<EventInvitePage />} />
         <Route path="/events/:id/planner" element={<Shell><PlannerPage /></Shell>} />
         <Route path="/events/:id/guests" element={<Shell><GuestsPage /></Shell>} />
         <Route path="/events/:id/ticketing" element={<Shell><TicketingPage /></Shell>} />
+        <Route path="/events/:id/ticketing/new" element={<Shell><CreateTicketPage /></Shell>} />
         <Route path="/events/:id/ticketing/:ticketId" element={<Shell><TicketGuestsPage /></Shell>} />
         <Route path="/events/:id/guests/:guestId" element={<Shell><GuestDetailPage /></Shell>} />
         <Route path="/events/:id/vendors" element={<Shell><VendorsPage /></Shell>} />
         <Route path="/events/:id/event-com" element={<Shell><EventComPage /></Shell>} />
         <Route path="/events/:id/reports" element={<Shell><ReportsPage /></Shell>} />
         <Route path="/events/:id/settings" element={<Shell><EventSettingsPage /></Shell>} />
+        <Route path="/events/:id/rsvp-mgmt" element={<Shell><RsvpManagementPage /></Shell>} />
       </Route>
 
       <Route path="/" element={<LandingPage />} />

@@ -52,12 +52,12 @@ export default function DatePicker({ value, onChange, placeholder = 'Select a da
       <button
         type="button"
         onClick={() => { setOpen(o => !o); if (selected) setViewDate(selected); }}
-        className="w-full flex items-center justify-between px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60 transition-all text-left"
+        className="w-full flex items-center justify-between px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/5 transition-all text-left"
       >
-        <span className={selected ? 'text-slate-800' : 'text-slate-400'}>
+        <span className={selected ? 'text-slate-800 font-semibold' : 'text-slate-400 font-normal'}>
           {selected ? format(selected, 'EEE, MMM d, yyyy') : placeholder}
         </span>
-        <Calendar size={15} className="text-slate-400 flex-shrink-0" />
+        <Calendar size={16} className="text-slate-450 flex-shrink-0" />
       </button>
 
       {open && (

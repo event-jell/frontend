@@ -192,7 +192,7 @@ export default function TimePicker({ value, onChange, placeholder = 'Select time
             </div>
 
             {/* Quick Presets */}
-            <div className="mt-3 pt-3 border-t border-slate-150">
+            <div className="mt-3 pt-3 border-t border-slate-200">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1.5">
                 Quick Select
               </span>
@@ -219,7 +219,7 @@ export default function TimePicker({ value, onChange, placeholder = 'Select time
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2 border-t border-slate-150 bg-slate-50/50">
+          <div className="flex items-center justify-between px-4 py-2 border-t border-slate-200 bg-slate-50/50">
             <button
               type="button"
               onClick={() => { onChange(''); setOpen(false); }}

@@ -3,10 +3,11 @@ import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { usePublicEvent } from '../hooks/useEvents';
 import { useTickets } from '../hooks/useTickets';
 import { useCreateGuest } from '../hooks/useGuests';
-import { Calendar, MapPin, Ticket, CheckCircle2, ChevronRight, ArrowLeft, Video, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Ticket, CheckCircle2, ChevronRight, ArrowLeft, Video, ExternalLink, QrCode } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { Ticket as TicketType, RsvpField } from '../types';
+import type { Ticket as TicketType, RsvpField, Guest } from '../types';
 import Logo from '../components/Logo';
+import { toast } from 'sonner';
 
 const INPUT_CLASS =
   'w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/15 focus:bg-white focus:border-[#7A1F1F]/60 transition-all text-sm font-medium text-slate-850';
@@ -61,19 +62,18 @@ function DynamicField({
       );
     case 'checkbox':
       return (
-        <div className="flex items-center gap-3">
+        <label className="flex items-center gap-2.5 cursor-pointer py-1">
           <input
             type="checkbox"
-            id={`field-${field.id}`}
             checked={value === 'true'}
             onChange={e => onChange(e.target.checked ? 'true' : 'false')}
-            className="w-4 h-4 accent-[#7A1F1F] rounded"
+            className="w-4 h-4 rounded text-[#7A1F1F] focus:ring-[#7A1F1F]"
           />
-          <label htmlFor={`field-${field.id}`} className="text-sm font-bold text-slate-700 cursor-pointer">
+          <span className="text-xs font-semibold text-slate-700">
             {field.label}
             {field.required && <span className="text-red-500 ml-0.5">*</span>}
-          </label>
-        </div>
+          </span>
+        </label>
       );
     case 'number':
       return (
@@ -148,6 +148,7 @@ export default function EventInvitePage() {
   const [form, setForm] = useState({ firstName: '', lastName: '', email: '' });
   const [customValues, setCustomValues] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [createdGuest, setCreatedGuest] = useState<Guest | null>(null);
 
   // Auto-select ticket from URL param
   const activeTickets = tickets.filter(t => t.status === 'active');
@@ -165,8 +166,33 @@ export default function EventInvitePage() {
       rsvpStatus: selectedTicket.price === 0 ? 'confirmed' : 'pending',
       customFields: Object.keys(customValues).length > 0 ? customValues : undefined,
     }, {
-      onSuccess: () => setSubmitted(true),
+      onSuccess: (data) => {
+        setCreatedGuest(data as unknown as Guest);
+        setSubmitted(true);
+      },
     });
+  };
+
+  const handleDownloadWalletPass = async () => {
+    if (!event) return;
+    try {
+      toast.loading('Generating your wallet pass...', { id: 'wallet-invite' });
+      const guestParam = createdGuest?._id ? `&guestId=${createdGuest._id}` : '';
+      const ticketParam = selectedTicket?._id ? `&ticketId=${selectedTicket._id}` : '';
+      const res = await fetch(`/api/events/${event.slug || id}/wallet-pass?${guestParam}${ticketParam}`);
+      if (!res.ok) throw new Error('Pass generation failed');
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${event.slug || 'event'}-pass.pkpass`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('Apple Wallet pass saved!', { id: 'wallet-invite' });
+    } catch {
+      toast.error('Could not download wallet pass', { id: 'wallet-invite' });
+    }
   };
 
   if (isLoadingEvent || isLoadingTickets) {
@@ -208,30 +234,88 @@ export default function EventInvitePage() {
     : null;
 
   if (submitted) {
+    const isAttending = selectedTicket?.price === 0 || createdGuest?.rsvpStatus === 'confirmed';
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-[#FAF8F5] to-[#F3ECE0] flex items-center justify-center p-6 animate-in fade-in duration-350">
-        <div className="bg-white max-w-md w-full rounded-3xl p-10 text-center shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+        <div className="bg-white max-w-md w-full rounded-3xl p-8 text-center shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden space-y-5">
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#7A1F1F] to-[#D4A24C]" />
-          <div className="w-16 h-16 bg-green-100 text-green-650 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
-            <CheckCircle2 size={32} />
+          
+          <div className="w-14 h-14 bg-green-100 text-green-650 rounded-full flex items-center justify-center mx-auto shadow-inner">
+            <CheckCircle2 size={30} />
           </div>
-          <h1 className="text-2xl font-black text-slate-900 mb-2">{t('invite.welcome')}</h1>
-          <p className="text-slate-500 mb-8 text-sm leading-relaxed">
-            {selectedTicket?.price === 0
-              ? "Your RSVP has been confirmed. We've sent the details to your email."
-              : "Your ticket request has been received. Please check your email for payment instructions."}
-          </p>
-          <button
-            onClick={() => {
-              setSubmitted(false);
-              setForm({ firstName: '', lastName: '', email: '' });
-              setCustomValues({});
-              setSelectedTicket(null);
-            }}
-            className="text-[#7A1F1F] font-bold hover:underline"
-          >
-            {t('invite.register_another')}
-          </button>
+
+          <div>
+            <h1 className="text-2xl font-black text-slate-900 mb-1" style={{ fontFamily: 'Playfair Display, serif' }}>
+              {isAttending ? 'RSVP Confirmed!' : 'Request Received!'}
+            </h1>
+            <p className="text-slate-500 text-xs leading-relaxed max-w-xs mx-auto">
+              {isAttending
+                ? `You're all set for ${event.name}! Present your check-in pass below at the entrance.`
+                : 'Your ticket request has been received. Please check your email for confirmation details.'}
+            </p>
+          </div>
+
+          {/* Attendee Pass Card */}
+          <div className="bg-[#FAF7F2] border border-slate-200/80 rounded-2xl p-4 text-left space-y-3">
+            <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Attendee</span>
+                <span className="font-bold text-slate-800 text-sm">{form.firstName} {form.lastName}</span>
+              </div>
+              <span className="text-xs font-bold text-[#7A1F1F] bg-[#FAF0E8] px-2.5 py-1 rounded-full border border-[#7A1F1F]/20">
+                {selectedTicket?.name || 'General Admission'}
+              </span>
+            </div>
+
+            {/* Check-in QR barcode */}
+            {isAttending && (
+              <div className="flex flex-col items-center justify-center pt-2">
+                <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-200">
+                  <img
+                    src={`/api/events/${event.slug || id}/qr-code${selectedTicket ? `?ticketId=${selectedTicket._id}` : ''}`}
+                    alt="Admission QR Code"
+                    className="w-28 h-28 object-contain"
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-2">
+                  Official Admission Barcode
+                </span>
+              </div>
+            )}
+
+            <div className="text-[11px] text-slate-500 space-y-1 pt-1 border-t border-slate-200/60">
+              {formattedDate && <div>📅 {formattedDate} {timeString && `• ${timeString}`}</div>}
+              {event.venue && <div>📍 {event.venue}</div>}
+            </div>
+          </div>
+
+          {/* Apple Wallet Button */}
+          {isAttending && (
+            <button
+              onClick={handleDownloadWalletPass}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-black hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm transition-all"
+            >
+              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.36c.64-.78 1.08-1.86.96-2.95-1 .04-2.17.67-2.85 1.46-.58.67-1.1 1.77-.96 2.83 1.12.09 2.21-.57 2.85-1.34z" />
+              </svg>
+              Add to Apple Wallet
+            </button>
+          )}
+
+          <div>
+            <button
+              onClick={() => {
+                setSubmitted(false);
+                setForm({ firstName: '', lastName: '', email: '' });
+                setCustomValues({});
+                setSelectedTicket(null);
+                setCreatedGuest(null);
+              }}
+              className="text-[#7A1F1F] font-bold text-xs hover:underline"
+            >
+              {t('invite.register_another')}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -240,7 +324,7 @@ export default function EventInvitePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FAF9F6] via-[#FAF8F5] to-[#F3ECE0] flex flex-col">
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-md border-b border-slate-150/60 py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-white/80 backdrop-blur-md border-b border-slate-200/60 py-4 px-6 md:px-12 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-2">
           <Logo size={32} />
           <span className="font-bold text-[#7A1F1F] tracking-tight">{t('invite.brand')}</span>
@@ -280,7 +364,7 @@ export default function EventInvitePage() {
               <div className="space-y-4">
                 {event.dates.map((d, index) => (
                   <div key={index} className="flex items-center gap-4 text-slate-700">
-                    <div className="w-10 h-10 bg-[#FAF7F2] border border-slate-150 rounded-xl flex items-center justify-center text-[#7A1F1F] shrink-0">
+                    <div className="w-10 h-10 bg-[#FAF7F2] border border-slate-200 rounded-xl flex items-center justify-center text-[#7A1F1F] shrink-0">
                       <Calendar size={18} />
                     </div>
                     <div>
@@ -298,7 +382,7 @@ export default function EventInvitePage() {
               </div>
             ) : (
               <div className="flex items-center gap-4 text-slate-700">
-                <div className="w-10 h-10 bg-[#FAF7F2] border border-slate-150 rounded-xl flex items-center justify-center text-[#7A1F1F] shrink-0">
+                <div className="w-10 h-10 bg-[#FAF7F2] border border-slate-200 rounded-xl flex items-center justify-center text-[#7A1F1F] shrink-0">
                   <Calendar size={18} />
                 </div>
                 <div>
@@ -335,7 +419,7 @@ export default function EventInvitePage() {
               </div>
             ) : (
               <div className="flex items-center gap-4 text-slate-700">
-                <div className="w-10 h-10 bg-[#FAF7F2] border border-slate-150 rounded-xl flex items-center justify-center text-[#7A1F1F] shrink-0">
+                <div className="w-10 h-10 bg-[#FAF7F2] border border-slate-200 rounded-xl flex items-center justify-center text-[#7A1F1F] shrink-0">
                   <MapPin size={18} />
                 </div>
                 <div>
@@ -351,7 +435,7 @@ export default function EventInvitePage() {
 
         {/* Right Column: RSVP / Checkout Box */}
         <div className="w-full lg:w-[460px] shrink-0">
-          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-8 border border-slate-150 relative overflow-hidden">
+          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 p-8 border border-slate-200 relative overflow-hidden">
             
             {/* Crimson & Gold Accent Bar */}
             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#7A1F1F] to-[#D4A24C]" />
@@ -362,7 +446,7 @@ export default function EventInvitePage() {
             </h2>
 
             {activeTickets.length === 0 ? (
-              <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-150">
+              <div className="text-center py-12 bg-slate-50 rounded-2xl border border-slate-200">
                 <Ticket className="text-slate-300 mx-auto mb-3" size={32} />
                 <p className="text-slate-500 font-bold text-sm">{t('invite.closed')}</p>
                 <p className="text-xs text-slate-400 mt-1 max-w-[200px] mx-auto">This event is currently not accepting new registrations.</p>
@@ -420,7 +504,7 @@ export default function EventInvitePage() {
                 </div>
 
                 {selectedTicket && (
-                  <div className="pt-6 border-t border-slate-150 animate-in fade-in slide-in-from-bottom-3 duration-300 space-y-4">
+                  <div className="pt-6 border-t border-slate-200 animate-in fade-in slide-in-from-bottom-3 duration-300 space-y-4">
                     <h3 className="font-bold text-slate-850 text-sm mb-1">{t('invite.guest_details')}</h3>
 
                     {/* Guest input fields */}

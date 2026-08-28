@@ -545,7 +545,7 @@ export default function PlannerPage() {
               <div className="h-3.5 w-16 bg-slate-200 rounded-full" />
               <div className="grid grid-cols-2 gap-3">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-16 bg-slate-50 border border-slate-150 rounded-xl flex flex-col items-center justify-center gap-2">
+                  <div key={i} className="h-16 bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2">
                     <div className="w-6 h-6 bg-slate-200 rounded-lg" />
                     <div className="h-2 w-12 bg-slate-200 rounded-full" />
                   </div>
@@ -556,7 +556,7 @@ export default function PlannerPage() {
               <div className="h-3.5 w-24 bg-slate-200 rounded-full" />
               <div className="grid grid-cols-2 gap-3">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-16 bg-slate-50 border border-slate-150 rounded-xl flex flex-col items-center justify-center gap-2">
+                  <div key={i} className="h-16 bg-slate-50 border border-slate-200 rounded-xl flex flex-col items-center justify-center gap-2">
                     <div className="w-6 h-6 bg-slate-200 rounded-lg" />
                     <div className="h-2 w-12 bg-slate-200 rounded-full" />
                   </div>
@@ -585,11 +585,11 @@ export default function PlannerPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <div className="h-3 w-8 bg-slate-200 rounded-full" />
-                  <div className="h-10 bg-slate-50 border border-slate-150 rounded-xl" />
+                  <div className="h-10 bg-slate-50 border border-slate-200 rounded-xl" />
                 </div>
                 <div className="space-y-1.5">
                   <div className="h-3 w-8 bg-slate-200 rounded-full" />
-                  <div className="h-10 bg-slate-50 border border-slate-150 rounded-xl" />
+                  <div className="h-10 bg-slate-50 border border-slate-200 rounded-xl" />
                 </div>
               </div>
             </div>

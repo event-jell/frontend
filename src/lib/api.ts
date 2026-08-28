@@ -205,6 +205,8 @@ function normalizeTicket(raw: any): Ticket {
     status: raw.status ?? 'active',
     saleStart: raw.sale_start ?? raw.saleStart,
     saleEnd: raw.sale_end ?? raw.saleEnd,
+    qrScans: raw.qr_scans ?? raw.qrScans ?? 0,
+    rsvpDisabled: raw.rsvp_disabled ?? raw.rsvpDisabled ?? false,
     createdAt: raw.createdAt,
   };
 }
@@ -357,6 +359,8 @@ function denormalizeTicket(data: Partial<Ticket>): Record<string, unknown> {
   if (data.status !== undefined) out.status = data.status;
   if (data.saleStart !== undefined) out.sale_start = data.saleStart;
   if (data.saleEnd !== undefined) out.sale_end = data.saleEnd;
+  if (data.qrScans !== undefined) out.qr_scans = data.qrScans;
+  if (data.rsvpDisabled !== undefined) out.rsvp_disabled = data.rsvpDisabled;
   return out;
 }
 

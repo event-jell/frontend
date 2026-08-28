@@ -1,6 +1,11 @@
 import { Toaster, toast } from 'sonner';
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
+
+function RsvpRedirect() {
+  const { id } = useParams<{ id: string }>();
+  return <Navigate to={`/events/${id}/invite`} replace />;
+}
 import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import AppShell from './layouts/AppShell';
@@ -28,8 +33,6 @@ import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import LandingPage from './pages/LandingPage';
-import EventRsvpPage from './pages/EventRsvpPage';
-import RsvpManagementPage from './pages/RsvpManagementPage';
 import { socket } from './lib/socket';
 
 const handleError = (error: any, v2?: any, v3?: any, v4?: any) => {
@@ -123,7 +126,7 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/events/:id/rsvp" element={<EventRsvpPage />} />
+      <Route path="/events/:id/rsvp" element={<RsvpRedirect />} />
       <Route path="/events/:id/invite" element={<EventInvitePage />} />
 
       {/* Protected routes */}
@@ -144,7 +147,6 @@ function AppRoutes() {
         <Route path="/events/:id/event-com" element={<Shell><EventComPage /></Shell>} />
         <Route path="/events/:id/reports" element={<Shell><ReportsPage /></Shell>} />
         <Route path="/events/:id/settings" element={<Shell><EventSettingsPage /></Shell>} />
-        <Route path="/events/:id/rsvp-mgmt" element={<Shell><RsvpManagementPage /></Shell>} />
       </Route>
 
       <Route path="/" element={<LandingPage />} />

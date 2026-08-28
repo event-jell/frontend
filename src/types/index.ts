@@ -160,6 +160,8 @@ export interface Ticket {
   status: 'active' | 'sold_out' | 'paused';
   saleStart?: string;
   saleEnd?: string;
+  qrScans?: number;
+  rsvpDisabled?: boolean;
   createdAt?: string;
 }
 

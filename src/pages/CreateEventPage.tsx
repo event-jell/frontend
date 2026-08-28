@@ -347,7 +347,7 @@ export default function CreateEventPage() {
                       type="button"
                       onClick={() => setForm(f => ({ ...f, type: value }))}
                       className={`relative flex flex-col items-center gap-1.5 py-2.5 sm:py-4 px-2 rounded-xl sm:rounded-2xl border-2 transition-all ${
-                        selected ? 'bg-[#FAF0E8]' : 'bg-white border-slate-150 hover:border-slate-300'
+                        selected ? 'bg-[#FAF0E8]' : 'bg-white border-slate-200 hover:border-slate-300'
                       }`}
                       style={selected ? { borderColor: R } : { borderColor: '#E7E1D8' }}
                     >

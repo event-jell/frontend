@@ -129,7 +129,7 @@ export default function EventDashboardPage() {
           {/* KPI Cards Row Skeleton */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-3">
+              <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="h-3.5 w-20 bg-slate-200 rounded-full" />
                 <div className="h-7 w-12 bg-slate-200 rounded-lg" />
                 <div className="h-3 w-16 bg-slate-200 rounded-full" />
@@ -138,13 +138,13 @@ export default function EventDashboardPage() {
           </div>
 
           {/* Analytics Card Skeleton */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm space-y-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-2">
                 <div className="h-4.5 w-36 bg-slate-200 rounded-full" />
                 <div className="h-3 w-48 bg-slate-200 rounded-full" />
               </div>
-              <div className="h-8 w-48 bg-slate-150 rounded-xl" />
+              <div className="h-8 w-48 bg-slate-200 rounded-xl" />
             </div>
             <div className="h-64 bg-slate-100 rounded-2xl" />
           </div>
@@ -154,7 +154,7 @@ export default function EventDashboardPage() {
             <div className="h-4.5 w-28 bg-slate-200 rounded-full mb-4" />
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                <div key={i} className="bg-white rounded-2xl border border-slate-150 p-5 shadow-sm space-y-4">
+                <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 shadow-sm space-y-4">
                   <div className="flex items-start justify-between">
                     <div className="w-10 h-10 rounded-xl bg-slate-200" />
                     <div className="w-4 h-4 rounded-md bg-slate-100" />
@@ -290,42 +290,42 @@ export default function EventDashboardPage() {
 
       <div className="max-w-5xl mx-auto px-4 py-6 sm:px-8 sm:py-8 space-y-6 sm:space-y-8">
         {/* KPI Cards Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              <Users size={14} className="text-[#7A1F1F]" /> Total Guests
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
+              <Users size={13} className="text-[#7A1F1F] shrink-0" /> Total Guests
             </div>
-            <div className="text-2xl font-black text-slate-900">{guests.length}</div>
-            <p className="text-xs text-slate-400 mt-1 font-medium">{confirmedGuests} confirmed</p>
+            <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">{event.guestCount || 0}</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 font-medium truncate">{confirmedGuests} confirmed</p>
           </div>
 
-          <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              <Ticket size={14} className="text-[#D4A24C]" /> Tickets Sold
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
+              <Ticket size={13} className="text-[#D4A24C] shrink-0" /> Tickets Sold
             </div>
-            <div className="text-2xl font-black text-slate-900">{event.ticketsSold || 0}</div>
-            <p className="text-xs text-slate-400 mt-1 font-medium">of {event.ticketsTotal || 0} capacity</p>
+            <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">{event.ticketsSold || 0}</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 font-medium truncate">of {event.ticketsTotal || 0} capacity</p>
           </div>
 
-          <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              <DollarSign size={14} className="text-emerald-600" /> Revenue
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
+              <DollarSign size={13} className="text-emerald-600 shrink-0" /> Revenue
             </div>
-            <div className="text-2xl font-black text-slate-900">${totalRevenue.toLocaleString()}</div>
-            <p className="text-xs text-emerald-600 mt-1 font-medium">gross tickets</p>
+            <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">${totalRevenue.toLocaleString()}</p>
+            <p className="text-[10px] sm:text-xs text-emerald-600 font-medium truncate">gross tickets</p>
           </div>
 
-          <div className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
-              <Store size={14} className="text-amber-600" /> Vendors
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xs">
+            <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
+              <Store size={13} className="text-amber-600 shrink-0" /> Vendors
             </div>
-            <div className="text-2xl font-black text-slate-900">{vendors.length}</div>
-            <p className="text-xs text-slate-400 mt-1 font-medium">{vendors.filter(v => v.status === 'confirmed').length} confirmed</p>
+            <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">{event.vendorCount || 0}</p>
+            <p className="text-[10px] sm:text-xs text-slate-400 font-medium truncate">active suppliers</p>
           </div>
         </div>
 
         {/* Bar Chart Section */}
-        <div className="bg-white border border-slate-150 rounded-2xl p-4 sm:p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
             <div>
               <h2 className="text-lg font-bold text-slate-900">Event Analytics</h2>
@@ -464,7 +464,7 @@ export default function EventDashboardPage() {
               <button
                 key={path}
                 onClick={() => navigate(`/events/${id}/${path}`)}
-                className="group relative bg-white rounded-2xl border border-slate-150 p-5 text-left shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+                className="group relative bg-white rounded-2xl border border-slate-200 p-5 text-left shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
               >
                 {/* Subtle gradient tint on hover */}
                 <div

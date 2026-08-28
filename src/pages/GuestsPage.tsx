@@ -245,7 +245,7 @@ export default function GuestsPage() {
           {/* Stats Row */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {[1, 2, 3, 4, 5].map(i => (
-              <div key={i} className="bg-white border border-slate-150 rounded-2xl p-4 shadow-sm space-y-3">
+              <div key={i} className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
                 <div className="h-3 w-16 bg-slate-200 rounded-full" />
                 <div className="h-6 w-8 bg-slate-200 rounded-lg" />
               </div>
@@ -253,7 +253,7 @@ export default function GuestsPage() {
           </div>
 
           {/* Timeline Card */}
-          <div className="bg-white border border-slate-150 rounded-2xl p-6 shadow-sm h-64 flex flex-col justify-between">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-64 flex flex-col justify-between">
             <div className="space-y-1.5">
               <div className="h-4 w-40 bg-slate-200 rounded-full" />
               <div className="h-3 w-56 bg-slate-200 rounded-full" />
@@ -272,7 +272,7 @@ export default function GuestsPage() {
           </div>
 
           {/* Table Outline */}
-          <div className="bg-white border border-slate-150 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="p-5 space-y-4">
               {[1, 2, 3, 4, 5].map(i => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
@@ -367,7 +367,7 @@ export default function GuestsPage() {
 
       <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-8 sm:py-6 max-w-[1200px] mx-auto w-full">
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-4 mb-6">
           {([
             { label: t('guests.stats.total'), value: counts.total,     color: '#7A1F1F' },
             { label: t('guests.stats.confirmed'), value: counts.confirmed, color: '#10B981' },
@@ -375,9 +375,9 @@ export default function GuestsPage() {
             { label: t('guests.stats.declined'),  value: counts.declined,  color: '#EF4444' },
             { label: t('guests.stats.checked_in'), value: counts.checkedIn, color: '#7A1F1F' },
           ] as const).map(({ label, value, color }) => (
-            <div key={label} className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm">
-              <p className="text-xs text-slate-500 mb-1">{label}</p>
-              <p className="text-2xl font-bold" style={{ color }}>{value}</p>
+            <div key={label} className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-2xs">
+              <p className="text-[11px] sm:text-xs text-slate-500 mb-0.5 truncate font-bold">{label}</p>
+              <p className="text-lg sm:text-2xl font-black tracking-tight" style={{ color }}>{value}</p>
             </div>
           ))}
         </div>

@@ -4,8 +4,9 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Ticket, CheckCircle2, Clock, XCircle, HelpCircle,
   UserCheck, Plus, Link as LinkIcon, Edit2, Trash2, Download,
-  Mail, ChevronLeft, ChevronRight, BarChart2, Info
+  Mail, ChevronLeft, ChevronRight, BarChart2, Info, Calendar, MapPin, Sparkles,
 } from 'lucide-react';
+import { useEvent } from '../hooks/useEvents';
 import { useTickets, useTicket, useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
 import { useGuests, useUpdateGuest, useCreateGuest } from '../hooks/useGuests';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
@@ -361,6 +362,7 @@ export default function TicketGuestsPage() {
     }
   }, [ticketId, id, navigate]);
 
+  const { data: event } = useEvent(id!);
   const { data: tickets = [], isLoading: isLoadingTickets } = useTickets(id);
   const { data: singleTicket, isLoading: isLoadingSingle } = useTicket(ticketId);
   const ticket = tickets.find(t => t._id === ticketId) || singleTicket;
@@ -447,7 +449,7 @@ export default function TicketGuestsPage() {
                   <div className="w-20 h-4 bg-slate-150 rounded animate-pulse" />
                   <div className="w-16 h-3 bg-slate-100 rounded animate-pulse" />
                 </div>
-                <div className="w-16 h-16 rounded-full bg-slate-100 border-4 border-slate-150 animate-pulse" />
+                <div className="w-16 h-16 rounded-full bg-slate-100 border-4 border-slate-200 animate-pulse" />
               </div>
             </div>
 
@@ -526,110 +528,186 @@ export default function TicketGuestsPage() {
         />
       )}
 
-      {/* Header */}
-      <div className="bg-white border-b border-slate-100 px-4 py-4 sm:px-8 sm:py-5 flex-shrink-0 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate(`/events/${id}/ticketing`)}
-            className="p-2 -ml-2 rounded-xl hover:bg-slate-50 text-slate-400 hover:text-slate-600 transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <Ticket size={18} className="text-[#7A1F1F]" />
-              <h1 className="text-xl font-bold text-slate-900">{ticket.name}</h1>
+      {/* Event Cover Banner Header */}
+      <div
+        className="relative px-3.5 py-4 sm:px-8 sm:pt-8 sm:pb-8 overflow-hidden bg-cover bg-center flex-shrink-0"
+        style={{ backgroundImage: `url(${event?.coverImage || '/default-banner.jpg'})` }}
+      >
+        {/* Semi-transparent dark overlay scrim for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/75 to-black/60 backdrop-blur-[2px]" />
+
+        <div className="relative max-w-5xl mx-auto z-10 space-y-2.5 sm:space-y-4">
+          {/* Top navigation row */}
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => navigate(`/events/${id}/ticketing`)}
+              className="inline-flex items-center gap-1 px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white/90 text-[11px] sm:text-xs font-semibold backdrop-blur-md transition-all"
+            >
+              <ArrowLeft size={13} /> Back to Ticketing
+            </button>
+
+            {/* Quick Edit & Delete */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setShowEdit(true)}
+                className="p-1.5 sm:p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl backdrop-blur-md transition-all"
+                title="Edit Ticket"
+              >
+                <Edit2 size={15} />
+              </button>
+              <button
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to delete this ticket? This cannot be undone.')) {
+                    deleteTicket.mutate(ticket._id, {
+                      onSuccess: () => navigate(`/events/${id}/ticketing`)
+                    });
+                  }
+                }}
+                className="p-1.5 sm:p-2 text-red-300 hover:text-white bg-red-500/20 hover:bg-red-500/40 border border-red-400/30 rounded-xl backdrop-blur-md transition-all"
+                title="Delete Ticket"
+              >
+                <Trash2 size={15} />
+              </button>
             </div>
-            <p className="text-sm text-slate-500 mt-0.5">{ticket.price === 0 ? 'Free Ticket' : `$${ticket.price}`} • {ticket.sold} / {ticket.total} Sold</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1 border-r border-slate-200 pr-3">
-            <button
-              onClick={() => setShowEdit(true)}
-              className="p-2 text-slate-400 hover:text-[#7A1F1F] hover:bg-[#FDF5EE] rounded-xl transition-colors"
-              title="Edit Ticket"
-            >
-              <Edit2 size={18} />
-            </button>
-            <button
-              onClick={() => {
-                if (window.confirm('Are you sure you want to delete this ticket? This cannot be undone.')) {
-                  deleteTicket.mutate(ticket._id, {
-                    onSuccess: () => navigate(`/events/${id}/ticketing`)
-                  });
-                }
-              }}
-              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-              title="Delete Ticket"
-            >
-              <Trash2 size={18} />
-            </button>
           </div>
 
-          {/* Export Action */}
-          <button
-            onClick={() => setShowExport(true)}
-            className="flex items-center gap-2 px-4 py-2 text-slate-700 bg-white border border-slate-200 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
-          >
-            <Download size={15} />
-            Export
-          </button>
+          {/* Title & Metadata Banner Content */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-3 sm:gap-4">
+            <div className="space-y-1 sm:space-y-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-400/20 border border-amber-400/30 text-amber-300 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-wider">
+                  <Ticket size={11} /> Ticket Details
+                </span>
+                {event?.name && (
+                  <span className="text-white/80 text-[11px] sm:text-xs font-semibold truncate">
+                    • {event.name}
+                  </span>
+                )}
+              </div>
 
-          <button
-            onClick={() => {
-              const url = `${window.location.origin}/events/${id}/invite?ticket=${ticketId}`;
-              navigator.clipboard.writeText(url);
-              setCopied(true);
-              setTimeout(() => setCopied(false), 2000);
-            }}
-            className="flex items-center gap-2 px-4 py-2 text-slate-700 bg-white border border-slate-200 text-sm font-semibold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
-          >
-            {copied ? <CheckCircle2 size={15} className="text-green-500" /> : <LinkIcon size={15} />}
-            {copied ? t('common.processing') : t('ticketing.copy_link')}
-          </button>
-          
-          <button
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-xl hover:opacity-90 shadow-sm"
-            style={{ backgroundColor: '#7A1F1F' }}
-          >
-            <Plus size={15} />
-            {t('guests.add_guest')}
-          </button>
+              <h1 className="text-lg sm:text-3xl lg:text-4xl font-black text-white tracking-tight leading-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
+                {ticket.name}
+              </h1>
+
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 pt-0.5">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/15 border border-white/20 text-white text-[10px] sm:text-xs font-black">
+                  {ticket.price === 0 ? 'Free Ticket' : `$${ticket.price}`}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] sm:text-xs font-extrabold">
+                  <UserCheck size={11} /> {ticket.sold} / {ticket.total} Sold ({ticket.total > 0 ? Math.round((ticket.sold / ticket.total) * 100) : 0}%)
+                </span>
+                {event?.venue && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/10 border border-white/15 text-white/90 text-[10px] sm:text-xs font-medium">
+                    <MapPin size={11} className="text-[#D4A24C]" /> {event.venue}
+                  </span>
+                )}
+                {event?.date && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/10 border border-white/15 text-white/90 text-[10px] sm:text-xs font-medium">
+                    <Calendar size={11} className="text-[#D4A24C]" /> {event.date}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Desktop Banner Action Buttons */}
+            <div className="hidden md:flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => setShowExport(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-white bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-xl backdrop-blur-md transition-all shadow-xs"
+              >
+                <Download size={14} />
+                Export
+              </button>
+
+              <button
+                onClick={() => {
+                  const url = `${window.location.origin}/events/${id}/invite?ticket=${ticketId}`;
+                  navigator.clipboard.writeText(url);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-white bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-xl backdrop-blur-md transition-all shadow-xs"
+              >
+                {copied ? <CheckCircle2 size={14} className="text-emerald-400" /> : <LinkIcon size={14} />}
+                {copied ? 'Copied!' : 'Copy Direct Link'}
+              </button>
+
+              <button
+                onClick={() => setShowAdd(true)}
+                className="flex items-center gap-1.5 px-4 py-2 text-slate-950 font-extrabold text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-100"
+                style={{ background: `linear-gradient(135deg, #D4A24C 0%, #E8C178 100%)` }}
+              >
+                <Plus size={14} strokeWidth={3} />
+                {t('guests.add_guest')}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto p-4 sm:p-8">
+      {/* Mobile Glass Action Bar */}
+      <div className="md:hidden flex items-center justify-between gap-1.5 px-3 py-2 bg-[#140606] text-white border-b border-white/10 shadow-xs flex-shrink-0">
+        <button
+          onClick={() => setShowAdd(true)}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 rounded-xl text-slate-950 font-black text-[11px] leading-none shadow-xs active:scale-95 transition-all whitespace-nowrap"
+          style={{ background: `linear-gradient(135deg, #D4A24C 0%, #E8C178 100%)` }}
+        >
+          <Plus size={12} strokeWidth={3} className="shrink-0" />
+          <span>Add Guest</span>
+        </button>
+
+        <button
+          onClick={() => {
+            const url = `${window.location.origin}/events/${id}/invite?ticket=${ticketId}`;
+            navigator.clipboard.writeText(url);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white font-extrabold text-[11px] leading-none rounded-xl active:scale-95 transition-all whitespace-nowrap"
+        >
+          {copied ? <CheckCircle2 size={12} className="text-emerald-400 shrink-0" /> : <LinkIcon size={12} className="shrink-0" />}
+          <span>{copied ? 'Copied!' : 'Copy Link'}</span>
+        </button>
+
+        <button
+          onClick={() => setShowExport(true)}
+          className="flex-1 flex items-center justify-center gap-1 py-1.5 px-2 bg-white/10 hover:bg-white/20 border border-white/15 text-white font-extrabold text-[11px] leading-none rounded-xl active:scale-95 transition-all whitespace-nowrap"
+        >
+          <Download size={12} className="shrink-0" />
+          <span>Export</span>
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-auto p-3.5 sm:p-8">
         <div className="max-w-5xl mx-auto">
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-6 mb-6 sm:mb-8">
             {/* Ticket Info Card */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-[#FDF5EE] text-[#7A1F1F] rounded-xl">
-                    <Ticket size={20} />
+            <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3.5 sm:p-6 shadow-2xs flex flex-col justify-between">
+              <div className="space-y-2.5 sm:space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-1.5 sm:p-2 bg-[#FDF5EE] text-[#7A1F1F] rounded-xl">
+                    <Ticket size={18} />
                   </div>
-                  <h3 className="font-bold text-slate-800">{t('ticket_guests.ticket_details')}</h3>
+                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">{t('ticket_guests.ticket_details')}</h3>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('ticketing.description')}</p>
-                  <p className="text-xs text-slate-500 mt-1 leading-relaxed line-clamp-3">{ticket.description || 'No description provided.'}</p>
+                  <p className="text-[10px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider">{t('ticketing.description')}</p>
+                  <p className="text-xs text-slate-600 mt-0.5 leading-relaxed line-clamp-3">{ticket.description || 'Standard RSVP & ticket pass for registered attendees.'}</p>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-4">
+              <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-100 mt-3 sm:mt-4">
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">{t('ticketing.price_label')}</p>
-                  <p className="text-sm font-bold text-slate-800 mt-0.5">{ticket.price === 0 ? t('ticketing.free') : `$${ticket.price}`}</p>
+                  <p className="text-[10px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider">{t('ticketing.price_label')}</p>
+                  <p className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{ticket.price === 0 ? t('ticketing.free') : `$${ticket.price}`}</p>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-right">{t('common.status')}</p>
-                  <div className="mt-1">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                      ticket.status === 'active' ? 'bg-[#FAF7F2] text-[#7A1F1F]' :
-                      ticket.status === 'sold_out' ? 'bg-red-50 text-red-600' :
-                      'bg-slate-100 text-slate-600'
+                  <p className="text-[10px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider text-right">{t('common.status')}</p>
+                  <div className="mt-0.5">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      ticket.status === 'active' ? 'bg-[#FAF7F2] text-[#7A1F1F] border border-[#7A1F1F]/20' :
+                      ticket.status === 'sold_out' ? 'bg-red-50 text-red-600 border border-red-200' :
+                      'bg-slate-100 text-slate-600 border border-slate-200'
                     }`}>
                       {ticket.status.replace('_', ' ')}
                     </span>
@@ -639,79 +717,79 @@ export default function TicketGuestsPage() {
             </div>
 
             {/* Sales Progress Card */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
-              <div className="space-y-3">
+            <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3.5 sm:p-6 shadow-2xs flex flex-col justify-between">
+              <div className="space-y-2.5 sm:space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-800">{t('ticket_guests.sales_progress')}</h3>
-                  <span className="text-xs font-bold text-[#7A1F1F] bg-[#FDF5EE] px-2 py-0.5 rounded-lg border border-[#7A1F1F]/10">
+                  <h3 className="font-extrabold text-slate-900 text-sm sm:text-base">{t('ticket_guests.sales_progress')}</h3>
+                  <span className="text-[11px] font-black text-[#7A1F1F] bg-[#FDF5EE] px-2 py-0.5 rounded-lg border border-[#7A1F1F]/15">
                     {Math.round((ticket.sold / (ticket.total || 1)) * 100)}% Sold
                   </span>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs font-semibold">
-                  <span className="text-slate-500">{t('ticket_guests.tickets_sold', { count: ticket.sold })}</span>
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <span className="text-slate-600">{t('ticket_guests.tickets_sold', { count: ticket.sold })}</span>
                   <span className="text-slate-400">{t('ticket_guests.total_tickets', { count: ticket.total })}</span>
                 </div>
                 
                 <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-gradient-to-r from-[#7A1F1F] to-[#D4A24C] rounded-full transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-[#7A1F1F] via-[#B83232] to-[#D4A24C] rounded-full transition-all duration-500"
                     style={{ width: `${Math.min(100, Math.round((ticket.sold / (ticket.total || 1)) * 100))}%` }}
                   />
                 </div>
               </div>
               
-              <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-100">
+              <div className="grid grid-cols-2 gap-3 mt-3 pt-3 border-t border-slate-100">
                 <div>
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Clock size={12}/> {t('ticketing.sale_start')}
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Clock size={11}/> {t('ticketing.sale_start')}
                   </p>
-                  <p className="text-xs text-slate-700 font-bold mt-1">
-                    {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : t('common.processing')}
+                  <p className="text-xs text-slate-800 font-extrabold mt-0.5">
+                    {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Immediate'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <Clock size={12}/> {t('ticketing.sale_end')}
+                  <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <Clock size={11}/> {t('ticketing.sale_end')}
                   </p>
-                  <p className="text-xs text-slate-700 font-bold mt-1">
-                    {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : t('common.processing')}
+                  <p className="text-xs text-slate-800 font-extrabold mt-0.5 truncate">
+                    {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Until Event / Sold Out'}
                   </p>
                 </div>
               </div>
             </div>
 
             {/* Check-in & RSVP Analytics Chart Card */}
-            <div className="bg-white border border-slate-100 rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+            <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl p-3.5 sm:p-6 shadow-2xs flex flex-col justify-between">
               <div className="flex items-center justify-between pb-2">
-                <h3 className="font-bold text-slate-800 flex items-center gap-1.5">
+                <h3 className="font-extrabold text-slate-900 text-sm sm:text-base flex items-center gap-1.5">
                   <BarChart2 size={16} className="text-[#7A1F1F]" />
                   Check-in Stats
                 </h3>
                 {ticketGuests.length > 0 && (
-                  <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
+                  <span className="text-[10px] font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
                     {Math.round((ticketGuests.filter(g => g.checkedIn).length / ticketGuests.length) * 100)}% Checked-in
                   </span>
                 )}
               </div>
 
               {ticketGuests.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center py-6 text-center text-slate-400">
+                <div className="flex-1 flex flex-col items-center justify-center py-4 text-center text-slate-400">
                   <BarChart2 size={24} className="opacity-20 mb-1" />
-                  <p className="text-[11px] font-semibold">No data available yet</p>
+                  <p className="text-xs font-bold text-slate-400">No check-in data yet</p>
                 </div>
               ) : (
-                <div className="flex items-center justify-between gap-2 flex-1">
+                <div className="flex items-center justify-between gap-2 flex-1 pt-1">
                   {/* Pie Chart */}
-                  <div className="w-24 h-24 shrink-0">
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                       <PieChart>
                         <Pie
                           data={analyticsData}
                           cx="50%"
                           cy="50%"
-                          innerRadius={28}
-                          outerRadius={38}
+                          innerRadius={24}
+                          outerRadius={34}
                           paddingAngle={2}
                           dataKey="value"
                         >
@@ -727,20 +805,20 @@ export default function TicketGuestsPage() {
                     </ResponsiveContainer>
                   </div>
                   {/* Legends */}
-                  <div className="space-y-1.5 text-xs flex-grow pl-3">
+                  <div className="space-y-2 text-xs flex-grow pl-2">
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-slate-400 font-bold">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] inline-block" />
+                      <span className="flex items-center gap-1 text-slate-500 font-bold text-[11px] sm:text-xs">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#10B981] inline-block shrink-0" />
                         Checked In
                       </span>
-                      <span className="font-bold text-slate-800">{ticketGuests.filter(g => g.checkedIn).length}</span>
+                      <span className="font-extrabold text-slate-900">{ticketGuests.filter(g => g.checkedIn).length}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="flex items-center gap-1 text-slate-400 font-bold">
-                        <span className="w-2.5 h-2.5 rounded-full bg-slate-200 inline-block" />
+                      <span className="flex items-center gap-1 text-slate-500 font-bold text-[11px] sm:text-xs">
+                        <span className="w-2.5 h-2.5 rounded-full bg-slate-300 inline-block shrink-0" />
                         Remaining
                       </span>
-                      <span className="font-bold text-slate-800">{ticketGuests.filter(g => !g.checkedIn).length}</span>
+                        <span className="font-extrabold text-slate-900">{ticketGuests.filter(g => !g.checkedIn).length}</span>
                     </div>
                   </div>
                 </div>
@@ -748,24 +826,24 @@ export default function TicketGuestsPage() {
             </div>
           </div>
 
-          <h2 className="text-lg font-bold text-slate-850 mb-4">{t('ticket_guests.applicants_title', { count: ticketGuests.length })}</h2>
+          <h2 className="text-base sm:text-lg font-extrabold text-slate-900 mb-3">{t('ticket_guests.applicants_title', { count: ticketGuests.length })}</h2>
 
-          <div className="overflow-x-auto">
-            <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
-              <table className="w-full text-sm">
+          <div className="bg-white border border-slate-200 rounded-xl sm:rounded-2xl shadow-2xs overflow-hidden">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-xs sm:text-sm min-w-[480px]">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/50">
-                    <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('ticket_guests.applicant_name')}</th>
-                    <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('ticket_guests.contact')}</th>
-                    <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('ticket_guests.status')}</th>
-                    <th className="text-left px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">{t('ticket_guests.check_in')}</th>
+                  <tr className="border-b border-slate-100 bg-slate-50/60">
+                    <th className="text-left px-3.5 py-2.5 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t('ticket_guests.applicant_name')}</th>
+                    <th className="text-left px-3.5 py-2.5 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t('ticket_guests.contact')}</th>
+                    <th className="text-left px-3.5 py-2.5 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t('ticket_guests.status')}</th>
+                    <th className="text-left px-3.5 py-2.5 text-[10px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{t('ticket_guests.check_in')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ticketGuests.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-12 text-center">
-                        <p className="text-slate-400 font-semibold">{t('ticket_guests.no_applicants')}</p>
+                      <td colSpan={4} className="px-4 py-8 text-center">
+                        <p className="text-slate-400 font-bold text-xs sm:text-sm">{t('ticket_guests.no_applicants')}</p>
                       </td>
                     </tr>
                   ) : (
@@ -773,27 +851,27 @@ export default function TicketGuestsPage() {
                       <tr key={guest._id}
                         onClick={() => navigate(`/events/${id}/guests/${guest._id}`)}
                         className="border-b border-slate-50 hover:bg-[#FDF5EE]/30 transition-colors cursor-pointer">
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-[#FAF7F2] border border-[#7A1F1F]/10 flex items-center justify-center text-[#7A1F1F] text-xs font-black flex-shrink-0">
+                        <td className="px-3.5 py-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FAF7F2] border border-[#7A1F1F]/10 flex items-center justify-center text-[#7A1F1F] text-[10px] sm:text-xs font-black flex-shrink-0">
                               {guest.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
-                            <p className="font-bold text-slate-800 text-sm">{guest.name}</p>
+                            <p className="font-bold text-slate-800 text-xs sm:text-sm">{guest.name}</p>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-slate-500 font-medium">
+                        <td className="px-3.5 py-2.5 text-slate-500 font-medium text-xs">
                           <p>{guest.email || '—'}</p>
-                          {guest.phone && <p className="text-xs text-slate-400 mt-0.5">{guest.phone}</p>}
+                          {guest.phone && <p className="text-[11px] text-slate-400 mt-0.5">{guest.phone}</p>}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3.5 py-2.5">
                           <RsvpBadge status={guest.rsvpStatus} />
                         </td>
-                        <td className="px-6 py-4" onClick={e => e.stopPropagation()}>
+                        <td className="px-3.5 py-2.5" onClick={e => e.stopPropagation()}>
                           <button
                             onClick={() => updateGuest.mutate({ id: guest._id, data: { checkedIn: !guest.checkedIn } })}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm ${guest.checkedIn ? 'bg-green-50 text-green-600 border border-green-200/50' : 'bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200'}`}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-2xs whitespace-nowrap ${guest.checkedIn ? 'bg-green-50 text-green-600 border border-green-200/50' : 'bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200'}`}
                           >
-                            <UserCheck size={14} />
+                            <UserCheck size={13} />
                             {guest.checkedIn ? t('guests.table.checked_in') : t('guests.table.check_in_action')}
                           </button>
                         </td>
@@ -802,32 +880,32 @@ export default function TicketGuestsPage() {
                   )}
                 </tbody>
               </table>
-
-              {/* Pagination Controls Footer */}
-              {ticketGuests.length > itemsPerPage && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/30">
-                  <span className="text-xs text-slate-500 font-semibold">
-                    Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({ticketGuests.length} total applicants)
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                      disabled={currentPage === 1}
-                      className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    <button
-                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                      disabled={currentPage === totalPages}
-                      className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
+
+            {/* Pagination Controls Footer */}
+            {ticketGuests.length > itemsPerPage && (
+              <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100 bg-slate-50/30">
+                <span className="text-xs text-slate-500 font-semibold">
+                  Page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> ({ticketGuests.length} total applicants)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500 disabled:opacity-40 disabled:hover:bg-transparent transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

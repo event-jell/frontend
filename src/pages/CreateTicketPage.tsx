@@ -260,7 +260,7 @@ export default function CreateTicketPage() {
                 </div>
 
                 {/* Description Box */}
-                <div className="bg-[#FAF7F2] rounded-xl p-3 border border-slate-150 text-xs text-slate-600 leading-relaxed min-h-[50px] break-words">
+                <div className="bg-[#FAF7F2] rounded-xl p-3 border border-slate-200 text-xs text-slate-600 leading-relaxed min-h-[50px] break-words">
                   {form.description || 'Description will appear here. Detail inclusions like complimentary food, seating, etc.'}
                 </div>
               </div>

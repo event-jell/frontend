@@ -138,15 +138,14 @@ export default function AppShell({ children }: Props) {
   const slugOrId = event?.slug || eventId;
 
   const SUITE_NAV = slugOrId ? [
-    { icon: Home,          label: 'Dashboard',  to: `/events/${slugOrId}`,           end: true },
-    { icon: Layout,        label: 'Planner',    to: `/events/${slugOrId}/planner` },
-    { icon: Users,         label: 'Guests',     to: `/events/${slugOrId}/guests` },
-    { icon: QrCode,        label: 'RSVP & QR',  to: `/events/${slugOrId}/rsvp-mgmt` },
-    { icon: Ticket,        label: 'Ticketing',  to: `/events/${slugOrId}/ticketing` },
-    { icon: Store,         label: 'Vendors',    to: `/events/${slugOrId}/vendors` },
-    { icon: MessageSquare, label: 'Event Com',  to: `/events/${slugOrId}/event-com` },
-    { icon: BarChart2,     label: 'Reports',    to: `/events/${slugOrId}/reports` },
-    { icon: Settings,      label: 'Settings',   to: `/events/${slugOrId}/settings` },
+    { icon: Home,          label: 'Dashboard',      to: `/events/${slugOrId}`,           end: true },
+    { icon: Layout,        label: 'Planner',        to: `/events/${slugOrId}/planner` },
+    { icon: Users,         label: 'Guests',         to: `/events/${slugOrId}/guests` },
+    { icon: Ticket,        label: 'Ticketing & QR', to: `/events/${slugOrId}/ticketing` },
+    { icon: Store,         label: 'Vendors',        to: `/events/${slugOrId}/vendors` },
+    { icon: MessageSquare, label: 'Event Com',      to: `/events/${slugOrId}/event-com` },
+    { icon: BarChart2,     label: 'Reports',        to: `/events/${slugOrId}/reports` },
+    { icon: Settings,      label: 'Settings',       to: `/events/${slugOrId}/settings` },
   ] : [];
 
   const sidebarWidth = collapsed ? 'w-[52px]' : 'w-[272px]';

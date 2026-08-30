@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import i18n from '../i18n';
 import { http } from '../lib/api';
+import { getCurrencyForCountry } from '../utils/formatters';
 
 interface Preferences {
   language: string;
@@ -35,18 +36,18 @@ export const PreferencesProvider: React.FC<{ children: ReactNode }> = ({ childre
   // Sync preferences from user profile when auth state changes
   useEffect(() => {
     if (user) {
-      // Assuming user object from AuthContext might contain these, or we fetch them
-      // In this app, we'll try to fetch from /preferences if possible
+      const userCountryCurrency = getCurrencyForCountry(user.country);
+      setPreferences(prev => ({
+        ...prev,
+        currency: (user as any).preferredCurrency || prev.currency || userCountryCurrency,
+      }));
+
       const fetchPrefs = async () => {
         try {
-          // If the backend has a GET /users/me or GET /preferences/me we'd use it.
-          // Since we might not have a GET endpoint explicitly for just preferences,
-          // we could rely on the user object returned from login/auth check
-          // For now, if user object has them:
           if ((user as any).preferredLanguage) {
             setPreferences({
               language: (user as any).preferredLanguage || 'en',
-              currency: (user as any).preferredCurrency || 'USD',
+              currency: (user as any).preferredCurrency || userCountryCurrency,
               timezone: (user as any).preferredTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
             });
           }

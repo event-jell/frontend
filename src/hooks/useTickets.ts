@@ -42,11 +42,15 @@ export function useUpdateTicket() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Ticket> }) => ticketsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await qc.cancelQueries({ queryKey: ticketKeys.all });
-      const snapshots = new Map<string, Ticket[]>();
-      qc.getQueriesData<Ticket[]>({ queryKey: ticketKeys.all }).forEach(([key, tickets]) => {
-        if (!tickets) return;
-        snapshots.set(JSON.stringify(key), tickets);
-        qc.setQueryData(key, tickets.map(t => (t._id === id ? { ...t, ...data } : t)));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: ticketKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.map((t: Ticket) => (t._id === id ? { ...t, ...data } : t)));
+        } else if (typeof value === 'object' && value && (value as Ticket)._id === id) {
+          qc.setQueryData(key, { ...value, ...data });
+        }
       });
       return { snapshots };
     },
@@ -63,11 +67,15 @@ export function useDeleteTicket() {
     mutationFn: (id: string) => ticketsApi.delete(id),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: ticketKeys.all });
-      const snapshots = new Map<string, Ticket[]>();
-      qc.getQueriesData<Ticket[]>({ queryKey: ticketKeys.all }).forEach(([key, tickets]) => {
-        if (!tickets) return;
-        snapshots.set(JSON.stringify(key), tickets);
-        qc.setQueryData(key, tickets.filter(t => t._id !== id));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: ticketKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.filter((t: Ticket) => t._id !== id));
+        } else if (typeof value === 'object' && value && (value as Ticket)._id === id) {
+          qc.setQueryData(key, undefined);
+        }
       });
       return { snapshots };
     },

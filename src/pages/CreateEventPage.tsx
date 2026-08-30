@@ -4,13 +4,15 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Sparkles, Check,
   Heart, Presentation, PartyPopper, Music, Tent, HandHeart, Briefcase, MoreHorizontal,
-  Upload, Trash2, Loader2, Video, MapPin, Plus, Clock, Calendar, Users,
+  Upload, Trash2, Loader2, Video, MapPin, Plus, Clock, Calendar, Users, Coins, ChevronDown
 } from 'lucide-react';
 import { useCreateEvent } from '../hooks/useEvents';
+import { useAuth } from '../contexts/AuthContext';
 import { uploadApi } from '../lib/api';
 import SEO from '../components/SEO';
 import DatePicker from '../components/DatePicker';
 import TimePicker from '../components/TimePicker';
+import { SUPPORTED_CURRENCIES, getCurrencyForCountry } from '../utils/formatters';
 import type { Event } from '../types';
 
 const R = '#7A1F1F';
@@ -29,6 +31,7 @@ const EVENT_TYPES: { value: NonNullable<Event['type']>; label: string; icon: Rea
 ];
 
 export default function CreateEventPage() {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const createEvent = useCreateEvent();
@@ -37,6 +40,7 @@ export default function CreateEventPage() {
     name: '', venue: '', date: '',
     status: 'draft' as Event['status'],
     type: 'wedding' as NonNullable<Event['type']>,
+    currency: getCurrencyForCountry(user?.country),
     coverImage: '',
     isVirtual: false,
     virtualLink: '',
@@ -289,6 +293,31 @@ export default function CreateEventPage() {
                       );
                     })()}
                   </div>
+                </div>
+
+                {/* Event Currency selector */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
+                    <Coins size={14} className="text-[#7A1F1F]" />
+                    Event Currency
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={form.currency}
+                      onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                      className="w-full appearance-none px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-[#7A1F1F] focus:ring-2 focus:ring-[#7A1F1F]/20 transition-all pr-10"
+                    >
+                      {SUPPORTED_CURRENCIES.map(c => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.code} ({c.symbol}) - {c.country}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3.5 pointer-events-none text-slate-400">
+                      <ChevronDown size={14} />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Currency used for ticket sales and payments.</p>
                 </div>
 
                 <div>

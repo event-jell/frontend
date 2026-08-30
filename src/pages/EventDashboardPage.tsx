@@ -5,6 +5,8 @@ import { useEvent } from '../hooks/useEvents';
 import { useGuests } from '../hooks/useGuests';
 import { useTickets } from '../hooks/useTickets';
 import { useVendors } from '../hooks/useVendors';
+import { useLocale } from '../hooks/useLocale';
+import { formatCurrency } from '../utils/formatters';
 import {
   Layout, Users, Ticket, Store, MessageSquare,
   BarChart2, Settings, Loader2, ArrowUpRight,
@@ -101,6 +103,7 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function EventDashboardPage() {
+  const { localCurrency } = useLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: event, isLoading: isLoadingEvent } = useEvent(id!);
@@ -311,7 +314,7 @@ export default function EventDashboardPage() {
             <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-400 uppercase tracking-wider mb-1 truncate">
               <DollarSign size={13} className="text-emerald-600 shrink-0" /> Revenue
             </div>
-            <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">${totalRevenue.toLocaleString()}</p>
+            <p className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight">{formatCurrency(totalRevenue, localCurrency)}</p>
             <p className="text-[10px] sm:text-xs text-emerald-600 font-medium truncate">gross tickets</p>
           </div>
 

@@ -3,8 +3,9 @@ import { Undo2, Redo2, MousePointer2, Hand, Square, Minus, Plus, Maximize2, Grid
 import { useTranslation } from 'react-i18next';
 import type { PresenceUser } from '../../hooks/usePresence';
 import { ELEMENT_TEMPLATES, CATEGORIES, CATEGORY_LABELS } from '../../lib/elementTemplates';
-import type { ElementTemplate } from '../../types';
+import type { ElementTemplate, Collaborator } from '../../types';
 import { useCollaborators, useRemoveCollaborator, useUpdateCollaboratorRole } from '../../hooks/useEvents';
+import ConfirmModal from '../common/ConfirmModal';
 import type { Room } from './StatusBar';
 
 export type ToolMode = 'select' | 'pan' | 'frame';
@@ -81,8 +82,6 @@ function MenuAction({ onClick, disabled, checked, children }: {
   );
 }
 
-type Collaborator = { _id: string; first_name: string; last_name: string; email: string; role: 'editor' | 'viewer' };
-
 function UserPopover({ user, eventId, isOwner, isSelf, collab, onClose }: {
   user: PresenceUser;
   eventId?: string;
@@ -93,56 +92,84 @@ function UserPopover({ user, eventId, isOwner, isSelf, collab, onClose }: {
 }) {
   const updateRole = useUpdateCollaboratorRole();
   const removeCollaborator = useRemoveCollaborator();
+  const [showConfirm, setShowConfirm] = useState(false);
   const canManage = isOwner && !isSelf && !!collab && !!eventId;
 
   return (
-    <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
-      <div className="flex items-center gap-3 p-3 border-b border-slate-100">
-        <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ backgroundColor: user.color }}
-        >
-          {user.initials}
+    <>
+      <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-lg shadow-lg z-50 overflow-hidden">
+        <div className="flex items-center gap-3 p-3 border-b border-slate-100">
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+            style={{ backgroundColor: user.color }}
+          >
+            {user.initials}
+          </div>
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-800 truncate">{user.name}{isSelf ? ' (you)' : ''}</div>
+            <div className="text-xs text-slate-500 truncate">{collab?.email ?? (isSelf ? '' : 'Owner')}</div>
+          </div>
         </div>
-        <div className="min-w-0">
-          <div className="text-sm font-semibold text-slate-800 truncate">{user.name}{isSelf ? ' (you)' : ''}</div>
-          <div className="text-xs text-slate-500 truncate">{collab?.email ?? (isSelf ? '' : 'Owner')}</div>
+        <div className="p-3 space-y-2">
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Online now
+          </div>
+          {canManage ? (
+            <>
+              <label className="block text-xs font-medium text-slate-500 mt-2">Role & Access</label>
+              <select
+                value={collab.role}
+                disabled={updateRole.isPending}
+                onChange={e => updateRole.mutate({ eventId: eventId!, userId: user.id, role: e.target.value })}
+                className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 cursor-pointer"
+              >
+                <option value="admin">Admin / Co-Host</option>
+                <option value="editor">Event Editor</option>
+                <option value="floor_planner">Floor Planner</option>
+                <option value="guest_coordinator">Guest Coordinator</option>
+                <option value="vendor_manager">Vendor Manager</option>
+                <option value="viewer">Viewer / Staff</option>
+              </select>
+              <button
+                onClick={() => setShowConfirm(true)}
+                disabled={removeCollaborator.isPending}
+                className="w-full flex items-center justify-center gap-1.5 mt-1 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              >
+                {removeCollaborator.isPending && <Loader2 size={12} className="animate-spin" />}
+                Remove access
+              </button>
+            </>
+          ) : collab ? (
+            <div className="text-xs text-slate-500">{collab.role === 'viewer' ? 'Can view' : 'Can edit'}</div>
+          ) : null}
         </div>
       </div>
-      <div className="p-3 space-y-2">
-        <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Online now
-        </div>
-        {canManage ? (
-          <>
-            <label className="block text-xs font-medium text-slate-500 mt-2">Permission</label>
-            <select
-              value={collab.role}
-              disabled={updateRole.isPending}
-              onChange={e => updateRole.mutate({ eventId: eventId!, userId: user.id, role: e.target.value as 'editor' | 'viewer' })}
-              className="w-full text-xs border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30"
-            >
-              <option value="editor">Can edit</option>
-              <option value="viewer">Can view</option>
-            </select>
-            <button
-              onClick={() => {
-                if (window.confirm(`Remove ${user.name}'s access to this event?`)) {
-                  removeCollaborator.mutate({ eventId: eventId!, userId: user.id }, { onSuccess: onClose });
-                }
-              }}
-              disabled={removeCollaborator.isPending}
-              className="w-full flex items-center justify-center gap-1.5 mt-1 px-2 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {removeCollaborator.isPending && <Loader2 size={12} className="animate-spin" />}
-              Remove access
-            </button>
-          </>
-        ) : collab ? (
-          <div className="text-xs text-slate-500">{collab.role === 'viewer' ? 'Can view' : 'Can edit'}</div>
-        ) : null}
-      </div>
-    </div>
+
+      <ConfirmModal
+        isOpen={showConfirm}
+        title="Revoke Event Access"
+        message={
+          <p>
+            Are you sure you want to remove <strong className="text-slate-900 font-bold">{user.name}</strong> from this event? They will immediately lose access to the floor plan and workspace.
+          </p>
+        }
+        confirmText="Remove Access"
+        variant="danger"
+        isLoading={removeCollaborator.isPending}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => {
+          removeCollaborator.mutate(
+            { eventId: eventId!, userId: user.id },
+            {
+              onSuccess: () => {
+                setShowConfirm(false);
+                onClose();
+              },
+            }
+          );
+        }}
+      />
+    </>
   );
 }
 

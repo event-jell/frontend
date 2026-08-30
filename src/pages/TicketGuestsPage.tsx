@@ -5,6 +5,7 @@ import {
   ArrowLeft, Ticket, CheckCircle2, Clock, XCircle, HelpCircle,
   UserCheck, Plus, Link as LinkIcon, Edit2, Trash2, Download,
   Mail, ChevronLeft, ChevronRight, BarChart2, Info, Calendar, MapPin, Sparkles,
+  QrCode,
 } from 'lucide-react';
 import { useEvent } from '../hooks/useEvents';
 import { useTickets, useTicket, useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
@@ -13,110 +14,10 @@ import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { ticketsApi } from '../lib/api';
 import type { Guest, Ticket as TicketType } from '../types';
 import SEO from '../components/SEO';
+import { SUPPORTED_CURRENCIES, getCurrencySymbol, formatCurrency, getCurrencyForCountry, formatLocalDate } from '../utils/formatters';
+import { useLocale } from '../hooks/useLocale';
+import EventPassModal from '../components/checkin/EventPassModal';
 
-function EditTicketModal({
-  ticket,
-  onClose,
-  onSave,
-  isPending
-}: {
-  ticket: TicketType;
-  onClose: () => void;
-  onSave: (data: Partial<TicketType>) => void;
-  isPending?: boolean;
-}) {
-  const { t } = useTranslation();
-  const [form, setForm] = useState({
-    name: ticket.name || '',
-    description: ticket.description || '',
-    price: ticket.price || 0,
-    total: ticket.total || 100,
-    saleStart: ticket.saleStart ? ticket.saleStart.split('T')[0] : '',
-    saleEnd: ticket.saleEnd ? ticket.saleEnd.split('T')[0] : ''
-  });
-
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-in fade-in duration-200">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6 mx-4">
-        <h2 className="text-lg font-bold text-slate-800 mb-5">{t('ticket_guests.edit_ticket_title')}</h2>
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs font-medium text-slate-650 mb-1 block">{t('ticketing.name')}</label>
-            <input
-              value={form.name}
-              onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-              className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60"
-              placeholder="e.g. General Admission, VIP"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-medium text-slate-650 mb-1 block">{t('ticketing.description')}</label>
-            <textarea
-              value={form.description}
-              onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-              className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60 resize-none"
-              rows={2}
-              placeholder="What's included…"
-            />
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-slate-650 mb-1 block">{t('ticketing.price')}</label>
-              <input
-                type="number"
-                min={0}
-                value={form.price}
-                onChange={e => setForm(f => ({ ...f, price: Number(e.target.value) }))}
-                className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-650 mb-1 block">{t('ticketing.capacity')}</label>
-              <input
-                type="number"
-                min={1}
-                value={form.total}
-                onChange={e => setForm(f => ({ ...f, total: Number(e.target.value) }))}
-                className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-slate-650 mb-1 block">{t('ticketing.sale_start')}</label>
-              <input
-                type="date"
-                value={form.saleStart}
-                onChange={e => setForm(f => ({ ...f, saleStart: e.target.value }))}
-                className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-slate-650 mb-1 block">{t('ticketing.sale_end')}</label>
-              <input
-                type="date"
-                value={form.saleEnd}
-                onChange={e => setForm(f => ({ ...f, saleEnd: e.target.value }))}
-                className="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60"
-              />
-            </div>
-          </div>
-        </div>
-        <div className="flex items-center justify-end gap-2 mt-6">
-          <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">{t('common.cancel')}</button>
-          <button
-            disabled={isPending}
-            onClick={() => { if (form.name) { onSave(form); } }}
-            className="px-5 py-2 text-sm text-white font-semibold rounded-xl hover:opacity-90 disabled:opacity-50"
-            style={{ backgroundColor: '#7A1F1F' }}
-          >
-            {isPending ? t('common.processing') : t('common.save')}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function AddGuestModal({
   onClose,
@@ -354,6 +255,7 @@ export default function TicketGuestsPage() {
   const { id, ticketId } = useParams<{ id: string; ticketId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { localCurrency, timezone, locale } = useLocale();
 
   // If URL is /events/:id/ticketing/new, redirect to /events/:id/ticketing?new=true
   useEffect(() => {
@@ -374,9 +276,9 @@ export default function TicketGuestsPage() {
   const deleteTicket = useDeleteTicket();
 
   const [showAdd, setShowAdd] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [selectedGuestPassId, setSelectedGuestPassId] = useState<string | null>(null);
 
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
@@ -510,21 +412,21 @@ export default function TicketGuestsPage() {
           onSave={data => createGuest.mutate({ ...data, eventId: id, ticketId })}
         />
       )}
-      
-      {showEdit && (
-        <EditTicketModal
-          ticket={ticket}
-          onClose={() => setShowEdit(false)}
-          onSave={data => updateTicket.mutate({ id: ticket._id, data }, { onSuccess: () => setShowEdit(false) })}
-          isPending={updateTicket.isPending}
-        />
-      )}
 
+      
       {showExport && (
         <ExportModal
           ticket={ticket}
           guests={ticketGuests}
           onClose={() => setShowExport(false)}
+        />
+      )}
+
+      {selectedGuestPassId && (
+        <EventPassModal
+          eventId={id || ''}
+          guestId={selectedGuestPassId}
+          onClose={() => setSelectedGuestPassId(null)}
         />
       )}
 
@@ -549,11 +451,12 @@ export default function TicketGuestsPage() {
             {/* Quick Edit & Delete */}
             <div className="flex items-center gap-1.5">
               <button
-                onClick={() => setShowEdit(true)}
-                className="p-1.5 sm:p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl backdrop-blur-md transition-all"
+                onClick={() => navigate(`/events/${id}/ticketing/${ticket._id}/edit`)}
+                className="p-1.5 sm:p-2 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl backdrop-blur-md transition-all flex items-center gap-1 text-xs font-semibold"
                 title="Edit Ticket"
               >
-                <Edit2 size={15} />
+                <Edit2 size={14} />
+                <span>Edit Ticket</span>
               </button>
               <button
                 onClick={() => {
@@ -591,7 +494,7 @@ export default function TicketGuestsPage() {
 
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2.5 pt-0.5">
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-white/15 border border-white/20 text-white text-[10px] sm:text-xs font-black">
-                  {ticket.price === 0 ? 'Free Ticket' : `$${ticket.price}`}
+                  {ticket.price === 0 ? 'Free Ticket' : formatCurrency(ticket.price, ticket.currency || event?.currency || localCurrency)}
                 </span>
                 <span className="inline-flex items-center gap-1 px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[10px] sm:text-xs font-extrabold">
                   <UserCheck size={11} /> {ticket.sold} / {ticket.total} Sold ({ticket.total > 0 ? Math.round((ticket.sold / ticket.total) * 100) : 0}%)
@@ -611,6 +514,14 @@ export default function TicketGuestsPage() {
 
             {/* Desktop Banner Action Buttons */}
             <div className="hidden md:flex items-center gap-2 shrink-0">
+              <button
+                onClick={() => navigate(`/events/${id}/checkin`)}
+                className="flex items-center gap-1.5 px-3.5 py-2 text-white bg-[#7A1F1F]/80 hover:bg-[#7A1F1F] border border-[#D4A24C]/40 text-xs font-bold rounded-xl backdrop-blur-md transition-all shadow-md active:scale-95"
+              >
+                <QrCode size={14} className="text-[#D4A24C]" />
+                Check-In Scanner
+              </button>
+
               <button
                 onClick={() => setShowExport(true)}
                 className="flex items-center gap-1.5 px-3.5 py-2 text-white bg-white/10 hover:bg-white/20 border border-white/20 text-xs font-bold rounded-xl backdrop-blur-md transition-all shadow-xs"
@@ -699,7 +610,7 @@ export default function TicketGuestsPage() {
               <div className="flex items-center justify-between pt-3 sm:pt-4 border-t border-slate-100 mt-3 sm:mt-4">
                 <div>
                   <p className="text-[10px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider">{t('ticketing.price_label')}</p>
-                  <p className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{ticket.price === 0 ? t('ticketing.free') : `$${ticket.price}`}</p>
+                  <p className="text-xs sm:text-sm font-black text-slate-900 mt-0.5">{ticket.price === 0 ? t('ticketing.free') : formatCurrency(ticket.price, ticket.currency || event?.currency || localCurrency)}</p>
                 </div>
                 <div>
                   <p className="text-[10px] sm:text-xs font-extrabold text-slate-400 uppercase tracking-wider text-right">{t('common.status')}</p>
@@ -745,7 +656,7 @@ export default function TicketGuestsPage() {
                     <Clock size={11}/> {t('ticketing.sale_start')}
                   </p>
                   <p className="text-xs text-slate-800 font-extrabold mt-0.5">
-                    {ticket.saleStart ? new Date(ticket.saleStart).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Immediate'}
+                    {ticket.saleStart ? formatLocalDate(ticket.saleStart, { timezone, locale, month: 'short', day: 'numeric', year: 'numeric' }) : 'Immediate'}
                   </p>
                 </div>
                 <div>
@@ -753,7 +664,7 @@ export default function TicketGuestsPage() {
                     <Clock size={11}/> {t('ticketing.sale_end')}
                   </p>
                   <p className="text-xs text-slate-800 font-extrabold mt-0.5 truncate">
-                    {ticket.saleEnd ? new Date(ticket.saleEnd).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'Until Event / Sold Out'}
+                    {ticket.saleEnd ? formatLocalDate(ticket.saleEnd, { timezone, locale, month: 'short', day: 'numeric', year: 'numeric' }) : 'Until Event / Sold Out'}
                   </p>
                 </div>
               </div>
@@ -867,13 +778,22 @@ export default function TicketGuestsPage() {
                           <RsvpBadge status={guest.rsvpStatus} />
                         </td>
                         <td className="px-3.5 py-2.5" onClick={e => e.stopPropagation()}>
-                          <button
-                            onClick={() => updateGuest.mutate({ id: guest._id, data: { checkedIn: !guest.checkedIn } })}
-                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-2xs whitespace-nowrap ${guest.checkedIn ? 'bg-green-50 text-green-600 border border-green-200/50' : 'bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200'}`}
-                          >
-                            <UserCheck size={13} />
-                            {guest.checkedIn ? t('guests.table.checked_in') : t('guests.table.check_in_action')}
-                          </button>
+                          <div className="flex items-center gap-1.5">
+                            <button
+                              onClick={() => setSelectedGuestPassId(guest._id)}
+                              className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-[#7A1F1F] border border-slate-200 shadow-2xs transition-colors"
+                              title="View Guest QR Pass"
+                            >
+                              <QrCode size={13} />
+                            </button>
+                            <button
+                              onClick={() => updateGuest.mutate({ id: guest._id, data: { checkedIn: !guest.checkedIn } })}
+                              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-bold transition-all shadow-2xs whitespace-nowrap ${guest.checkedIn ? 'bg-green-50 text-green-600 border border-green-200/50' : 'bg-slate-50 hover:bg-slate-100 text-slate-650 border border-slate-200'}`}
+                            >
+                              <UserCheck size={13} />
+                              {guest.checkedIn ? t('guests.table.checked_in') : t('guests.table.check_in_action')}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))

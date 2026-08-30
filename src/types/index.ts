@@ -123,6 +123,7 @@ export interface Event {
   allowGuestSeatSelection?: boolean;
   rsvpFields?: RsvpField[];
   rsvpDisabled?: boolean;
+  currency?: string;
   qrScans?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -155,6 +156,7 @@ export interface Ticket {
   name: string;
   description?: string;
   price: number;
+  currency?: string;
   total: number;
   sold: number;
   status: 'active' | 'sold_out' | 'paused';
@@ -192,4 +194,404 @@ export interface Comm {
   recipientCount: number;
   audience: string;
   createdAt?: string;
+}
+
+export interface CollaboratorPermissions {
+  canEditDetails: boolean;
+  canManageFloorPlan: boolean;
+  canManageGuests: boolean;
+  canManageTickets: boolean;
+  canManageVendors: boolean;
+  canManageComms: boolean;
+  canManageTeam: boolean;
+  canCheckInGuests?: boolean;
+}
+
+export type CollaboratorRole = 'admin' | 'editor' | 'viewer' | 'floor_planner' | 'guest_coordinator' | 'check_in_staff' | 'vendor_manager' | 'custom';
+
+export interface Collaborator {
+  _id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: string;
+  permissions?: CollaboratorPermissions;
+  status: 'active' | 'pending';
+  token?: string;
+  expires_at?: string;
+}
+
+// ─── Check-In & Scanner Types ───────────────────────────────────────────────
+
+export type ScanResultType =
+  | 'VALID'
+  | 'ALREADY_CHECKED_IN'
+  | 'INVALID_TOKEN'
+  | 'WRONG_EVENT'
+  | 'CANCELLED'
+  | 'EXPIRED'
+  | 'REVOKED'
+  | 'UNAUTHORIZED_SCANNER';
+
+export interface CheckInGuest {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  tableAssignment?: string;
+  dietaryReqs?: string;
+  group?: string;
+  plusOnes: number;
+  checkedIn: boolean;
+  checkedInAt?: string;
+  rsvpStatus?: string;
+  ticketId?: string;
+  ticketName?: string;
+  ticketPrice?: number;
+  ticketCurrency?: string;
+  photoUrl?: string;
+}
+
+export interface CheckInValidateResponse {
+  isValid: boolean;
+  scanResult: ScanResultType;
+  message: string;
+  checkedInAt?: string;
+  checkedInBy?: string;
+  expectedEvent?: string;
+  guest?: CheckInGuest;
+  ticket?: {
+    id: string;
+    name: string;
+    price: number;
+    currency?: string;
+  } | null;
+}
+
+export interface CheckInConfirmResponse {
+  success: boolean;
+  scanResult: ScanResultType;
+  message: string;
+  checkedInAt?: string;
+  checkedInBy?: string;
+  guest?: CheckInGuest;
+}
+
+export interface CheckInTierStat {
+  id: string;
+  name: string;
+  total: number;
+  checkedIn: number;
+  isVip: boolean;
+}
+
+export interface CheckInRecentItem {
+  guestId: string;
+  name: string;
+  ticketName: string;
+  tableAssignment?: string;
+  checkedInAt?: string;
+  method: 'qr' | 'manual' | 'nfc';
+}
+
+export interface CheckInAlertItem {
+  id: string;
+  scanResult: ScanResultType;
+  failureReason?: string;
+  guestName?: string;
+  ticketName?: string;
+  timestamp: string;
+  method: 'qr' | 'manual' | 'nfc';
+}
+
+export interface CheckInStats {
+  totalExpected: number;
+  checkedInCount: number;
+  remainingCount: number;
+  checkInPercentage: number;
+  tierStats: CheckInTierStat[];
+  recentCheckIns: CheckInRecentItem[];
+  recentAlerts: CheckInAlertItem[];
+  eventConfig?: {
+    require_photo_verification?: boolean;
+    allow_multiple_entries?: boolean;
+    dynamic_qr_enabled?: boolean;
+    dynamic_qr_interval_seconds?: number;
+  };
+}
+
+export interface CheckInAuditLog {
+  _id: string;
+  event_id: string;
+  guest_id?: string;
+  ticket_id?: string;
+  scanner_user_id: string;
+  scanner_device_id?: string;
+  scan_result: ScanResultType;
+  failure_reason?: string;
+  timestamp: string;
+  guest_name?: string;
+  ticket_name?: string;
+  method: 'qr' | 'manual' | 'nfc';
+}
+
+export interface GuestPassData {
+  guest: {
+    id: string;
+    name: string;
+    email?: string;
+    tableAssignment?: string;
+    dietary?: string;
+    group?: string;
+    plusOnes: number;
+    checkedIn: boolean;
+    checkedInAt?: string;
+    photoUrl?: string;
+  };
+  ticket?: {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    currency?: string;
+  } | null;
+  event: {
+    id: string;
+    slug?: string;
+    name: string;
+    venue: string;
+    date: string;
+    startTime?: string;
+    endTime?: string;
+    coverImage?: string;
+    currency?: string;
+  };
+  qrToken: string;
+  dynamicQrEnabled: boolean;
+  expiresInSeconds?: number;
+  intervalSeconds?: number;
+}
+
+// ─── Wallet & Financial Types ───────────────────────────────────────────────
+
+export interface PayoutAccount {
+  id: string;
+  type: 'bank_transfer' | 'paypal' | 'paystack';
+  bank_name?: string;
+  account_number?: string;
+  account_name?: string;
+  bank_code?: string;
+  paypal_email?: string;
+  is_default: boolean;
+  created_at: string;
+}
+
+export interface Wallet {
+  _id: string;
+  user_id: string;
+  available_balance: number;
+  pending_balance: number;
+  total_earned: number;
+  total_withdrawn: number;
+  currency: string;
+  pin_set: boolean;
+  payout_accounts: PayoutAccount[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WalletTransaction {
+  _id: string;
+  wallet_id: string;
+  user_id: string;
+  reference: string;
+  type: 'ticket_sale' | 'vendor_payout' | 'deposit' | 'withdrawal' | 'refund' | 'fee';
+  direction: 'credit' | 'debit';
+  amount: number;
+  fee: number;
+  net_amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'cancelled';
+  description: string;
+  metadata?: Record<string, any>;
+  completed_at?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WalletStats {
+  wallet: Wallet;
+  recent_transactions: WalletTransaction[];
+  metrics: {
+    available_balance: number;
+    total_earned: number;
+    total_withdrawn: number;
+    pending_balance: number;
+    withdrawals_count: number;
+    deposits_count: number;
+  };
+}
+
+// ─── Vendor Marketplace & Listing Types ─────────────────────────────────────
+
+export type VendorCategoryType =
+  | 'dj'
+  | 'caterer'
+  | 'event_planner'
+  | 'decorator'
+  | 'equipment_rental'
+  | 'venue'
+  | 'photographer'
+  | 'videographer'
+  | 'mc_host'
+  | 'makeup_artist'
+  | 'baker'
+  | 'florist'
+  | 'security'
+  | 'transportation'
+  | 'entertainment'
+  | 'other';
+
+export interface VendorCategoryInfo {
+  id: VendorCategoryType;
+  name: string;
+  icon: string;
+  desc: string;
+}
+
+export interface VendorListing {
+  _id: string;
+  owner_id: string;
+  title: string;
+  tagline: string;
+  category: VendorCategoryType;
+  description: string;
+  pricing_type: 'fixed' | 'hourly' | 'starting_at' | 'custom_quote';
+  base_price: number;
+  currency: string;
+  cover_image: string;
+  gallery_images: string[];
+  location: string;
+  service_radius_km: number;
+  amenities: string[];
+  status: 'published' | 'draft' | 'paused';
+  rating: number;
+  reviews_count: number;
+  views_count: number;
+  inquiries_count: number;
+  bookings_count: number;
+  deposit_percentage: number;
+  contact_email?: string;
+  contact_phone?: string;
+  website?: string;
+  instagram?: string;
+  cancellation_policy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VendorListingsResponse {
+  listings: VendorListing[];
+  metrics: {
+    total_listings: number;
+    published_listings: number;
+    total_views: number;
+    total_inquiries: number;
+    total_bookings: number;
+  };
+}
+
+// ─── Dashboard Summary Types ────────────────────────────────────────────────
+
+export interface DashboardActivity {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string;
+  time: string;
+  status: string;
+  icon: string;
+}
+
+export interface DashboardSummary {
+  wallet: Wallet;
+  metrics: {
+    available_balance: number;
+    total_earned: number;
+    total_withdrawn: number;
+    pending_balance: number;
+    total_events: number;
+    active_events: number;
+    total_guests: number;
+    total_checked_in: number;
+    vendor_listings_count: number;
+    vendor_published_count: number;
+    vendor_views_count: number;
+    vendor_inquiries_count: number;
+  };
+  vendor_listings: VendorListing[];
+  recent_events: Event[];
+  recent_transactions: WalletTransaction[];
+  recent_activities: DashboardActivity[];
+}
+
+
+
+// ─── Chat & Messaging Types ──────────────────────────────────────────────────
+
+export interface ChatMessage {
+  _id: string;
+  sender_id: {
+    _id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | string;
+  recipient_id: {
+    _id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | string;
+  conversation_id: string;
+  vendor_listing_id?: {
+    _id: string;
+    title: string;
+    category: string;
+    cover_image?: string;
+    base_price: number;
+    currency: string;
+  };
+  event_id?: string;
+  content: string;
+  read: boolean;
+  read_at?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConversationItem {
+  conversation_id: string;
+  other_user: {
+    _id: string;
+    first_name: string;
+    last_name: string;
+    email: string;
+  } | null;
+  vendor_listing?: {
+    _id: string;
+    title: string;
+    category: string;
+    cover_image?: string;
+    base_price: number;
+    currency: string;
+  } | null;
+  last_message: {
+    _id: string;
+    content: string;
+    sender_id: string;
+    createdAt: string;
+    read: boolean;
+  };
+  unread_count: number;
 }

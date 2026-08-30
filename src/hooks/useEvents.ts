@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { eventsApi } from '../lib/api';
-import type { Event } from '../types';
+import { eventsApi, invitationsApi } from '../lib/api';
+import type { Event, CollaboratorPermissions } from '../types';
 
 export const eventKeys = {
   all: ['events'] as const,
@@ -85,14 +85,23 @@ export function useCollaborators(eventId: string) {
   });
 }
 
+export function useRecentContacts() {
+  return useQuery({
+    queryKey: ['invitations', 'recent-contacts'],
+    queryFn: () => invitationsApi.getRecentContacts(),
+    staleTime: 120_000,
+  });
+}
+
 export function useAddCollaborator() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ eventId, email, role }: { eventId: string; email: string; role?: 'editor' | 'viewer' }) =>
-      eventsApi.addCollaborator(eventId, email, role),
+    mutationFn: ({ eventId, email, role, permissions }: { eventId: string; email: string; role?: string; permissions?: Partial<CollaboratorPermissions> }) =>
+      eventsApi.addCollaborator(eventId, email, role, permissions),
     onSuccess: (_, { eventId }) => {
       qc.invalidateQueries({ queryKey: eventKeys.collaborators(eventId) });
       qc.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+      qc.invalidateQueries({ queryKey: ['invitations', 'recent-contacts'] });
     },
   });
 }
@@ -100,8 +109,20 @@ export function useAddCollaborator() {
 export function useUpdateCollaboratorRole() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ eventId, userId, role }: { eventId: string; userId: string; role: 'editor' | 'viewer' }) =>
+    mutationFn: ({ eventId, userId, role }: { eventId: string; userId: string; role: string }) =>
       eventsApi.updateCollaboratorRole(eventId, userId, role),
+    onSuccess: (_, { eventId }) => {
+      qc.invalidateQueries({ queryKey: eventKeys.collaborators(eventId) });
+      qc.invalidateQueries({ queryKey: eventKeys.detail(eventId) });
+    },
+  });
+}
+
+export function useUpdateCollaboratorPermissions() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ eventId, userId, role, permissions }: { eventId: string; userId: string; role?: string; permissions?: Partial<CollaboratorPermissions> }) =>
+      eventsApi.updateCollaboratorPermissions(eventId, userId, role, permissions),
     onSuccess: (_, { eventId }) => {
       qc.invalidateQueries({ queryKey: eventKeys.collaborators(eventId) });
       qc.invalidateQueries({ queryKey: eventKeys.detail(eventId) });

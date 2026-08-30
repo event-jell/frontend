@@ -27,18 +27,30 @@ import TicketGuestsPage from './pages/TicketGuestsPage';
 import GuestDetailPage from './pages/GuestDetailPage';
 import EventSettingsPage from './pages/EventSettingsPage';
 import CreateTicketPage from './pages/CreateTicketPage';
+import EditTicketPage from './pages/EditTicketPage';
 import EventOnboardingPage from './pages/EventOnboardingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import LandingPage from './pages/LandingPage';
+import AcceptInvitePage from './pages/AcceptInvitePage';
+import CheckInScannerPage from './pages/CheckInScannerPage';
+import CheckInDashboardPage from './pages/CheckInDashboardPage';
+import GuestEventPassPage from './pages/GuestEventPassPage';
+import DashboardPage from './pages/DashboardPage';
+import WalletPage from './pages/WalletPage';
+import VendorHubPage from './pages/VendorHubPage';
+import CreateVendorListingPage from './pages/CreateVendorListingPage';
+import VendorProfilePage from './pages/VendorProfilePage';
+import MessagesPage from './pages/MessagesPage';
 import { socket } from './lib/socket';
+import { getFriendlyErrorMessage } from './lib/api';
 
 const handleError = (error: any, v2?: any, v3?: any, v4?: any) => {
   const meta = v4?.meta || v2?.meta; // v4 is mutation for MutationCache, v2 is query for QueryCache
   if (meta?.suppressGlobalErrorToast) return;
-  const message = error.response?.data?.message || error.message || 'An error occurred';
+  const message = getFriendlyErrorMessage(error);
   toast.error(message);
 };
 
@@ -128,9 +140,18 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/events/:id/rsvp" element={<RsvpRedirect />} />
       <Route path="/events/:id/invite" element={<EventInvitePage />} />
+      <Route path="/events/:id/pass/:guestId" element={<GuestEventPassPage />} />
+      <Route path="/invitations/accept/:token" element={<AcceptInvitePage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Shell><DashboardPage /></Shell>} />
+        <Route path="/wallet" element={<Shell><WalletPage /></Shell>} />
+        <Route path="/vendor/listings" element={<Shell><VendorHubPage /></Shell>} />
+        <Route path="/vendor/listings/new" element={<Shell><CreateVendorListingPage /></Shell>} />
+        <Route path="/vendors" element={<Shell><VendorHubPage /></Shell>} />
+        <Route path="/vendors/new" element={<Shell><CreateVendorListingPage /></Shell>} />
+        <Route path="/vendor-hub/new" element={<Shell><CreateVendorListingPage /></Shell>} />
         <Route path="/events" element={<Shell><EventsPage /></Shell>} />
         <Route path="/events/new" element={<Shell><CreateEventPage /></Shell>} />
         <Route path="/events/onboarding" element={<EventOnboardingPage />} />
@@ -142,8 +163,17 @@ function AppRoutes() {
         <Route path="/events/:id/ticketing" element={<Shell><TicketingPage /></Shell>} />
         <Route path="/events/:id/ticketing/new" element={<Shell><CreateTicketPage /></Shell>} />
         <Route path="/events/:id/ticketing/:ticketId" element={<Shell><TicketGuestsPage /></Shell>} />
+        <Route path="/events/:id/ticketing/:ticketId/edit" element={<Shell><EditTicketPage /></Shell>} />
+        <Route path="/events/:id/checkin" element={<CheckInScannerPage />} />
+        <Route path="/events/:id/checkin-dashboard" element={<Shell><CheckInDashboardPage /></Shell>} />
         <Route path="/events/:id/guests/:guestId" element={<Shell><GuestDetailPage /></Shell>} />
         <Route path="/events/:id/vendors" element={<Shell><VendorsPage /></Shell>} />
+        <Route path="/events/:id/vendors/marketplace/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
+        <Route path="/events/:id/vendors/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
+        <Route path="/vendors/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
+        <Route path="/vendor/listings/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
+        <Route path="/messages" element={<Shell><MessagesPage /></Shell>} />
+        <Route path="/messages/:conversationId" element={<Shell><MessagesPage /></Shell>} />
         <Route path="/events/:id/event-com" element={<Shell><EventComPage /></Shell>} />
         <Route path="/events/:id/reports" element={<Shell><ReportsPage /></Shell>} />
         <Route path="/events/:id/settings" element={<Shell><EventSettingsPage /></Shell>} />

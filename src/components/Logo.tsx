@@ -3,22 +3,22 @@
 interface LogoProps {
   className?: string;
   size?: number;
+  showText?: boolean;
 }
 
-export default function Logo({ className = '', size = 32 }: LogoProps) {
+export default function Logo({ className = '', size = 36, showText = true }: LogoProps) {
   return (
-    <div
-      className={`rounded-xl flex items-center justify-center flex-shrink-0 text-white font-bold ${className}`}
-      style={{
-        width: size,
-        height: size,
-        background: 'linear-gradient(135deg, #0F6E56 0%, #10b981 100%)',
-        boxShadow: '0 4px 12px rgba(15, 110, 86, 0.25)',
-        fontSize: size * 0.4,
-        letterSpacing: '-0.05em',
-      }}
-    >
-      EJ
+    <div className={`flex items-center gap-2.5 ${className}`}>
+      <img
+        src="/logo.png"
+        alt="Event Jell"
+        className="object-contain flex-shrink-0"
+        style={{
+          height: size,
+          width: 'auto',
+          maxHeight: size * 1.5,
+        }}
+      />
     </div>
   );
 }

@@ -1,12 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useEvent, useUpdateEvent, useDeleteEvent, useCollaborators, useAddCollaborator, useRemoveCollaborator, useUpdateCollaboratorRole } from '../hooks/useEvents';
-import { Save, AlertTriangle, Loader2, Calendar, MapPin, Clock, AlignLeft, Users, UserPlus, X, ClipboardList, Plus, Trash2, GripVertical, ChevronDown, Upload, Video } from 'lucide-react';
+import { useEvent, useUpdateEvent, useDeleteEvent, useCollaborators, useAddCollaborator, useRemoveCollaborator, useUpdateCollaboratorRole, useUpdateCollaboratorPermissions, useRecentContacts } from '../hooks/useEvents';
+import { Save, AlertTriangle, Loader2, Calendar, MapPin, Clock, AlignLeft, Users, UserPlus, X, ClipboardList, Plus, Trash2, GripVertical, ChevronDown, Upload, Video, Sparkles, Check, Shield, Sliders, Settings2, Key, Coins } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import type { RsvpField } from '../types';
+import type { RsvpField, Collaborator, CollaboratorPermissions } from '../types';
 import { uploadApi } from '../lib/api';
 import DatePicker from '../components/DatePicker';
 import TimePicker from '../components/TimePicker';
+import PermissionsModal, { ROLE_PRESETS } from '../components/events/PermissionsModal';
+import ConfirmModal from '../components/common/ConfirmModal';
+import { SUPPORTED_CURRENCIES, getCurrencyForCountry } from '../utils/formatters';
+import { toast } from 'sonner';
 
 export default function EventSettingsPage() {
   const { user } = useAuth();
@@ -16,11 +20,33 @@ export default function EventSettingsPage() {
   const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
   const { data: collaborators, isLoading: isLoadingCollaborators } = useCollaborators(id!);
+  const { data: recentContacts } = useRecentContacts();
   const addCollaborator = useAddCollaborator();
   const removeCollaborator = useRemoveCollaborator();
   const updateCollaboratorRole = useUpdateCollaboratorRole();
+  const updateCollaboratorPermissions = useUpdateCollaboratorPermissions();
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'editor' | 'viewer'>('editor');
+  const [inviteRole, setInviteRole] = useState<string>('editor');
+  const [customInvitePerms, setCustomInvitePerms] = useState<CollaboratorPermissions | null>(null);
+  const [isCustomInviteOpen, setIsCustomInviteOpen] = useState(false);
+  const [editingCollab, setEditingCollab] = useState<Collaborator | null>(null);
+  const [collabToRemove, setCollabToRemove] = useState<Collaborator | null>(null);
+  const [isDeleteEventOpen, setIsDeleteEventOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'rsvp' | 'team' | 'danger'>('general');
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+  const [selectedSuggestIndex, setSelectedSuggestIndex] = useState(-1);
+  const autocompleteContainerRef = useRef<HTMLDivElement>(null);
+
+  // Close autocomplete on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (autocompleteContainerRef.current && !autocompleteContainerRef.current.contains(e.target as Node)) {
+        setShowAutocomplete(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -30,6 +56,7 @@ export default function EventSettingsPage() {
     startTime: '',
     endTime: '',
     status: 'draft' as 'draft' | 'planning' | 'confirmed' | 'live',
+    currency: getCurrencyForCountry(user?.country),
     allowGuestSeatSelection: false,
     coverImage: '',
     isVirtual: false,
@@ -74,6 +101,7 @@ export default function EventSettingsPage() {
         startTime: event.startTime || '',
         endTime: event.endTime || '',
         status: event.status || 'draft',
+        currency: event.currency || getCurrencyForCountry(user?.country),
         allowGuestSeatSelection: event.allowGuestSeatSelection || false,
         coverImage: event.coverImage || '',
         isVirtual: event.isVirtual || false,
@@ -82,7 +110,7 @@ export default function EventSettingsPage() {
       });
       setRsvpFields(event.rsvpFields ?? []);
     }
-  }, [event]);
+  }, [event, user?.country]);
 
   if (isLoading) {
     return (
@@ -113,12 +141,19 @@ export default function EventSettingsPage() {
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
-      deleteEvent.mutate(id!, {
-        onSuccess: () => navigate('/events'),
-      });
-    }
+    setIsDeleteEventOpen(true);
   };
+
+  const isOwner = user?.id === event.owner_id;
+
+  const tabs = [
+    { id: 'general' as const, label: 'General Info', icon: AlignLeft },
+    { id: 'rsvp' as const, label: 'RSVP Form Fields', icon: ClipboardList },
+    ...(isOwner ? [
+      { id: 'team' as const, label: 'Team & Collaborators', icon: Users },
+      { id: 'danger' as const, label: 'Danger Zone', icon: AlertTriangle }
+    ] : [])
+  ];
 
   return (
     <div className="flex flex-col h-full bg-[#F8FAFC] overflow-hidden">
@@ -139,11 +174,37 @@ export default function EventSettingsPage() {
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-6 py-10 sm:px-10 space-y-10">
+      <div className="flex-1 overflow-y-auto px-6 py-10 sm:px-10">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-6 items-start">
           
-          {/* General Information Card */}
-          <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden transform transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/40">
+          {/* Side Tabs Navigation */}
+          <div className="w-full md:w-64 flex-shrink-0 flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1 bg-white md:bg-transparent p-1 md:p-0 rounded-2xl border md:border-0 border-slate-100">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2.5 px-4 py-2.5 md:py-3 rounded-xl text-sm font-bold whitespace-nowrap transition-all outline-none ${
+                    isActive
+                      ? 'bg-[#FAF0E8] text-[#7A1F1F]'
+                      : 'text-slate-600 hover:bg-slate-100/50 hover:text-[#7A1F1F]'
+                  }`}
+                >
+                  <Icon size={18} className={isActive ? 'text-[#7A1F1F]' : 'text-slate-400'} />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Settings Section Content area */}
+          <div className="flex-1 w-full">
+          
+            {activeTab === 'general' && (
+              /* General Information Card */
+              <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden transform transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/40">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
               <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#FDF5EE] flex items-center justify-center text-[#7A1F1F]">
@@ -217,35 +278,35 @@ export default function EventSettingsPage() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Event Location Type Toggle */}
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                     <MapPin size={16} className="text-[#7A1F1F]" />
-                    Event Type / Location
+                    Location Type
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, isVirtual: false }))}
-                      className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                      className={`px-3 py-3 rounded-xl border text-xs font-bold transition-all ${
                         !formData.isVirtual
                           ? 'bg-[#FAF0E8] border-[#7A1F1F] text-[#7A1F1F] shadow-sm'
                           : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
                       }`}
                     >
-                      Physical Venue
+                      Physical
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData(prev => ({ ...prev, isVirtual: true }))}
-                      className={`px-4 py-3 rounded-xl border text-sm font-bold transition-all ${
+                      className={`px-3 py-3 rounded-xl border text-xs font-bold transition-all ${
                         formData.isVirtual
                           ? 'bg-[#FAF0E8] border-[#7A1F1F] text-[#7A1F1F] shadow-sm'
                           : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'
                       }`}
                     >
-                      Virtual Event
+                      Virtual
                     </button>
                   </div>
                 </div>
@@ -268,9 +329,31 @@ export default function EventSettingsPage() {
                       <option value="live">Live</option>
                     </select>
                     <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
-                      <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <ChevronDown size={14} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Event Currency selector */}
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                    <Coins size={16} className="text-[#7A1F1F]" />
+                    Event Currency
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.currency}
+                      onChange={e => setFormData({ ...formData, currency: e.target.value })}
+                      className="w-full appearance-none px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/10 transition-all pr-10"
+                    >
+                      {SUPPORTED_CURRENCIES.map(c => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.code} ({c.symbol}) - {c.country}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
+                      <ChevronDown size={14} />
                     </div>
                   </div>
                 </div>
@@ -428,7 +511,10 @@ export default function EventSettingsPage() {
             </div>
           </div>
 
-          {/* ─── RSVP Form Builder ─── */}
+            )}
+
+            {activeTab === 'rsvp' && (
+              /* ─── RSVP Form Builder ─── */
           <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
               <div className="flex items-center justify-between">
@@ -443,14 +529,18 @@ export default function EventSettingsPage() {
                 </span>
               </div>
               <p className="text-sm text-slate-500 mt-2">
-                Define the questions guests must answer when they RSVP. Name and Email are always collected automatically.
+                Define the questions guests must answer when they RSVP. First Name, Last Name, and Email are always collected automatically.
               </p>
             </div>
             <div className="p-8 space-y-4">
 
               {/* Default locked fields */}
               <div className="space-y-2">
-                {[{ label: 'Full Name', type: 'text' }, { label: 'Email Address', type: 'email' }].map(f => (
+                {[
+                  { label: 'First Name', type: 'text' },
+                  { label: 'Last Name', type: 'text' },
+                  { label: 'Email Address', type: 'email' },
+                ].map(f => (
                   <div key={f.label} className="flex items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl opacity-60 cursor-not-allowed">
                     <GripVertical size={14} className="text-slate-300" />
                     <span className="text-sm font-medium text-slate-700 flex-1">{f.label}</span>
@@ -633,143 +723,541 @@ export default function EventSettingsPage() {
             </div>
           </div>
 
-          {/* Collaborators (Owner Only) */}
-          {user?.id === event.owner_id && (
-            <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/30 border border-slate-100 overflow-hidden transform transition-all duration-300 hover:shadow-2xl hover:shadow-slate-200/40">
-              <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-b from-slate-50/50 to-white flex items-center justify-between">
-                <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-[#FAF7F2] flex items-center justify-center text-emerald-500">
-                    <Users size={16} />
-                  </div>
-                  Team & Collaborators
-                </h2>
-                <div className="bg-emerald-100 text-emerald-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                  Owner
-                </div>
-              </div>
-              <div className="p-8 space-y-8">
-                <div>
-                  <p className="text-sm text-slate-500 font-medium leading-relaxed mb-6">
-                    Invite team members to help manage this event. Choose whether they can edit event details, guests, tickets, vendors, and the floor plan, or only view them.
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <input
-                        type="email"
-                        value={inviteEmail}
-                        onChange={e => setInviteEmail(e.target.value)}
-                        placeholder="team.member@example.com"
-                        className="w-full pl-11 pr-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-slate-400 placeholder:font-normal"
-                        onKeyDown={e => {
-                          if (e.key === 'Enter' && inviteEmail) {
-                            e.preventDefault();
-                            addCollaborator.mutate({ eventId: id!, email: inviteEmail, role: inviteRole }, {
-                              onSuccess: () => setInviteEmail('')
-                            });
-                          }
-                        }}
-                      />
-                      <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
-                        <Users size={16} className="text-slate-400" />
+            )}
+
+            {activeTab === 'team' && isOwner && (
+              /* Collaborators (Owner Only) */
+              <div className="space-y-6">
+                {/* Main Card */}
+                <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/40 border border-slate-100/80 overflow-hidden">
+                  {/* Card Header */}
+                  <div className="px-8 py-6 border-b border-slate-100 bg-gradient-to-r from-slate-50/80 via-white to-slate-50/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3.5">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#7A1F1F]/10 to-[#7A1F1F]/5 text-[#7A1F1F] flex items-center justify-center border border-[#7A1F1F]/10 shadow-sm">
+                        <Users size={20} />
+                      </div>
+                      <div>
+                        <h2 className="text-lg font-black tracking-tight text-slate-900 flex items-center gap-2.5">
+                          Event Team & Collaborators
+                        </h2>
+                        <p className="text-xs text-slate-500 font-medium">
+                          Manage who has access to coordinate and edit this specific event
+                        </p>
                       </div>
                     </div>
-                    <select
-                      value={inviteRole}
-                      onChange={e => setInviteRole(e.target.value as 'editor' | 'viewer')}
-                      className="px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 text-sm font-medium focus:outline-none focus:bg-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer"
-                    >
-                      <option value="editor">Can edit</option>
-                      <option value="viewer">Can view</option>
-                    </select>
-                    <button
-                      onClick={() => {
-                        if (inviteEmail) {
-                          addCollaborator.mutate({ eventId: id!, email: inviteEmail, role: inviteRole }, {
-                            onSuccess: () => setInviteEmail('')
-                          });
-                        }
-                      }}
-                      disabled={addCollaborator.isPending || !inviteEmail}
-                      className="flex items-center justify-center gap-2 px-6 py-3 bg-[#FAF7F2] text-[#3FA65B] hover:bg-emerald-100 text-sm font-bold rounded-xl transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                    >
-                      {addCollaborator.isPending ? <Loader2 size={18} className="animate-spin" /> : <UserPlus size={18} />}
-                      Send Invite
-                    </button>
-                  </div>
-                  {addCollaborator.isError && (
-                    <p className="text-xs text-red-600 font-medium mt-2">
-                      {(addCollaborator.error as any)?.response?.data?.message ?? 'Could not send invite.'}
-                    </p>
-                  )}
-                </div>
-
-                {isLoadingCollaborators ? (
-                  <div className="flex justify-center py-8">
-                    <div className="flex items-center gap-3 text-slate-400 font-medium text-sm">
-                      <Loader2 className="animate-spin" size={18} />
-                      Loading team members...
+                    <div className="flex items-center gap-2">
+                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/70 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+                        Owner View
+                      </span>
                     </div>
                   </div>
-                ) : collaborators && collaborators.length > 0 ? (
-                  <div className="border border-slate-200/60 rounded-2xl overflow-hidden bg-white">
-                    <ul className="divide-y divide-slate-100">
-                      {collaborators.map((collab: any) => (
-                        <li key={collab._id} className="flex items-center justify-between p-5 hover:bg-slate-50/50 transition-colors group">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 text-[#7A1F1F] flex items-center justify-center font-bold text-sm shadow-inner shadow-white/50">
-                              {collab.first_name[0]}{collab.last_name[0]}
-                            </div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-800">{collab.first_name} {collab.last_name}</p>
-                              <p className="text-xs font-medium text-slate-500 mt-0.5">{collab.email}</p>
-                            </div>
+
+                  <div className="p-8 space-y-8">
+                    {/* Scoped Security Callout */}
+                    <div className="flex items-start gap-3.5 p-4 rounded-2xl bg-gradient-to-r from-amber-50/70 to-orange-50/40 border border-amber-200/60 text-slate-700">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Shield size={16} />
+                      </div>
+                      <div className="text-xs leading-relaxed">
+                        <p className="font-bold text-amber-900">Single-Event Scoped Access</p>
+                        <p className="text-slate-600 mt-0.5">
+                          Collaborators invited here are strictly limited to <strong className="text-slate-800 font-bold">"{event.name}"</strong>. They will only have access to the specific modules and permissions you designate below, and cannot see your other events or account settings.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Invite Section Card */}
+                    <div className="bg-slate-50/70 rounded-2xl border border-slate-200/70 p-5 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                          <UserPlus size={14} className="text-[#7A1F1F]" />
+                          Invite New Team Member
+                        </h3>
+                        {customInvitePerms && inviteRole === 'custom' && (
+                          <span className="text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                            <Sparkles size={11} /> Custom Permissions Set
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Input Row 1: Email with Autocomplete */}
+                      <div className="relative" ref={autocompleteContainerRef}>
+                        <div className="relative flex items-center">
+                          <div className="absolute left-4 pointer-events-none text-slate-400">
+                            <Users size={17} />
                           </div>
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={collab.role ?? 'editor'}
-                              onChange={e => {
-                                updateCollaboratorRole.mutate({
-                                  eventId: id!,
-                                  userId: collab._id,
-                                  role: e.target.value as 'editor' | 'viewer',
-                                });
-                              }}
-                              disabled={updateCollaboratorRole.isPending}
-                              className="text-xs font-medium text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 cursor-pointer"
-                            >
-                              <option value="editor">Can edit</option>
-                              <option value="viewer">Can view</option>
-                            </select>
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`Remove ${collab.first_name} from collaborators?`)) {
-                                  removeCollaborator.mutate({ eventId: id!, userId: collab._id });
+                          <input
+                            type="email"
+                            value={inviteEmail}
+                            onChange={e => {
+                              setInviteEmail(e.target.value);
+                              setShowAutocomplete(true);
+                              setSelectedSuggestIndex(-1);
+                            }}
+                            onFocus={() => setShowAutocomplete(true)}
+                            placeholder="Enter teammate's email address (e.g. sarah@example.com)"
+                            className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/10 transition-all placeholder:text-slate-400"
+                            onKeyDown={e => {
+                              const existingCollabEmails = new Set((collaborators || []).map((c: any) => (c.email || '').toLowerCase()));
+                              if (user?.email) existingCollabEmails.add(user.email.toLowerCase());
+                              const currentSuggestions = (recentContacts || []).filter(c => {
+                                const em = (c.email || '').toLowerCase();
+                                if (existingCollabEmails.has(em)) return false;
+                                if (!inviteEmail.trim()) return true;
+                                const q = inviteEmail.toLowerCase().trim();
+                                return em.includes(q) || (c.name && c.name.toLowerCase().includes(q));
+                              }).slice(0, 5);
+
+                              if (e.key === 'ArrowDown' && showAutocomplete && currentSuggestions.length > 0) {
+                                e.preventDefault();
+                                setSelectedSuggestIndex(prev => Math.min(prev + 1, currentSuggestions.length - 1));
+                              } else if (e.key === 'ArrowUp' && showAutocomplete && currentSuggestions.length > 0) {
+                                e.preventDefault();
+                                setSelectedSuggestIndex(prev => Math.max(prev - 1, -1));
+                              } else if (e.key === 'Enter') {
+                                e.preventDefault();
+                                if (showAutocomplete && selectedSuggestIndex >= 0 && currentSuggestions[selectedSuggestIndex]) {
+                                  const sel = currentSuggestions[selectedSuggestIndex];
+                                  setInviteEmail(sel.email);
+                                  if (sel.role) setInviteRole(sel.role);
+                                  setShowAutocomplete(false);
+                                  setSelectedSuggestIndex(-1);
                                 }
-                              }}
-                              disabled={removeCollaborator.isPending}
-                              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
-                              title="Remove collaborator"
-                            >
-                              <X size={18} />
-                            </button>
+                              } else if (e.key === 'Escape') {
+                                setShowAutocomplete(false);
+                              }
+                            }}
+                          />
+                        </div>
+
+                        {/* Autocomplete Dropdown */}
+                        {showAutocomplete && (() => {
+                          const existingCollabEmails = new Set((collaborators || []).map((c: any) => (c.email || '').toLowerCase()));
+                          if (user?.email) existingCollabEmails.add(user.email.toLowerCase());
+                          const currentSuggestions = (recentContacts || []).filter(c => {
+                            const em = (c.email || '').toLowerCase();
+                            if (existingCollabEmails.has(em)) return false;
+                            if (!inviteEmail.trim()) return true;
+                            const q = inviteEmail.toLowerCase().trim();
+                            return em.includes(q) || (c.name && c.name.toLowerCase().includes(q));
+                          }).slice(0, 5);
+
+                          if (currentSuggestions.length === 0) return null;
+
+                          return (
+                            <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-900/10 py-2 z-50 overflow-hidden">
+                              <div className="px-3.5 py-1.5 flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100 mb-1">
+                                <span className="flex items-center gap-1.5">
+                                  <Sparkles size={12} className="text-[#D4A24C]" /> Suggested Recent Contacts
+                                </span>
+                                <span className="text-[10px] lowercase font-normal">press ↑↓ or click</span>
+                              </div>
+                              <ul className="max-h-60 overflow-y-auto divide-y divide-slate-50">
+                                {currentSuggestions.map((contact, idx) => {
+                                  const isSelected = idx === selectedSuggestIndex;
+                                  const initials = contact.name
+                                    ? contact.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                                    : contact.email[0].toUpperCase();
+                                  return (
+                                    <li
+                                      key={contact.email}
+                                      onMouseEnter={() => setSelectedSuggestIndex(idx)}
+                                      onClick={() => {
+                                        setInviteEmail(contact.email);
+                                        if (contact.role) setInviteRole(contact.role);
+                                        setShowAutocomplete(false);
+                                        setSelectedSuggestIndex(-1);
+                                      }}
+                                      className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                                        isSelected ? 'bg-slate-100/90' : 'hover:bg-slate-50'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-indigo-200 text-[#7A1F1F] flex items-center justify-center font-bold text-xs shadow-inner">
+                                          {initials}
+                                        </div>
+                                        <div>
+                                          {contact.name && (
+                                            <p className="text-xs font-bold text-slate-800">{contact.name}</p>
+                                          )}
+                                          <p className="text-xs text-slate-500 font-medium">{contact.email}</p>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full capitalize">
+                                          {contact.role || 'Editor'}
+                                        </span>
+                                        {isSelected && <Check size={14} className="text-emerald-600" />}
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            </div>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Input Row 2: Role Preset, Customize Button, and Submit */}
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                        <div className="flex-1">
+                          <select
+                            value={inviteRole}
+                            onChange={e => {
+                              const r = e.target.value;
+                              setInviteRole(r);
+                              if (r === 'custom') {
+                                setIsCustomInviteOpen(true);
+                              } else {
+                                setCustomInvitePerms(ROLE_PRESETS[r]?.permissions || null);
+                              }
+                            }}
+                            className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs font-bold focus:outline-none focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/10 transition-all cursor-pointer shadow-sm"
+                          >
+                            <option value="admin">👑 Admin / Co-Host (Full Access)</option>
+                            <option value="editor">✏️ Event Editor (Full Planning)</option>
+                            <option value="floor_planner">📐 Floor & Seating Planner</option>
+                            <option value="guest_coordinator">👥 Guest & Check-in Coordinator</option>
+                            <option value="vendor_manager">🤝 Vendor & Budget Manager</option>
+                            <option value="viewer">👁️ Viewer / Staff (Read-Only)</option>
+                            <option value="custom">⚙️ Custom Permissions...</option>
+                          </select>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsCustomInviteOpen(true)}
+                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-colors shadow-sm"
+                        >
+                          <Sliders size={14} className="text-[#7A1F1F]" />
+                          <span>Customize Permissions</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (inviteEmail) {
+                              setShowAutocomplete(false);
+                              addCollaborator.mutate(
+                                {
+                                  eventId: id!,
+                                  email: inviteEmail,
+                                  role: inviteRole,
+                                  permissions: customInvitePerms || ROLE_PRESETS[inviteRole]?.permissions || undefined,
+                                },
+                                {
+                                  onSuccess: () => {
+                                    setInviteEmail('');
+                                    setCustomInvitePerms(null);
+                                    setInviteRole('editor');
+                                    toast.success(`Invitation delivered to ${inviteEmail}!`);
+                                  },
+                                }
+                              );
+                            }
+                          }}
+                          disabled={addCollaborator.isPending || !inviteEmail}
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold text-white transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:pointer-events-none whitespace-nowrap"
+                          style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #992626 100%)' }}
+                        >
+                          {addCollaborator.isPending ? (
+                            <>
+                              <Loader2 size={15} className="animate-spin" /> Sending...
+                            </>
+                          ) : (
+                            <>
+                              <UserPlus size={15} /> Send Invitation
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                      {addCollaborator.isError && (
+                        <p className="text-xs text-red-600 font-semibold mt-1">
+                          {(addCollaborator.error as any)?.response?.data?.message ?? 'Could not send invite.'}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Team Members List */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                          <Users size={14} className="text-slate-400" />
+                          Current Collaborators ({collaborators?.length || 0})
+                        </h3>
+                      </div>
+
+                      {isLoadingCollaborators ? (
+                        <div className="flex justify-center py-10 bg-slate-50/50 rounded-2xl border border-slate-100">
+                          <div className="flex items-center gap-3 text-slate-400 font-medium text-sm">
+                            <Loader2 className="animate-spin text-[#7A1F1F]" size={20} />
+                            Loading team members...
                           </div>
-                        </li>
-                      ))}
-                    </ul>
+                        </div>
+                      ) : collaborators && collaborators.length > 0 ? (
+                        <div className="border border-slate-200/70 rounded-2xl overflow-hidden bg-white divide-y divide-slate-100 shadow-sm">
+                          {collaborators.map((collab: any) => {
+                            const isPending = collab.status === 'pending';
+                            const roleKey = collab.role || 'editor';
+                            const preset = ROLE_PRESETS[roleKey];
+                            const perms: CollaboratorPermissions =
+                              collab.permissions || preset?.permissions || ROLE_PRESETS.editor.permissions;
+
+                            const activePermsCount = Object.values(perms).filter(Boolean).length;
+                            const roleTitle = preset?.label || (roleKey === 'custom' ? 'Custom Permissions' : roleKey.charAt(0).toUpperCase() + roleKey.slice(1));
+
+                            const name = isPending
+                              ? collab.email
+                              : `${collab.first_name || ''} ${collab.last_name || ''}`.trim() || collab.email;
+
+                            const initials = isPending
+                              ? '⏳'
+                              : `${(collab.first_name || 'U')[0]}${(collab.last_name || 'U')[0]}`.toUpperCase();
+
+                            return (
+                              <div
+                                key={collab._id}
+                                className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50/60 transition-colors"
+                              >
+                                {/* Member Info */}
+                                <div className="flex items-start gap-4 min-w-0">
+                                  <div className="relative flex-shrink-0">
+                                    <div
+                                      className={`w-11 h-11 rounded-2xl flex items-center justify-center font-bold text-sm shadow-sm ${
+                                        isPending
+                                          ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                                          : 'bg-gradient-to-br from-rose-100 to-indigo-100 text-[#7A1F1F] border border-rose-200/50'
+                                      }`}
+                                    >
+                                      {initials}
+                                    </div>
+                                    {/* Status Dot */}
+                                    <span
+                                      className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                                        isPending ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'
+                                      }`}
+                                      title={isPending ? 'Invite pending registration' : 'Active team member'}
+                                    />
+                                  </div>
+
+                                  <div className="min-w-0 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                      <p className="text-sm font-bold text-slate-900 truncate">{name}</p>
+                                      {isPending ? (
+                                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/70">
+                                          Invite Pending
+                                        </span>
+                                      ) : (
+                                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
+                                          Active Member
+                                        </span>
+                                      )}
+                                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                                        {roleTitle}
+                                      </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 font-medium truncate">
+                                      {isPending ? 'Invitation email delivered • Awaiting user sign up' : collab.email}
+                                    </p>
+
+                                    {/* Compact Capability Matrix */}
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1.5 bg-slate-50 border border-slate-200/70 px-2.5 py-0.5 rounded-lg">
+                                        <Shield size={11} className="text-[#7A1F1F]" />
+                                        {activePermsCount === 7 ? (
+                                          <span className="text-emerald-700 font-bold">Full Access (7/7 Modules)</span>
+                                        ) : activePermsCount === 0 ? (
+                                          <span className="text-slate-400 italic">Read-Only</span>
+                                        ) : (
+                                          <span>
+                                            <strong className="text-slate-800">{activePermsCount} of 7</strong> Permissions Enabled
+                                          </span>
+                                        )}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-2.5 self-end md:self-center flex-shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditingCollab(collab)}
+                                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:border-[#7A1F1F] hover:text-[#7A1F1F] transition-all shadow-sm"
+                                  >
+                                    <Shield size={13} className="text-[#7A1F1F]" />
+                                    Edit Permissions
+                                  </button>
+
+                                  <button
+                                    onClick={() => setCollabToRemove(collab)}
+                                    disabled={removeCollaborator.isPending}
+                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
+                                    title="Revoke access"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="text-center py-12 px-6 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200/80">
+                          <div className="w-12 h-12 rounded-2xl bg-white text-slate-300 flex items-center justify-center mx-auto mb-3 shadow-sm border border-slate-100">
+                            <Users size={24} />
+                          </div>
+                          <h4 className="text-sm font-bold text-slate-800 mb-1">No Collaborators Yet</h4>
+                          <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                            Invite planners, seating coordinators, or co-hosts to collaborate on this event.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                ) : (
-                  <div className="text-center py-8 px-4 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                    <Users size={32} className="text-slate-300 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-slate-500">No collaborators added yet.</p>
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
+
+          {/* Permissions Modal for Editing Collaborator */}
+          {editingCollab && (
+            <PermissionsModal
+              isOpen={!!editingCollab}
+              eventName={event?.name || 'Event'}
+              collaborator={editingCollab}
+              isSaving={updateCollaboratorPermissions.isPending}
+              onClose={() => setEditingCollab(null)}
+              onSave={(role, permissions) => {
+                updateCollaboratorPermissions.mutate(
+                  {
+                    eventId: id!,
+                    userId: editingCollab._id,
+                    role,
+                    permissions,
+                  },
+                  {
+                    onSuccess: () => {
+                      setEditingCollab(null);
+                      toast.success('Permissions updated successfully!');
+                    },
+                    onError: () => {
+                      toast.error('Failed to update permissions.');
+                    },
+                  }
+                );
+              }}
+            />
           )}
 
-          {/* Danger Zone (Owner Only) */}
-          {user?.id === event.owner_id && (
-            <div className="bg-white rounded-3xl shadow-xl shadow-red-500/5 border border-red-100 overflow-hidden relative">
+          {/* Permissions Modal for Customizing New Invite */}
+          {isCustomInviteOpen && (
+            <PermissionsModal
+              isOpen={isCustomInviteOpen}
+              eventName={event?.name || 'Event'}
+              collaborator={{
+                _id: 'new_invite',
+                first_name: inviteEmail ? inviteEmail.split('@')[0] : 'New',
+                last_name: 'Collaborator',
+                email: inviteEmail || 'team.member@example.com',
+                role: inviteRole,
+                permissions: customInvitePerms || ROLE_PRESETS[inviteRole]?.permissions || ROLE_PRESETS.editor.permissions,
+                status: 'pending',
+              }}
+              isSaving={false}
+              onClose={() => setIsCustomInviteOpen(false)}
+              onSave={(role, permissions) => {
+                setInviteRole(role);
+                setCustomInvitePerms(permissions);
+                setIsCustomInviteOpen(false);
+                toast.success('Custom permissions configured for this invitation.');
+              }}
+            />
+          )}
+
+          {/* Confirm Modal for Removing Collaborator / Canceling Invite */}
+          {collabToRemove && (
+            <ConfirmModal
+              isOpen={!!collabToRemove}
+              title={collabToRemove.status === 'pending' ? 'Cancel Invitation' : 'Remove Collaborator'}
+              message={
+                collabToRemove.status === 'pending' ? (
+                  <p>
+                    Are you sure you want to cancel the invitation sent to{' '}
+                    <strong className="text-slate-900 font-bold">{collabToRemove.email}</strong>? The invitation link will be immediately invalidated.
+                  </p>
+                ) : (
+                  <p>
+                    Are you sure you want to remove{' '}
+                    <strong className="text-slate-900 font-bold">
+                      {collabToRemove.first_name && collabToRemove.first_name !== collabToRemove.email.split('@')[0]
+                        ? `${collabToRemove.first_name} ${collabToRemove.last_name || ''}`.trim()
+                        : collabToRemove.email}
+                    </strong>{' '}
+                    from event collaborators? They will immediately lose access to view, edit, and coordinate{' '}
+                    <strong className="text-slate-900 font-bold">"{event?.name}"</strong>.
+                  </p>
+                )
+              }
+              confirmText={collabToRemove.status === 'pending' ? 'Cancel Invite' : 'Remove Member'}
+              variant="danger"
+              isLoading={removeCollaborator.isPending}
+              onClose={() => setCollabToRemove(null)}
+              onConfirm={() => {
+                if (collabToRemove) {
+                  removeCollaborator.mutate(
+                    { eventId: id!, userId: collabToRemove._id },
+                    {
+                      onSuccess: () => {
+                        setCollabToRemove(null);
+                        toast.success(
+                          collabToRemove.status === 'pending'
+                            ? 'Invitation cancelled'
+                            : 'Collaborator removed successfully'
+                        );
+                      },
+                      onError: () => {
+                        toast.error('Failed to remove collaborator');
+                      },
+                    }
+                  );
+                }
+              }}
+            />
+          )}
+
+          {/* Confirm Modal for Deleting Event */}
+          {isDeleteEventOpen && (
+            <ConfirmModal
+              isOpen={isDeleteEventOpen}
+              title="Delete Event Permanently"
+              message={
+                <p>
+                  Are you sure you want to permanently delete{' '}
+                  <strong className="text-slate-900 font-bold">"{event?.name}"</strong>? All associated floor plan designs, tables, guest seating lists, tickets, and communications will be permanently wiped. This action <strong className="text-red-600 font-bold">cannot be undone</strong>.
+                </p>
+              }
+              confirmText="Delete Event"
+              variant="danger"
+              isLoading={deleteEvent.isPending}
+              onClose={() => setIsDeleteEventOpen(false)}
+              onConfirm={() => {
+                deleteEvent.mutate(id!, {
+                  onSuccess: () => {
+                    setIsDeleteEventOpen(false);
+                    toast.success('Event deleted successfully');
+                    navigate('/events');
+                  },
+                  onError: () => {
+                    toast.error('Failed to delete event');
+                  },
+                });
+              }}
+            />
+          )}
+
+            {activeTab === 'danger' && isOwner && (
+              /* Danger Zone (Owner Only) */
+              <div className="bg-white rounded-3xl shadow-xl shadow-red-500/5 border border-red-100 overflow-hidden relative">
               <div className="absolute inset-0 bg-red-500/[0.02] pointer-events-none" />
               <div className="px-8 py-6 border-b border-red-100 bg-gradient-to-b from-red-50/50 to-white flex items-center justify-between">
                 <h2 className="text-lg font-bold text-red-600 flex items-center gap-2.5">
@@ -796,6 +1284,7 @@ export default function EventSettingsPage() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>

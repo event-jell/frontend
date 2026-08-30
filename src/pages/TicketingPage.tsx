@@ -3,14 +3,17 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Plus, Ticket, TrendingUp, DollarSign, Users, MoreHorizontal,
   Link as LinkIcon, CheckCircle2, X, BarChart2, QrCode, Download,
-  Share2, Eye, EyeOff, Search, ChevronDown, Sparkles
+  Share2, Eye, EyeOff, Search, ChevronDown, Sparkles, Edit2
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
 import { useTickets, useCreateTicket, useUpdateTicket, useDeleteTicket } from '../hooks/useTickets';
 import { useGuests } from '../hooks/useGuests';
+import { useEvent } from '../hooks/useEvents';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import type { Ticket as TicketType, Guest } from '../types';
+import { formatCurrency, formatLocalDate } from '../utils/formatters';
+import { useLocale } from '../hooks/useLocale';
 import { toast } from 'sonner';
 
 const STATUS_CONFIG = {
@@ -21,6 +24,7 @@ const STATUS_CONFIG = {
 
 /** Modal to display and download a per-ticket RSVP QR Code & invite link */
 function RsvpLinkModal({ ticket, eventId, onClose }: { ticket: TicketType; eventId: string; onClose: () => void }) {
+  const { localCurrency } = useLocale();
   const [copied, setCopied] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const rsvpUrl = `${window.location.origin}/events/${eventId}/invite?ticket=${ticket._id}`;
@@ -133,7 +137,7 @@ function RsvpLinkModal({ ticket, eventId, onClose }: { ticket: TicketType; event
                   borderColor: isPaid ? '#FDE68A' : '#A7F3D0',
                 }}
               >
-                {isPaid ? `$${ticket.price}` : 'Free RSVP'}
+                {isPaid ? formatCurrency(ticket.price, ticket.currency || localCurrency) : 'Free RSVP'}
               </span>
             </div>
             
@@ -302,6 +306,17 @@ function TicketOptionsModal({
 
           <button
             onClick={() => {
+              navigate(`/events/${eventId}/ticketing/${ticket._id}/edit`);
+              onClose();
+            }}
+            className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-slate-700 hover:bg-slate-50 hover:text-[#7A1F1F] transition-all text-left"
+          >
+            <Edit2 size={16} className="text-slate-400 shrink-0" />
+            Edit Ticket Type
+          </button>
+
+          <button
+            onClick={() => {
               navigate(`/events/${eventId}/ticketing/${ticket._id}`);
               onClose();
             }}
@@ -404,11 +419,13 @@ function ProgressBar({ value, max, color }: { value: number; max: number; color:
 
 export default function TicketingPage() {
   const { t } = useTranslation();
+  const { localCurrency, timezone, locale } = useLocale();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { data: tickets = [], isLoading } = useTickets(id!);
   const { data: guests = [] } = useGuests(id!);
+  const { data: event } = useEvent(id!);
   const createTicket = useCreateTicket();
   const updateTicket = useUpdateTicket();
   const deleteTicket = useDeleteTicket();
@@ -425,10 +442,11 @@ export default function TicketingPage() {
     }
   }, [location.search, id, navigate]);
 
-  const totalSold = tickets.reduce((s, t) => s + t.sold, 0);
-  const totalCapacity = tickets.reduce((s, t) => s + t.total, 0);
-  const totalRevenue = tickets.reduce((s, t) => s + t.sold * t.price, 0);
-  const totalScans = tickets.reduce((s, t) => s + (t.qrScans || 0), 0);
+  const ticketList = Array.isArray(tickets) ? tickets : [];
+  const totalSold = ticketList.reduce((s, t) => s + t.sold, 0);
+  const totalCapacity = ticketList.reduce((s, t) => s + t.total, 0);
+  const totalRevenue = ticketList.reduce((s, t) => s + t.sold * t.price, 0);
+  const totalScans = ticketList.reduce((s, t) => s + (t.qrScans || 0), 0);
 
   const salesTimelineData = useMemo(() => {
     const soldTickets = guests.filter(g => g.ticketId && g.createdAt);
@@ -446,7 +464,7 @@ export default function TicketingPage() {
     const dayCounts: Record<string, number> = {};
     soldTickets.forEach(g => {
       const d = new Date(g.createdAt || Date.now());
-      const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const dateStr = formatLocalDate(d, { timezone, locale, month: 'short', day: 'numeric' });
       dayCounts[dateStr] = (dayCounts[dateStr] || 0) + 1;
     });
 
@@ -456,7 +474,7 @@ export default function TicketingPage() {
       cumulative += dayCounts[date];
       return { date, sales: cumulative };
     });
-  }, [guests]);
+  }, [guests, timezone, locale]);
 
   // Filtered guests for the live registrations table
   const filteredGuests = useMemo(() => {
@@ -504,7 +522,7 @@ export default function TicketingPage() {
         `"${ticketName}"`,
         `"${g.rsvpStatus || 'confirmed'}"`,
         `"${g.checkedIn ? 'Yes' : 'No'}"`,
-        `"${g.createdAt ? new Date(g.createdAt).toLocaleDateString() : ''}"`,
+        `"${g.createdAt ? formatLocalDate(g.createdAt, { timezone, locale }) : ''}"`,
       ];
     });
 
@@ -594,7 +612,23 @@ export default function TicketingPage() {
               Ticketing & QR Passes
             </h1>
           </div>
-          <div className="flex items-center gap-2 mt-1 sm:mt-0">
+          <div className="flex flex-wrap items-center gap-2 mt-1 sm:mt-0">
+            <button
+              onClick={() => navigate(`/events/${id}/checkin`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 text-white bg-[#7A1F1F] hover:bg-[#9c3030] text-xs sm:text-sm font-extrabold rounded-xl shadow-md transition-all active:scale-95"
+            >
+              <QrCode size={15} className="text-[#D4A24C]" />
+              <span>Check-In Scanner</span>
+            </button>
+
+            <button
+              onClick={() => navigate(`/events/${id}/checkin-dashboard`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-extrabold rounded-xl border border-slate-200 transition-colors"
+            >
+              <BarChart2 size={15} />
+              <span>Scanner Dashboard</span>
+            </button>
+
             <button
               onClick={() => navigate(`/events/${id}/ticketing/new`)}
               className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-white text-xs sm:text-sm font-extrabold rounded-xl hover:opacity-90 shadow-2xs transition-opacity"
@@ -612,7 +646,7 @@ export default function TicketingPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-4">
           {[
             { icon: Ticket, label: 'Tickets Claimed', value: totalSold.toLocaleString(), sub: `of ${totalCapacity.toLocaleString()} total`, color: '#7A1F1F' },
-            { icon: DollarSign, label: 'Total Revenue', value: `$${totalRevenue.toLocaleString()}`, sub: 'gross sales', color: '#10B981' },
+            { icon: DollarSign, label: 'Total Revenue', value: formatCurrency(totalRevenue, event?.currency || localCurrency), sub: 'gross sales', color: '#10B981' },
             { icon: QrCode, label: 'Total QR Scans', value: totalScans.toLocaleString(), sub: 'across all passes', color: '#D4A24C' },
             { icon: Users, label: 'Ticket Tiers', value: tickets.length, sub: 'active tiers', color: '#7A1F1F' },
           ].map(({ icon: Icon, label, value, sub, color }) => (
@@ -711,7 +745,7 @@ export default function TicketingPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {tickets.map(ticket => {
+            {ticketList.map(ticket => {
               const pct = ticket.total > 0 ? Math.round(ticket.sold / ticket.total * 100) : 0;
               const status = STATUS_CONFIG[ticket.status as keyof typeof STATUS_CONFIG] || STATUS_CONFIG.active;
               const revenue = ticket.sold * ticket.price;
@@ -739,7 +773,7 @@ export default function TicketingPage() {
                             className="text-[10px] sm:text-[11px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
                             style={{ background: isPaid ? '#FEF3C7' : '#ECFDF5', color: isPaid ? '#B45309' : '#059669' }}
                           >
-                            {isPaid ? `$${ticket.price}` : 'Free'}
+                            {isPaid ? formatCurrency(ticket.price, ticket.currency || event?.currency || localCurrency) : 'Free'}
                           </span>
                         </div>
                         {ticket.description && <p className="text-[11px] sm:text-xs text-slate-400 line-clamp-1">{ticket.description}</p>}
@@ -758,7 +792,7 @@ export default function TicketingPage() {
                     <div className="grid grid-cols-3 gap-2 my-2.5 p-2.5 bg-slate-50/80 rounded-xl">
                       <div>
                         <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase">Price</p>
-                        <p className="font-extrabold text-slate-900 text-xs sm:text-sm mt-0.5">{ticket.price === 0 ? 'Free' : `$${ticket.price}`}</p>
+                        <p className="font-extrabold text-slate-900 text-xs sm:text-sm mt-0.5">{ticket.price === 0 ? 'Free' : formatCurrency(ticket.price, ticket.currency || event?.currency || localCurrency)}</p>
                       </div>
                       <div>
                         <p className="text-[9px] sm:text-[10px] font-bold text-slate-400 uppercase">Claimed</p>
@@ -843,7 +877,7 @@ export default function TicketingPage() {
                 className="w-full sm:w-auto px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none"
               >
                 <option value="all">All Ticket Tiers ({guests.length})</option>
-                {tickets.map(t => (
+                {ticketList.map(t => (
                   <option key={t._id} value={t._id}>
                     {t.name} ({guests.filter(g => g.ticketId === t._id).length})
                   </option>
@@ -906,7 +940,7 @@ export default function TicketingPage() {
                           )}
                         </td>
                         <td className="py-3 px-4 text-slate-400 text-[11px]">
-                          {guest.createdAt ? new Date(guest.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : '—'}
+                          {guest.createdAt ? formatLocalDate(guest.createdAt, { timezone, locale, month: 'short', day: 'numeric' }) : '—'}
                         </td>
                       </tr>
                     );

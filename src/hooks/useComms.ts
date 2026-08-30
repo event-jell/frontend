@@ -33,11 +33,15 @@ export function useUpdateComm() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Comm> }) => commsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await qc.cancelQueries({ queryKey: commKeys.all });
-      const snapshots = new Map<string, Comm[]>();
-      qc.getQueriesData<Comm[]>({ queryKey: commKeys.all }).forEach(([key, comms]) => {
-        if (!comms) return;
-        snapshots.set(JSON.stringify(key), comms);
-        qc.setQueryData(key, comms.map(c => (c._id === id ? { ...c, ...data } : c)));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: commKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.map((c: Comm) => (c._id === id ? { ...c, ...data } : c)));
+        } else if (typeof value === 'object' && value && (value as Comm)._id === id) {
+          qc.setQueryData(key, { ...value, ...data });
+        }
       });
       return { snapshots };
     },
@@ -54,11 +58,15 @@ export function useDeleteComm() {
     mutationFn: (id: string) => commsApi.delete(id),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: commKeys.all });
-      const snapshots = new Map<string, Comm[]>();
-      qc.getQueriesData<Comm[]>({ queryKey: commKeys.all }).forEach(([key, comms]) => {
-        if (!comms) return;
-        snapshots.set(JSON.stringify(key), comms);
-        qc.setQueryData(key, comms.filter(c => c._id !== id));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: commKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.filter((c: Comm) => c._id !== id));
+        } else if (typeof value === 'object' && value && (value as Comm)._id === id) {
+          qc.setQueryData(key, undefined);
+        }
       });
       return { snapshots };
     },

@@ -1,15 +1,19 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import SEO from '../components/SEO';
 import {
   Search, Plus, Filter, Download, CheckCircle2, Clock, XCircle,
-  HelpCircle, UserCheck, Link as LinkIcon, Upload, Trash2, ChevronDown, BarChart2
+  HelpCircle, UserCheck, Link as LinkIcon, Upload, Trash2, ChevronDown, BarChart2, Ticket, QrCode
 } from 'lucide-react';
 import { useGuests, useCreateGuest, useUpdateGuest, useDeleteGuest, useBulkCreateGuests } from '../hooks/useGuests';
+import { useTickets } from '../hooks/useTickets';
+import { useLocale } from '../hooks/useLocale';
+import { formatCurrency, formatLocalDate } from '../utils/formatters';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import ImportGuestsModal from '../components/guests/ImportGuestsModal';
-import type { Guest } from '../types';
+import EventPassModal from '../components/checkin/EventPassModal';
+import type { Guest, Ticket as TicketType } from '../types';
 
 const RSVP_CONFIG = {
   confirmed: { label: 'Confirmed', icon: CheckCircle2, color: '#10B981', bg: '#ECFDF5' },
@@ -29,13 +33,31 @@ function RsvpBadge({ status }: { status: Guest['rsvpStatus'] }) {
   );
 }
 
-function AddGuestModal({ onClose, onSave }: { onClose: () => void; onSave: (d: Partial<Guest>) => void }) {
+function AddGuestModal({
+  tickets = [],
+  onClose,
+  onSave,
+}: {
+  tickets?: TicketType[];
+  onClose: () => void;
+  onSave: (d: Partial<Guest>) => void;
+}) {
   const { t } = useTranslation();
+  const { localCurrency } = useLocale();
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', group: '',
+    name: '', email: '', phone: '', group: '', ticketId: '',
     dietaryReqs: '', rsvpStatus: 'pending' as Guest['rsvpStatus'], plusOnes: 0,
   });
   const set = (k: string, v: string | number) => setForm(f => ({ ...f, [k]: v }));
+
+  const handleTicketChange = (tId: string) => {
+    const selected = tickets.find(t => t._id === tId);
+    setForm(f => ({
+      ...f,
+      ticketId: tId,
+      group: selected ? selected.name : f.group,
+    }));
+  };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
@@ -59,11 +81,28 @@ function AddGuestModal({ onClose, onSave }: { onClose: () => void; onSave: (d: P
                 className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="+1 555 000 0000" />
             </div>
           </div>
+          {tickets.length > 0 && (
+            <div>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">Ticket Tier / Pass</label>
+              <select
+                value={form.ticketId}
+                onChange={e => handleTicketChange(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 bg-white"
+              >
+                <option value="">— Select Ticket Tier (Optional) —</option>
+                {tickets.map(t => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} {t.price > 0 ? `(${formatCurrency(t.price, t.currency || localCurrency)})` : '(Free)'}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-slate-600 mb-1 block">{t('guests.modal.group')}</label>
+              <label className="text-xs font-medium text-slate-600 mb-1 block">{t('guests.modal.group')} / Type</label>
               <input value={form.group} onChange={e => set('group', e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="VIP, Family…" />
+                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" placeholder="VIP, General Admission…" />
             </div>
             <div>
               <label className="text-xs font-medium text-slate-600 mb-1 block">{t('guests.modal.plus_ones')}</label>
@@ -102,6 +141,7 @@ function AddGuestModal({ onClose, onSave }: { onClose: () => void; onSave: (d: P
 }
 
 export default function GuestsPage() {
+  const { localCurrency, timezone, locale } = useLocale();
   const { t } = useTranslation();
   const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -109,6 +149,7 @@ export default function GuestsPage() {
   const ticketId = searchParams.get('ticketId');
 
   const { data: guests = [], isLoading } = useGuests(eventId);
+  const { data: tickets = [] } = useTickets(eventId);
   const createGuest = useCreateGuest();
   const updateGuest = useUpdateGuest();
   const deleteGuest = useDeleteGuest();
@@ -119,9 +160,22 @@ export default function GuestsPage() {
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [showCopied, setShowCopied] = useState(false);
+  const [selectedGuestPassId, setSelectedGuestPassId] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkMenuOpen, setBulkMenuOpen] = useState(false);
   const [addMenuOpen, setAddMenuOpen] = useState(false);
+  const addMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close add dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (addMenuRef.current && !addMenuRef.current.contains(e.target as Node)) {
+        setAddMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/events/${eventId}/invite`);
@@ -130,12 +184,14 @@ export default function GuestsPage() {
   };
 
   const handleExport = () => {
-    const header = 'Name,Email,Phone,Group,RSVP Status,Dietary,+1s,Checked In,Table\n';
-    const rows = guests.map(g =>
-      [g.name, g.email, g.phone, g.group, g.rsvpStatus, g.dietaryReqs, g.plusOnes, g.checkedIn ? 'Yes' : 'No', g.tableAssignment]
+    const header = 'Name,Email,Phone,Group,Ticket Tier,RSVP Status,Dietary,+1s,Checked In,Table\n';
+    const rows = guests.map(g => {
+      const ticketName = tickets.find(t => t._id === g.ticketId)?.name || '';
+      const groupOrTicket = g.group || ticketName;
+      return [g.name, g.email, g.phone, groupOrTicket, ticketName, g.rsvpStatus, g.dietaryReqs, g.plusOnes, g.checkedIn ? 'Yes' : 'No', g.tableAssignment]
         .map(v => `"${(v ?? '').toString().replace(/"/g, '""')}"`)
-        .join(',')
-    ).join('\n');
+        .join(',');
+    }).join('\n');
     const blob = new Blob([header + rows], { type: 'text/csv' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -149,10 +205,16 @@ export default function GuestsPage() {
 
   const filtered = useMemo(() => ticketFiltered.filter(g => {
     const s = search.toLowerCase();
-    const matchSearch = !s || g.name.toLowerCase().includes(s) || (g.email?.toLowerCase().includes(s) ?? false) || (g.group?.toLowerCase().includes(s) ?? false);
+    const ticketName = tickets.find(t => t._id === g.ticketId)?.name?.toLowerCase() ?? '';
+    const groupName = g.group?.toLowerCase() ?? '';
+    const matchSearch = !s ||
+      g.name.toLowerCase().includes(s) ||
+      (g.email?.toLowerCase().includes(s) ?? false) ||
+      groupName.includes(s) ||
+      ticketName.includes(s);
     const matchRsvp = filterRsvp === 'all' || g.rsvpStatus === filterRsvp;
     return matchSearch && matchRsvp;
-  }), [ticketFiltered, search, filterRsvp]);
+  }), [ticketFiltered, search, filterRsvp, tickets]);
 
   const counts = {
     total:     ticketFiltered.length,
@@ -178,7 +240,7 @@ export default function GuestsPage() {
     const dayCounts: Record<string, number> = {};
     validGuests.forEach(g => {
       const d = new Date(g.createdAt || Date.now());
-      const dateStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      const dateStr = formatLocalDate(d, { timezone, locale, month: 'short', day: 'numeric' });
       dayCounts[dateStr] = (dayCounts[dateStr] || 0) + 1;
     });
 
@@ -188,7 +250,7 @@ export default function GuestsPage() {
       cumulative += dayCounts[date];
       return { date, total: cumulative };
     });
-  }, [ticketFiltered]);
+  }, [ticketFiltered, timezone, locale]);
 
   const allFilteredIds = filtered.map(g => g._id);
   const allSelected = allFilteredIds.length > 0 && allFilteredIds.every(id => selected.has(id));
@@ -298,8 +360,11 @@ export default function GuestsPage() {
     <div className="flex flex-col h-full overflow-hidden">
       <SEO title="Manage Guests" />
       {showAdd && (
-        <AddGuestModal onClose={() => setShowAdd(false)}
-          onSave={data => createGuest.mutate({ ...data, eventId })} />
+        <AddGuestModal
+          tickets={tickets}
+          onClose={() => setShowAdd(false)}
+          onSave={data => createGuest.mutate({ ...data, eventId })}
+        />
       )}
       {showImport && (
         <ImportGuestsModal
@@ -309,6 +374,14 @@ export default function GuestsPage() {
           onImport={async (gs) => {
             await bulkCreate.mutateAsync({ eventId: eventId!, guests: gs });
           }}
+        />
+      )}
+
+      {selectedGuestPassId && (
+        <EventPassModal
+          eventId={eventId || ''}
+          guestId={selectedGuestPassId}
+          onClose={() => setSelectedGuestPassId(null)}
         />
       )}
 
@@ -325,38 +398,80 @@ export default function GuestsPage() {
               </div>
             )}
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <button onClick={handleCopyLink}
-              className="flex items-center gap-2 px-3 py-2 text-slate-700 bg-white border border-slate-200 text-sm font-medium rounded-xl hover:bg-slate-50 shadow-sm">
-              <LinkIcon size={14} /> {t('guests.share_rsvp')}
+          <div className="flex gap-2.5 flex-wrap items-center">
+            <button
+              onClick={() => navigate(`/events/${eventId}/checkin`)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-[#7A1F1F] hover:bg-[#9c3030] text-white text-xs font-bold rounded-xl shadow-md transition-all active:scale-95"
+            >
+              <QrCode size={14} className="text-[#D4A24C]" />
+              <span>Check-In Scanner</span>
             </button>
-            <button onClick={handleExport}
-              className="flex items-center gap-2 px-3 py-2 text-slate-600 text-sm font-medium border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm bg-white">
-              <Download size={14} /> {t('guests.export')}
+            <button
+              onClick={handleCopyLink}
+              className="flex items-center gap-2 px-3.5 py-2.5 text-slate-700 bg-white border border-slate-200 text-xs font-bold rounded-xl hover:bg-slate-50 transition-all shadow-2xs"
+            >
+              <LinkIcon size={14} className="text-slate-500" />
+              <span>{showCopied ? 'Link Copied!' : t('guests.share_rsvp')}</span>
+            </button>
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 px-3.5 py-2.5 text-slate-700 text-xs font-bold border border-slate-200 rounded-xl hover:bg-slate-50 transition-all shadow-2xs bg-white"
+            >
+              <Download size={14} className="text-slate-500" />
+              <span>{t('guests.export')}</span>
             </button>
 
             {/* Add guest split button */}
-            <div className="relative flex">
-              <button onClick={() => setShowAdd(true)}
-                className="flex items-center gap-2 px-4 py-2 text-white text-sm font-semibold rounded-l-xl hover:opacity-90 shadow-sm"
-                style={{ backgroundColor: '#7A1F1F' }}>
-                <Plus size={14} /> {t('guests.add_guest')}
+            <div className="relative inline-flex shadow-sm rounded-xl" ref={addMenuRef}>
+              <button
+                onClick={() => setShowAdd(true)}
+                className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#7A1F1F] to-[#992626] text-white text-xs font-bold rounded-l-xl hover:brightness-110 active:scale-[0.99] transition-all"
+              >
+                <Plus size={15} />
+                <span>{t('guests.add_guest')}</span>
               </button>
               <button
                 onClick={() => setAddMenuOpen(o => !o)}
-                className="flex items-center px-2 py-2 text-white text-sm font-semibold rounded-r-xl hover:opacity-90 border-l border-white/20"
-                style={{ backgroundColor: '#7A1F1F' }}>
-                <ChevronDown size={14} />
+                className={`flex items-center justify-center px-2.5 py-2.5 bg-[#7A1F1F] hover:bg-[#601818] text-white rounded-r-xl border-l border-white/20 transition-all ${
+                  addMenuOpen ? 'bg-[#601818]' : ''
+                }`}
+                title="More options"
+              >
+                <ChevronDown size={14} className={`transition-transform duration-200 ${addMenuOpen ? 'rotate-180' : ''}`} />
               </button>
+
               {addMenuOpen && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-10 py-1" onMouseLeave={() => setAddMenuOpen(false)}>
-                  <button onClick={() => { setShowAdd(true); setAddMenuOpen(false); }}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                    <Plus size={14} /> {t('guests.add_single')}
+                <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200/90 rounded-2xl shadow-xl shadow-slate-900/10 z-30 p-1.5 animate-in fade-in zoom-in-95 duration-150">
+                  <button
+                    onClick={() => {
+                      setShowAdd(true);
+                      setAddMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-[#FAF0E8] text-[#7A1F1F] flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                      <Plus size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">{t('guests.add_single')}</div>
+                      <div className="text-[11px] text-slate-400 font-normal">Add attendee manually</div>
+                    </div>
                   </button>
-                  <button onClick={() => { setShowImport(true); setAddMenuOpen(false); }}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-sm text-slate-700 hover:bg-slate-50">
-                    <Upload size={14} /> {t('guests.add_import')}
+
+                  <button
+                    onClick={() => {
+                      setShowImport(true);
+                      setAddMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full p-2.5 rounded-xl hover:bg-slate-50 transition-colors text-left group"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
+                      <Upload size={16} />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-slate-800">{t('guests.add_import')}</div>
+                      <div className="text-[11px] text-slate-400 font-normal">Upload CSV or spreadsheet</div>
+                    </div>
                   </button>
                 </div>
               )}
@@ -431,19 +546,30 @@ export default function GuestsPage() {
         {/* Filters + bulk bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mb-4">
           <div className="relative flex-1 max-w-sm">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input value={search} onChange={e => setSearch(e.target.value)} placeholder={t('guests.search_placeholder')}
-              className="w-full pl-9 pr-3 py-2 text-sm bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30" />
+            <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder={t('guests.search_placeholder')}
+              className="w-full pl-9 pr-3 py-2 text-xs font-medium bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/30 shadow-2xs"
+            />
           </div>
-          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1">
+          <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-2xs">
             {(['all', 'confirmed', 'pending', 'declined', 'maybe'] as const).map(s => (
-              <button key={s} onClick={() => setFilterRsvp(s)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg capitalize transition-all ${filterRsvp === s ? 'bg-slate-800 text-white' : 'text-slate-500 hover:text-slate-800'}`}>
-                {t(`guests.status.${s}`)}
+              <button
+                key={s}
+                onClick={() => setFilterRsvp(s)}
+                className={`px-3 py-1.5 text-xs font-bold rounded-lg capitalize transition-all ${
+                  filterRsvp === s
+                    ? 'bg-slate-900 text-white shadow-sm'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                {s === 'all' ? 'All' : t(`guests.status.${s}`, s)}
               </button>
             ))}
           </div>
-          <button className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 bg-white">
+          <button className="flex items-center gap-2 px-3.5 py-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 bg-white shadow-2xs">
             <Filter size={14} /> {t('guests.filters')}
           </button>
         </div>
@@ -545,21 +671,38 @@ export default function GuestsPage() {
                       {guest.phone && <p className="text-xs text-slate-400">{guest.phone}</p>}
                     </td>
                     <td className="px-4 py-3 hidden md:table-cell">
-                      {guest.group
-                        ? <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-full">{guest.group}</span>
-                        : <span className="text-slate-400">—</span>}
+                      {(() => {
+                        const displayGroup = guest.group || tickets.find(t => t._id === guest.ticketId)?.name;
+                        return displayGroup ? (
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-[#FAF0E8] text-[#7A1F1F] text-xs font-semibold rounded-full border border-[#7A1F1F]/20 shadow-2xs">
+                            <Ticket size={11} className="text-[#7A1F1F] opacity-75" />
+                            {displayGroup}
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        );
+                      })()}
                     </td>
                     <td className="px-4 py-3"><RsvpBadge status={guest.rsvpStatus} /></td>
                     <td className="px-4 py-3 text-slate-500 hidden sm:table-cell">{guest.tableAssignment || '—'}</td>
                     <td className="px-4 py-3" onClick={e => e.stopPropagation()}>
-                      <button
-                        onClick={() => updateGuest.mutate({ id: guest._id, data: { checkedIn: !guest.checkedIn } })}
-                        className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                          guest.checkedIn ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
-                        }`}>
-                        <UserCheck size={12} />
-                        {guest.checkedIn ? t('guests.table.checked_in') : t('guests.table.check_in_action')}
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setSelectedGuestPassId(guest._id)}
+                          className="p-1.5 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-[#7A1F1F] border border-slate-200 shadow-2xs transition-colors"
+                          title="View Guest Event Pass"
+                        >
+                          <QrCode size={13} />
+                        </button>
+                        <button
+                          onClick={() => updateGuest.mutate({ id: guest._id, data: { checkedIn: !guest.checkedIn } })}
+                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
+                            guest.checkedIn ? 'bg-green-50 text-green-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                          }`}>
+                          <UserCheck size={12} />
+                          {guest.checkedIn ? t('guests.table.checked_in') : t('guests.table.check_in_action')}
+                        </button>
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-right" onClick={e => e.stopPropagation()}>
                       <button onClick={() => { if (confirm('Remove this guest?')) deleteGuest.mutate(guest._id); }}

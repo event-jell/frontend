@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Sparkles, Calendar, Users, DollarSign, Info, Minus, Plus } from 'lucide-react';
@@ -6,11 +6,14 @@ import { useCreateTicket } from '../hooks/useTickets';
 import { useEvent } from '../hooks/useEvents';
 import SEO from '../components/SEO';
 import DatePicker from '../components/DatePicker';
+import { useAuth } from '../contexts/AuthContext';
+import { SUPPORTED_CURRENCIES, getCurrencySymbol, formatCurrency, getCurrencyForCountry } from '../utils/formatters';
 
 const R = '#7A1F1F';
 const RD = '#5C1414';
 
 export default function CreateTicketPage() {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -21,10 +24,17 @@ export default function CreateTicketPage() {
     name: '',
     description: '',
     price: 0,
+    currency: getCurrencyForCountry(user?.country),
     total: 100,
     saleStart: '',
     saleEnd: '',
   });
+
+  useEffect(() => {
+    if (event?.currency) {
+      setForm(f => ({ ...f, currency: event.currency || getCurrencyForCountry(user?.country) }));
+    }
+  }, [event?.currency, user?.country]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,39 +101,61 @@ export default function CreateTicketPage() {
                 />
               </div>
 
-              {/* Price & Capacity Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
+              {/* Price, Currency & Capacity Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
+                {/* Price (4 cols) */}
+                <div className="sm:col-span-4">
                   <label className="text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <DollarSign size={16} className="text-slate-400" />
-                    Price ($)
+                    Price ({getCurrencySymbol(form.currency)})
                   </label>
                   <div className="flex items-center bg-slate-50/50 border border-slate-200 rounded-xl focus-within:bg-white focus-within:border-[#7A1F1F] focus-within:ring-4 focus-within:ring-[#7A1F1F]/5 transition-all overflow-hidden">
                     <button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, price: Math.max(0, f.price - 5) }))}
-                      className="px-3.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-r border-slate-200 select-none font-bold text-lg shrink-0"
+                      onClick={() => setForm(f => ({ ...f, price: Math.max(0, f.price - (form.currency === 'NGN' ? 500 : 5)) }))}
+                      className="px-2.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-r border-slate-200 select-none font-bold text-base shrink-0"
                     >
-                      <Minus size={14} />
+                      <Minus size={13} />
                     </button>
                     <input
                       type="number"
                       min={0}
                       value={form.price}
                       onChange={e => setForm(f => ({ ...f, price: Math.max(0, Number(e.target.value)) }))}
-                      className="w-full bg-transparent px-3 py-2 text-center text-slate-800 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full bg-transparent px-2 py-2 text-center text-slate-800 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <button
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, price: f.price + 5 }))}
-                      className="px-3.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-l border-slate-200 select-none font-bold text-lg shrink-0"
+                      onClick={() => setForm(f => ({ ...f, price: f.price + (form.currency === 'NGN' ? 500 : 5) }))}
+                      className="px-2.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-l border-slate-200 select-none font-bold text-base shrink-0"
                     >
-                      <Plus size={14} />
+                      <Plus size={13} />
                     </button>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">Set to 0 for free RSVPs.</p>
+                  <p className="text-xs text-slate-400 mt-1">Set to 0 for free.</p>
                 </div>
-                <div>
+
+                {/* Currency selector (4 cols) */}
+                <div className="sm:col-span-4">
+                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">
+                    Currency
+                  </label>
+                  <select
+                    value={form.currency}
+                    onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                    className="w-full px-3 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/5 transition-all"
+                  >
+                    {SUPPORTED_CURRENCIES.map(c => (
+                      <option key={c.code} value={c.code}>
+                        {c.flag} {c.code} ({c.symbol})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-400 mt-1">{SUPPORTED_CURRENCIES.find(c => c.code === form.currency)?.country || 'Event currency'}</p>
+                </div>
+
+                {/* Total Capacity (4 cols) */}
+                <div className="sm:col-span-4">
                   <label className="text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <Users size={16} className="text-slate-400" />
                     Total Capacity
@@ -132,26 +164,26 @@ export default function CreateTicketPage() {
                     <button
                       type="button"
                       onClick={() => setForm(f => ({ ...f, total: Math.max(1, f.total - 10) }))}
-                      className="px-3.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-r border-slate-200 select-none font-bold text-lg shrink-0"
+                      className="px-2.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-r border-slate-200 select-none font-bold text-base shrink-0"
                     >
-                      <Minus size={14} />
+                      <Minus size={13} />
                     </button>
                     <input
                       type="number"
                       min={1}
                       value={form.total}
                       onChange={e => setForm(f => ({ ...f, total: Math.max(1, Number(e.target.value)) }))}
-                      className="w-full bg-transparent px-3 py-2 text-center text-slate-800 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-full bg-transparent px-2 py-2 text-center text-slate-800 text-sm font-bold focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <button
                       type="button"
                       onClick={() => setForm(f => ({ ...f, total: f.total + 10 }))}
-                      className="px-3.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-l border-slate-200 select-none font-bold text-lg shrink-0"
+                      className="px-2.5 py-3 text-slate-400 hover:text-slate-750 hover:bg-slate-100/80 active:bg-slate-200/50 transition-colors border-l border-slate-200 select-none font-bold text-base shrink-0"
                     >
-                      <Plus size={14} />
+                      <Plus size={13} />
                     </button>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">Max tickets available of this type.</p>
+                  <p className="text-xs text-slate-400 mt-1">Available tickets.</p>
                 </div>
               </div>
 
@@ -254,7 +286,7 @@ export default function CreateTicketPage() {
                   <div className="text-right">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Price</span>
                     <span className="text-2xl font-black text-slate-800">
-                      {form.price === 0 ? 'Free' : `$${form.price}`}
+                      {form.price === 0 ? 'Free' : formatCurrency(form.price, form.currency)}
                     </span>
                   </div>
                 </div>

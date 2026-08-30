@@ -4,6 +4,8 @@ import {
   Mail, Smartphone, Users, Zap, ChevronRight, X,
 } from 'lucide-react';
 import { useComms, useCreateComm, useDeleteComm } from '../hooks/useComms';
+import { useLocale } from '../hooks/useLocale';
+import { formatLocalDate } from '../utils/formatters';
 import type { Comm } from '../types';
 
 const STATUS_CONFIG = {
@@ -163,6 +165,7 @@ function ComposeModal({ onClose, onSave }: ComposeModalProps) {
 }
 
 function CommCard({ comm, onDelete }: { comm: Comm; onDelete: () => void }) {
+  const { timezone, locale } = useLocale();
   const status = STATUS_CONFIG[comm.status];
   const StatusIcon = status.icon;
   const audience = AUDIENCE_OPTIONS.find(o => o.value === comm.audience);
@@ -219,12 +222,12 @@ function CommCard({ comm, onDelete }: { comm: Comm; onDelete: () => void }) {
             )}
             {comm.sentAt && (
               <span className="text-xs text-slate-300">
-                Sent {new Date(comm.sentAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                Sent {formatLocalDate(comm.sentAt, { timezone, locale, month: 'short', day: 'numeric', year: 'numeric' })}
               </span>
             )}
             {comm.scheduledAt && comm.status === 'scheduled' && (
               <span className="text-xs text-amber-400 font-medium">
-                Scheduled {new Date(comm.scheduledAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                Scheduled {formatLocalDate(comm.scheduledAt, { timezone, locale, month: 'short', day: 'numeric' })}
               </span>
             )}
           </div>

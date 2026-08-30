@@ -5,13 +5,15 @@ import SEO from '../components/SEO';
 import {
   Sparkles, Heart, Presentation, PartyPopper, Music, Tent, HandHeart, Briefcase,
   MoreHorizontal, Calendar, MapPin, Users, ArrowRight, ArrowLeft, Check, Upload,
-  Loader2, Zap, Rocket, Star, Compass, Layers, CheckCircle2, ShieldCheck,
+  Loader2, Zap, Rocket, Star, Compass, Layers, CheckCircle2, ShieldCheck, Coins, ChevronDown
 } from 'lucide-react';
 import { useCreateEvent } from '../hooks/useEvents';
+import { useAuth } from '../contexts/AuthContext';
 import { uploadApi } from '../lib/api';
 import Logo from '../components/Logo';
 import DatePicker from '../components/DatePicker';
 import TimePicker from '../components/TimePicker';
+import { SUPPORTED_CURRENCIES, getCurrencyForCountry } from '../utils/formatters';
 import type { Event } from '../types';
 
 const R = '#7A1F1F';
@@ -38,6 +40,7 @@ const PRESET_BANNERS = [
 ];
 
 export default function EventOnboardingPage() {
+  const { user } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const createEvent = useCreateEvent();
@@ -46,6 +49,7 @@ export default function EventOnboardingPage() {
   const [form, setForm] = useState({
     name: '',
     type: 'wedding' as NonNullable<Event['type']>,
+    currency: getCurrencyForCountry(user?.country),
     venue: '',
     date: '',
     startTime: '18:00',
@@ -400,6 +404,36 @@ export default function EventOnboardingPage() {
                       </div>
                     );
                   })()}
+                </div>
+
+                {/* Event Currency selector */}
+                <div className="space-y-1.5 pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+                      <Coins size={13} className="text-[#7A1F1F]" />
+                      Event Currency
+                    </label>
+                    <span className="text-xs font-bold text-[#7A1F1F]">
+                      {SUPPORTED_CURRENCIES.find(c => c.code === form.currency)?.name}
+                    </span>
+                  </div>
+                  <div className="relative">
+                    <select
+                      value={form.currency}
+                      onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
+                      className="w-full appearance-none px-3.5 h-[44px] sm:h-[48px] text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F] pr-10"
+                    >
+                      {SUPPORTED_CURRENCIES.map(c => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.code} ({c.symbol}) - {c.country}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute inset-y-0 right-0 flex items-center px-3.5 pointer-events-none text-slate-400">
+                      <ChevronDown size={14} />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-400">Tickets and registrations will default to this currency.</p>
                 </div>
               </div>
             </div>

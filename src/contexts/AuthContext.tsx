@@ -1,10 +1,19 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
-interface AuthUser {
+export interface AuthUser {
   id: string;
+  _id?: string;
   firstName: string;
   lastName: string;
   email: string;
+  country?: string;
+  organizationName?: string;
+  organizationSize?: string;
+  creatorRole?: string;
+  primaryEventType?: string;
+  plan?: string;
+  subscriptionStatus?: string;
+  subscriptionExpiresAt?: string;
 }
 
 interface AuthContextValue {

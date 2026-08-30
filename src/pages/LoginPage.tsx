@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-do
 import SEO from '../components/SEO';
 import { useMutation } from '@tanstack/react-query';
 import { Mail, Lock, Eye, EyeOff, Star, CheckCircle } from 'lucide-react';
-import { authApi, eventsApi } from '../lib/api';
+import { authApi, eventsApi, getFriendlyErrorMessage } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from '../components/Logo';
 import { toast } from 'sonner';
@@ -45,20 +45,18 @@ export default function LoginPage() {
 
       navigate('/events', { replace: true });
     },
+    onError: (err) => {
+      const msg = getFriendlyErrorMessage(err);
+      toast.error(msg);
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    mutation.mutate({ email, password }, {
-      onError: () => {
-        toast.error("email or password is not correrct, please register");
-      }
-    });
+    mutation.mutate({ email: email.trim(), password });
   };
 
-  const errorMessage = mutation.error instanceof Error
-    ? (mutation.error as any).response?.data?.message ?? mutation.error.message
-    : null;
+  const errorMessage = mutation.error ? getFriendlyErrorMessage(mutation.error) : null;
 
   return (
     <div className="min-h-screen flex" style={{ background: '#FAF7F2' }}>

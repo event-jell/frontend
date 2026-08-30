@@ -146,6 +146,7 @@
       "submit": "Add Guest"
     },
     "status": {
+      "all": "All",
       "confirmed": "Confirmed",
       "pending": "Pending",
       "declined": "Declined",
@@ -256,7 +257,7 @@
     "create_title": "Create Ticket Type",
     "name": "Ticket Name *",
     "description": "Description",
-    "price": "Price ($)",
+    "price": "Price",
     "capacity": "Total Capacity",
     "sale_start": "Sale Start",
     "sale_end": "Sale End",

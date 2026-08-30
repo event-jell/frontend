@@ -1,54 +1,43 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import SEO from '../components/SEO';
 import { useMutation } from '@tanstack/react-query';
 import {
   User, Mail, Lock, Eye, EyeOff, MapPin, CheckCircle, ArrowRight, Zap, Search,
-  Globe, Users, LayoutGrid, Presentation, Ticket, MessageSquare, Wallet, BarChart3,
-  Contact2, Sparkles, UserPlus, X, Loader2,
+  Loader2, Building2, Users, Briefcase, Layers, Sparkles,
 } from 'lucide-react';
 import { authApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { useCreateEvent, useAddCollaborator } from '../hooks/useEvents';
 import Logo from '../components/Logo';
+import { COUNTRIES, getCountryFlag } from '../utils/countries';
 
-const MODULES = [
-  { key: 'guests', label: 'Guest Management', icon: Users },
-  { key: 'floor_plan', label: 'Floor Plan', icon: LayoutGrid },
-  { key: 'stage_plan', label: 'Stage Plan', icon: Presentation },
-  { key: 'ticketing', label: 'Ticketing', icon: Ticket },
-  { key: 'event_com', label: 'Event Com', icon: MessageSquare },
-  { key: 'budget_finance', label: 'Budget & Finance', icon: Wallet },
-  { key: 'reports', label: 'Reports', icon: BarChart3 },
-  { key: 'crm', label: 'CRM', icon: Contact2 },
-  { key: 'ai_assistant', label: 'AI Assistant', icon: Sparkles },
-] as const;
+const ORG_SIZES = [
+  '1 (Just me)',
+  '2 - 10 team members',
+  '11 - 50 team members',
+  '51 - 200 team members',
+  '201 - 500 team members',
+  '500+ team members',
+];
 
-function slugify(s: string): string {
-  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
+const CREATOR_ROLES = [
+  'Event Planner / Producer',
+  'Event Coordinator / Specialist',
+  'Venue & Hospitality Manager',
+  'Corporate Event Lead',
+  'Marketing & Brand Manager',
+  'Agency Owner / Executive',
+  'Independent Organizer / Host',
+  'Other',
+];
 
-const COUNTRIES = [
-  'Afghanistan','Albania','Algeria','Andorra','Angola','Antigua and Barbuda','Argentina','Armenia','Australia','Austria',
-  'Azerbaijan','Bahamas','Bahrain','Bangladesh','Barbados','Belarus','Belgium','Belize','Benin','Bhutan','Bolivia',
-  'Bosnia and Herzegovina','Botswana','Brazil','Brunei','Bulgaria','Burkina Faso','Burundi','Cabo Verde','Cambodia',
-  'Cameroon','Canada','Central African Republic','Chad','Chile','China','Colombia','Comoros','Congo (DRC)','Congo (Republic)',
-  'Costa Rica','Croatia','Cuba','Cyprus','Czech Republic','Denmark','Djibouti','Dominica','Dominican Republic','Ecuador',
-  'Egypt','El Salvador','Equatorial Guinea','Eritrea','Estonia','Eswatini','Ethiopia','Fiji','Finland','France','Gabon',
-  'Gambia','Georgia','Germany','Ghana','Greece','Grenada','Guatemala','Guinea','Guinea-Bissau','Guyana','Haiti','Honduras',
-  'Hungary','Iceland','India','Indonesia','Iran','Iraq','Ireland','Israel','Italy','Jamaica','Japan','Jordan','Kazakhstan',
-  'Kenya','Kiribati','Kuwait','Kyrgyzstan','Laos','Latvia','Lebanon','Lesotho','Liberia','Libya','Liechtenstein',
-  'Lithuania','Luxembourg','Madagascar','Malawi','Malaysia','Maldives','Mali','Malta','Marshall Islands','Mauritania',
-  'Mauritius','Mexico','Micronesia','Moldova','Monaco','Mongolia','Montenegro','Morocco','Mozambique','Myanmar',
-  'Namibia','Nauru','Nepal','Netherlands','New Zealand','Nicaragua','Niger','Nigeria','North Korea','North Macedonia',
-  'Norway','Oman','Pakistan','Palau','Panama','Papua New Guinea','Paraguay','Peru','Philippines','Poland','Portugal',
-  'Qatar','Romania','Russia','Rwanda','Saint Kitts and Nevis','Saint Lucia','Saint Vincent and the Grenadines',
-  'Samoa','San Marino','Saudi Arabia','Senegal','Serbia','Seychelles','Sierra Leone','Singapore','Slovakia','Slovenia',
-  'Solomon Islands','Somalia','South Africa','South Korea','South Sudan','Spain','Sri Lanka','Sudan','Suriname',
-  'Sweden','Switzerland','Syria','Taiwan','Tajikistan','Tanzania','Thailand','Timor-Leste','Togo','Tonga',
-  'Trinidad and Tobago','Tunisia','Turkey','Turkmenistan','Tuvalu','Uganda','Ukraine','United Arab Emirates',
-  'United Kingdom','United States','Uruguay','Uzbekistan','Vanuatu','Vatican City','Venezuela','Vietnam','Yemen',
-  'Zambia','Zimbabwe',
+const EVENT_TYPES = [
+  'Weddings & Social Gatherings',
+  'Corporate & Conferences',
+  'Galas, Charity & Banquets',
+  'Concerts & Live Entertainment',
+  'Festivals & Outdoor Grounds',
+  'Multiple / Mixed Formats',
 ];
 
 const PERKS = [
@@ -98,17 +87,25 @@ function PasswordStrength({ password }: { password: string }) {
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const inviteEmail = searchParams.get('email') || '';
+  const inviteToken = searchParams.get('inviteToken') || '';
   const { login, user } = useAuth();
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1);
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [otp, setOtp] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(inviteEmail);
   const [country, setCountry] = useState('');
   const [countrySearch, setCountrySearch] = useState('');
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const countryRef = useRef<HTMLDivElement>(null);
+
+  const [organizationName, setOrganizationName] = useState('');
+  const [organizationSize, setOrganizationSize] = useState('');
+  const [creatorRole, setCreatorRole] = useState('');
+  const [primaryEventType, setPrimaryEventType] = useState('');
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -116,28 +113,6 @@ export default function RegisterPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [checkingEmail, setCheckingEmail] = useState(false);
-
-  // ── Workspace onboarding (steps 4-6) ──
-  const [workspaceName, setWorkspaceName] = useState('');
-  const [workspaceSlug, setWorkspaceSlug] = useState('');
-  const [slugEdited, setSlugEdited] = useState(false);
-  const [slugChecking, setSlugChecking] = useState(false);
-  const [createdEventId, setCreatedEventId] = useState<string | null>(null);
-  const [selectedModules, setSelectedModules] = useState<Record<string, boolean>>(
-    () => Object.fromEntries(MODULES.map(m => [m.key, true]))
-  );
-  const [teammates, setTeammates] = useState<{ email: string; role: 'editor' | 'viewer'; error: string }[]>([
-    { email: '', role: 'editor', error: '' },
-  ]);
-  const createEvent = useCreateEvent();
-  const addCollaborator = useAddCollaborator();
-
-  useEffect(() => {
-    if (!workspaceSlug) return;
-    setSlugChecking(true);
-    const t = setTimeout(() => setSlugChecking(false), 500);
-    return () => clearTimeout(t);
-  }, [workspaceSlug]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -151,7 +126,8 @@ export default function RegisterPage() {
   }, []);
 
   const filteredCountries = COUNTRIES.filter(c => 
-    c.toLowerCase().includes(countrySearch.toLowerCase())
+    c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    c.code.toLowerCase().includes(countrySearch.toLowerCase())
   );
 
   const mutation = useMutation({
@@ -164,7 +140,7 @@ export default function RegisterPage() {
 
   const verifyMutation = useMutation({
     mutationFn: authApi.verifyEmail,
-    onSuccess: (data) => {
+    onSuccess: () => {
       setValidationError('');
       // Navigate to login page so first-time login flow is triggered on sign in
       navigate('/login?created=true', {
@@ -184,82 +160,11 @@ export default function RegisterPage() {
     verifyMutation.mutate({ email, otp: otp.trim() });
   };
 
-  const handleWorkspaceSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setValidationError('');
-    if (!workspaceName.trim()) {
-      setValidationError('Please name your workspace.');
-      return;
-    }
-    createEvent.mutate({ name: workspaceName.trim() }, {
-      onSuccess: (created) => {
-        setCreatedEventId(created._id);
-        setStep(5);
-      },
-    });
-  };
-
-  const toggleModule = (key: string) => {
-    setSelectedModules(m => ({ ...m, [key]: !m[key] }));
-  };
-
-  const handleModulesSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (user) {
-      const enabled = Object.entries(selectedModules).filter(([, on]) => on).map(([key]) => key);
-      localStorage.setItem(`ej_workspace_modules_${user.id}`, JSON.stringify(enabled));
-    }
-    setStep(6);
-  };
-
-  const updateTeammate = (i: number, patch: Partial<{ email: string; role: 'editor' | 'viewer' }>) => {
-    setTeammates(rows => rows.map((r, idx) => idx === i ? { ...r, ...patch, error: '' } : r));
-  };
-
-  const addTeammateRow = () => {
-    setTeammates(rows => rows.length >= 5 ? rows : [...rows, { email: '', role: 'editor', error: '' }]);
-  };
-
-  const removeTeammateRow = (i: number) => {
-    setTeammates(rows => rows.filter((_, idx) => idx !== i));
-  };
-
-  const finishOnboarding = () => {
-    navigate(createdEventId ? `/events/${createdEventId}` : '/events', { replace: true });
-  };
-
-  const handleSendInvites = async () => {
-    const pending = teammates
-      .map((t, i) => ({ ...t, i }))
-      .filter(t => t.email.trim());
-
-    if (!createdEventId || pending.length === 0) {
-      finishOnboarding();
-      return;
-    }
-
-    const next = [...teammates];
-    await Promise.all(pending.map(async t => {
-      try {
-        await addCollaborator.mutateAsync({ eventId: createdEventId, email: t.email.trim(), role: t.role });
-        next[t.i] = { ...next[t.i], error: '' };
-      } catch (err) {
-        const message = err instanceof Error ? (err as any).response?.data?.message ?? err.message : 'Could not invite this person.';
-        next[t.i] = { ...next[t.i], error: message };
-      }
-    }));
-    setTeammates(next);
-
-    if (next.every(t => !t.email.trim() || !t.error)) {
-      finishOnboarding();
-    }
-  };
-
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault();
     setValidationError('');
     if (!firstName.trim() || !lastName.trim() || !email.trim()) {
-      setValidationError('Please fill in all fields.');
+      setValidationError('Please fill in your name and email address.');
       return;
     }
     setCheckingEmail(true);
@@ -289,10 +194,20 @@ export default function RegisterPage() {
       setValidationError('Password must be at least 8 characters.');
       return;
     }
-    mutation.mutate({ firstName, lastName, email, password, country });
+    mutation.mutate({
+      firstName,
+      lastName,
+      email,
+      password,
+      country,
+      organizationName,
+      organizationSize,
+      creatorRole,
+      primaryEventType,
+    });
   };
 
-  const activeError = mutation.error ?? verifyMutation.error ?? createEvent.error;
+  const activeError = mutation.error ?? verifyMutation.error;
   const errorMessage = validationError || (
     activeError instanceof Error
       ? (activeError as any).response?.data?.message ?? activeError.message
@@ -399,7 +314,7 @@ export default function RegisterPage() {
 
           {/* Progress dots */}
           <div className="flex items-center gap-1.5 mb-6">
-            {([1, 2, 3, 4, 5, 6] as const).map(n => (
+            {([1, 2, 3] as const).map(n => (
               <div key={n} className="flex items-center flex-1 last:flex-none">
                 <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all flex-shrink-0"
                   style={{
@@ -408,14 +323,14 @@ export default function RegisterPage() {
                   }}>
                   {step > n ? <CheckCircle size={12} /> : n}
                 </div>
-                {n < 6 && (
+                {n < 3 && (
                   <div className="flex-1 h-px mx-1" style={{ background: step > n ? `linear-gradient(90deg, ${R}, #9c3030)` : '#e2e8f0' }} />
                 )}
               </div>
             ))}
           </div>
           <p className="text-xs font-semibold text-center mb-6 -mt-2" style={{ color: R }}>
-            {['Your info', 'Security', 'Verify', 'Workspace', 'Modules', 'Team'][step - 1]}
+            {['Your info', 'Security', 'Verify'][step - 1]}
           </p>
 
           {/* Card */}
@@ -426,9 +341,6 @@ export default function RegisterPage() {
                   1: 'Create your account',
                   2: 'Secure your account',
                   3: 'Check your email',
-                  4: 'Name your workspace',
-                  5: 'Select your tools & modules',
-                  6: 'Add your teammates',
                 }[step]}
               </h2>
               <p className="text-sm" style={{ color: '#94a3b8' }}>
@@ -436,12 +348,21 @@ export default function RegisterPage() {
                   1: 'Tell us a bit about yourself to get started.',
                   2: 'Choose a strong password to protect your account.',
                   3: `Enter the 6-digit code we sent to ${email}.`,
-                  4: "This is where all your events will live. You can change this later.",
-                  5: 'Pick what you need — you can turn these on or off anytime.',
-                  6: 'Invite people to help you plan. You can always do this later.',
                 }[step]}
               </p>
             </div>
+
+            {(inviteToken || inviteEmail) && step === 1 && (
+              <div className="mx-8 mt-4 p-3.5 rounded-2xl bg-amber-50/90 border border-amber-200/90 flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl bg-[#7A1F1F] text-[#D4A24C] flex items-center justify-center flex-shrink-0 font-bold text-xs shadow-sm">
+                  EJ
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-950">You're accepting an invitation! 🎉</p>
+                  <p className="text-[11px] text-amber-800">Create your account to automatically join your team workspace.</p>
+                </div>
+              </div>
+            )}
 
             {errorMessage && (
               <div className="mx-8 mt-4 px-4 py-3 rounded-xl bg-red-50 border border-red-100 flex items-start gap-2">
@@ -455,10 +376,10 @@ export default function RegisterPage() {
             <div className="px-8 pb-8 pt-6">
               {/* ── STEP 1 ── */}
               {step === 1 && (
-                <form onSubmit={handleStep1} className="space-y-5">
-                  <div className="grid grid-cols-2 gap-4">
+                <form onSubmit={handleStep1} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">First name</label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">First name</label>
                       <div className="relative">
                         <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
                         <input
@@ -474,7 +395,7 @@ export default function RegisterPage() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Last name</label>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Last name</label>
                       <input
                         type="text" required
                         value={lastName}
@@ -489,7 +410,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Email address</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Work email</label>
                     <div className="relative">
                       <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
                       <input
@@ -506,10 +427,104 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Country</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Organization / Company name</label>
+                    <div className="relative">
+                      <Building2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
+                      <input
+                        type="text"
+                        value={organizationName}
+                        onChange={e => setOrganizationName(e.target.value)}
+                        placeholder="e.g. Apex Events, Luxe Studio, Independent"
+                        className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
+                        style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
+                        onFocus={e => (e.target.style.borderColor = R)}
+                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Organization size</label>
+                      <div className="relative">
+                        <Users size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#cbd5e1' }} />
+                        <select
+                          value={organizationSize}
+                          onChange={e => setOrganizationSize(e.target.value)}
+                          className="w-full h-11 pl-10 pr-8 rounded-xl border text-sm bg-[#f8fafc] text-slate-800 transition-all outline-none appearance-none cursor-pointer"
+                          style={{ borderColor: '#e2e8f0' }}
+                          onFocus={e => (e.target.style.borderColor = R)}
+                          onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                        >
+                          <option value="">Select company size</option>
+                          {ORG_SIZES.map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Role of creator</label>
+                      <div className="relative">
+                        <Briefcase size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#cbd5e1' }} />
+                        <select
+                          value={creatorRole}
+                          onChange={e => setCreatorRole(e.target.value)}
+                          className="w-full h-11 pl-10 pr-8 rounded-xl border text-sm bg-[#f8fafc] text-slate-800 transition-all outline-none appearance-none cursor-pointer"
+                          style={{ borderColor: '#e2e8f0' }}
+                          onFocus={e => (e.target.style.borderColor = R)}
+                          onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                        >
+                          <option value="">Select your role</option>
+                          {CREATOR_ROLES.map(r => (
+                            <option key={r} value={r}>{r}</option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                            <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Primary event type</label>
+                    <div className="relative">
+                      <Layers size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#cbd5e1' }} />
+                      <select
+                        value={primaryEventType}
+                        onChange={e => setPrimaryEventType(e.target.value)}
+                        className="w-full h-11 pl-10 pr-8 rounded-xl border text-sm bg-[#f8fafc] text-slate-800 transition-all outline-none appearance-none cursor-pointer"
+                        style={{ borderColor: '#e2e8f0' }}
+                        onFocus={e => (e.target.style.borderColor = R)}
+                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
+                      >
+                        <option value="">Select primary event focus</option>
+                        {EVENT_TYPES.map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                          <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Country</label>
                     <div className="relative" ref={countryRef}>
                       <div 
-                        className="relative w-full h-11 pl-10 pr-4 rounded-xl border text-sm cursor-pointer transition-all flex items-center gap-2 outline-none"
+                        className="relative w-full h-11 pl-3.5 pr-4 rounded-xl border text-sm cursor-pointer transition-all flex items-center gap-2 outline-none"
                         style={{ 
                           borderColor: isCountryOpen ? R : '#e2e8f0', 
                           background: '#f8fafc', 
@@ -517,7 +532,7 @@ export default function RegisterPage() {
                         }}
                         onClick={() => setIsCountryOpen(!isCountryOpen)}
                       >
-                        <MapPin size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
+                        <span className="text-base flex-shrink-0">{getCountryFlag(country)}</span>
                         <span className="flex-1 truncate">{country || 'Select your country'}</span>
                         <svg className="transition-transform duration-200" style={{ transform: isCountryOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} width="12" height="12" viewBox="0 0 12 12" fill="none">
                           <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -545,26 +560,29 @@ export default function RegisterPage() {
                           </div>
                           <div 
                             className="overflow-y-auto custom-scrollbar" 
-                            style={{ maxHeight: 'var(--country-list-height, 320px)' }}
+                            style={{ maxHeight: 'var(--country-list-height, 260px)' }}
                           >
                             {filteredCountries.length > 0 ? (
                               filteredCountries.map(c => (
                                 <div 
-                                  key={c} 
+                                  key={c.code} 
                                   className="px-4 py-2.5 text-sm cursor-pointer transition-all hover:bg-slate-50 flex items-center justify-between"
                                   style={{ 
                                     color: '#475569', 
-                                    backgroundColor: country === c ? 'rgba(122,31,31,0.08)' : 'transparent',
-                                    fontWeight: country === c ? '600' : '400'
+                                    backgroundColor: country === c.name ? 'rgba(122,31,31,0.08)' : 'transparent',
+                                    fontWeight: country === c.name ? '600' : '400'
                                   }}
                                   onClick={() => {
-                                    setCountry(c);
+                                    setCountry(c.name);
                                     setIsCountryOpen(false);
                                     setCountrySearch('');
                                   }}
                                 >
-                                  {c}
-                                  {country === c && <CheckCircle size={14} style={{ color: R }} />}
+                                  <div className="flex items-center gap-2.5">
+                                    <span className="text-base leading-none">{c.flag}</span>
+                                    <span>{c.name}</span>
+                                  </div>
+                                  {country === c.name && <CheckCircle size={14} style={{ color: R }} />}
                                 </div>
                               ))
                             ) : (
@@ -581,7 +599,7 @@ export default function RegisterPage() {
                   <button
                     type="submit"
                     disabled={checkingEmail}
-                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2 disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-3 disabled:opacity-50 disabled:pointer-events-none"
                     style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
                   >
                     {checkingEmail ? (
@@ -591,7 +609,7 @@ export default function RegisterPage() {
                       </>
                     ) : (
                       <>
-                        Continue <ArrowRight size={15} />
+                        Continue to setup <ArrowRight size={15} />
                       </>
                     )}
                   </button>
@@ -729,194 +747,15 @@ export default function RegisterPage() {
                   </button>
                 </form>
               )}
-
-              {/* ── STEP 4: Name your workspace ── */}
-              {step === 4 && (
-                <form onSubmit={handleWorkspaceSubmit} className="space-y-5">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Workspace name</label>
-                    <div className="relative">
-                      <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
-                      <input
-                        type="text" required autoFocus
-                        value={workspaceName}
-                        onChange={e => {
-                          setWorkspaceName(e.target.value);
-                          if (!slugEdited) setWorkspaceSlug(slugify(e.target.value));
-                        }}
-                        placeholder="Luxe Wedding Planning"
-                        className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
-                        style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
-                        onFocus={e => (e.target.style.borderColor = R)}
-                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-2 uppercase tracking-wide">Workspace URL</label>
-                    <div className="flex items-center rounded-xl border overflow-hidden" style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}>
-                      <input
-                        type="text"
-                        value={workspaceSlug}
-                        onChange={e => { setSlugEdited(true); setWorkspaceSlug(slugify(e.target.value)); }}
-                        placeholder="luxe-wedding"
-                        className="flex-1 h-11 pl-4 pr-2 bg-transparent text-sm text-slate-800 placeholder:text-slate-300 outline-none min-w-0"
-                      />
-                      <span className="text-sm text-slate-400 pr-2 whitespace-nowrap">.eventdesk.com</span>
-                      <div className="pr-3.5 flex-shrink-0">
-                        {workspaceSlug && (slugChecking
-                          ? <span className="w-3.5 h-3.5 border-2 border-slate-300 border-t-slate-500 rounded-full animate-spin block" />
-                          : <CheckCircle size={16} className="text-green-500" />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={createEvent.isPending}
-                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-                    style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
-                  >
-                    {createEvent.isPending ? (
-                      <><Loader2 size={15} className="animate-spin" /> Creating workspace…</>
-                    ) : (
-                      <>Continue <ArrowRight size={15} /></>
-                    )}
-                  </button>
-                </form>
-              )}
-
-              {/* ── STEP 5: Select tools & modules ── */}
-              {step === 5 && (
-                <form onSubmit={handleModulesSubmit} className="space-y-5">
-                  <div className="grid grid-cols-2 gap-3">
-                    {MODULES.map(({ key, label, icon: Icon }) => {
-                      const on = !!selectedModules[key];
-                      return (
-                        <button
-                          key={key}
-                          type="button"
-                          onClick={() => toggleModule(key)}
-                          className="flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all"
-                          style={{
-                            borderColor: on ? R : '#e2e8f0',
-                            background: on ? 'rgba(122,31,31,0.04)' : '#f8fafc',
-                          }}
-                        >
-                          <Icon size={16} style={{ color: on ? R : '#94a3b8' }} className="flex-shrink-0" />
-                          <span className="text-xs font-semibold flex-1" style={{ color: on ? '#1e293b' : '#64748b' }}>{label}</span>
-                          <div className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0"
-                            style={{ background: on ? '#22c55e' : '#e2e8f0' }}>
-                            {on && <CheckCircle size={12} className="text-white" />}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 mt-2"
-                    style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
-                  >
-                    Continue <ArrowRight size={15} />
-                  </button>
-                </form>
-              )}
-
-              {/* ── STEP 6: Add teammates ── */}
-              {step === 6 && (
-                <div className="space-y-4">
-                  <div className="space-y-3">
-                    {teammates.map((t, i) => (
-                      <div key={i}>
-                        <div className="flex items-center gap-2">
-                          <div className="relative flex-1">
-                            <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
-                            <input
-                              type="email"
-                              value={t.email}
-                              onChange={e => updateTeammate(i, { email: e.target.value })}
-                              placeholder="teammate@company.com"
-                              className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
-                              style={{ borderColor: t.error ? '#ef4444' : '#e2e8f0', background: '#f8fafc' }}
-                              onFocus={e => { if (!t.error) e.target.style.borderColor = R; }}
-                              onBlur={e => { if (!t.error) e.target.style.borderColor = '#e2e8f0'; }}
-                            />
-                          </div>
-                          <select
-                            value={t.role}
-                            onChange={e => updateTeammate(i, { role: e.target.value as 'editor' | 'viewer' })}
-                            className="h-11 px-3 rounded-xl border text-sm text-slate-600 outline-none cursor-pointer"
-                            style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
-                          >
-                            <option value="editor">Can edit</option>
-                            <option value="viewer">Can view</option>
-                          </select>
-                          {teammates.length > 1 && (
-                            <button
-                              type="button"
-                              onClick={() => removeTeammateRow(i)}
-                              className="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-red-500 transition-colors"
-                            >
-                              <X size={15} />
-                            </button>
-                          )}
-                        </div>
-                        {t.error && <p className="text-xs text-red-600 mt-1 ml-1">{t.error}</p>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {teammates.length < 5 && (
-                    <button
-                      type="button"
-                      onClick={addTeammateRow}
-                      className="text-xs font-semibold flex items-center gap-1.5"
-                      style={{ color: R }}
-                    >
-                      <UserPlus size={13} /> Add another
-                    </button>
-                  )}
-
-                  <div className="flex gap-3 mt-2">
-                    <button
-                      type="button"
-                      onClick={finishOnboarding}
-                      className="h-12 px-5 rounded-xl text-sm font-semibold border transition-all hover:bg-slate-50"
-                      style={{ borderColor: '#e2e8f0', color: '#64748b' }}
-                    >
-                      Skip for now
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSendInvites}
-                      disabled={addCollaborator.isPending}
-                      className="flex-1 h-12 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none"
-                      style={{ background: `linear-gradient(135deg, ${R} 0%, #9c3030 100%)`, boxShadow: `0 4px 16px rgba(122,31,31,0.35)` }}
-                    >
-                      {addCollaborator.isPending ? (
-                        <><Loader2 size={15} className="animate-spin" /> Sending invites…</>
-                      ) : (
-                        <><CheckCircle size={15} /> Finish</>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
-          {step <= 3 && (
-            <p className="text-center text-sm mt-6" style={{ color: '#94a3b8' }}>
-              Already have an account?{' '}
-              <Link to="/login" className="font-semibold hover:underline" style={{ color: R }}>
-                Sign in
-              </Link>
-            </p>
-          )}
+          <p className="text-center text-sm mt-6" style={{ color: '#94a3b8' }}>
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold hover:underline" style={{ color: R }}>
+              Sign in
+            </Link>
+          </p>
         </div>
       </div>
     </div>

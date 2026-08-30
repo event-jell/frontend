@@ -33,11 +33,15 @@ export function useUpdateVendor() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Vendor> }) => vendorsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await qc.cancelQueries({ queryKey: vendorKeys.all });
-      const snapshots = new Map<string, Vendor[]>();
-      qc.getQueriesData<Vendor[]>({ queryKey: vendorKeys.all }).forEach(([key, vendors]) => {
-        if (!vendors) return;
-        snapshots.set(JSON.stringify(key), vendors);
-        qc.setQueryData(key, vendors.map(v => (v._id === id ? { ...v, ...data } : v)));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: vendorKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.map((v: Vendor) => (v._id === id ? { ...v, ...data } : v)));
+        } else if (typeof value === 'object' && value && (value as Vendor)._id === id) {
+          qc.setQueryData(key, { ...value, ...data });
+        }
       });
       return { snapshots };
     },
@@ -54,11 +58,15 @@ export function useDeleteVendor() {
     mutationFn: (id: string) => vendorsApi.delete(id),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: vendorKeys.all });
-      const snapshots = new Map<string, Vendor[]>();
-      qc.getQueriesData<Vendor[]>({ queryKey: vendorKeys.all }).forEach(([key, vendors]) => {
-        if (!vendors) return;
-        snapshots.set(JSON.stringify(key), vendors);
-        qc.setQueryData(key, vendors.filter(v => v._id !== id));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: vendorKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.filter((v: Vendor) => v._id !== id));
+        } else if (typeof value === 'object' && value && (value as Vendor)._id === id) {
+          qc.setQueryData(key, undefined);
+        }
       });
       return { snapshots };
     },

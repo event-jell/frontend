@@ -4,8 +4,12 @@ import { useTranslation } from 'react-i18next';
 import {
   ArrowLeft, Mail, Phone, Users, UtensilsCrossed, StickyNote,
   CheckCircle2, Clock, XCircle, HelpCircle, UserCheck, Trash2, Edit2, Check, X,
+  Ticket,
 } from 'lucide-react';
 import { useGuest, useUpdateGuest, useDeleteGuest } from '../hooks/useGuests';
+import { useTickets } from '../hooks/useTickets';
+import { useLocale } from '../hooks/useLocale';
+import { formatCurrency } from '../utils/formatters';
 import type { Guest } from '../types';
 
 const RSVP_OPTIONS: { value: Guest['rsvpStatus']; label: string; color: string; bg: string; icon: React.ElementType }[] = [
@@ -42,11 +46,13 @@ function InfoRow({ icon: Icon, label, value }: { icon: React.ElementType; label:
 }
 
 export default function GuestDetailPage() {
+  const { localCurrency } = useLocale();
   const { t } = useTranslation();
   const { id, guestId } = useParams<{ id: string; guestId: string }>();
   const navigate = useNavigate();
 
   const { data: guest, isLoading } = useGuest(guestId!);
+  const { data: tickets = [] } = useTickets(id);
   const updateGuest = useUpdateGuest();
   const deleteGuest = useDeleteGuest();
 
@@ -104,6 +110,8 @@ export default function GuestDetailPage() {
   }
 
   const initials = guest.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const ticket = tickets.find(t => t._id === guest.ticketId);
+  const guestGroup = guest.group || ticket?.name;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -151,7 +159,19 @@ export default function GuestDetailPage() {
                     </button>
                   </div>
                 )}
-                {guest.group && <p className="text-sm text-slate-400 mt-0.5">{guest.group}</p>}
+                {guestGroup && (
+                  <div className="mt-1.5 flex items-center gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-[#FAF0E8] text-[#7A1F1F] text-xs font-semibold rounded-full border border-[#7A1F1F]/20">
+                      <Ticket size={11} className="text-[#7A1F1F]" />
+                      {guestGroup}
+                    </span>
+                    {ticket && (
+                      <span className="text-xs text-slate-500 font-medium">
+                        {ticket.price > 0 ? formatCurrency(ticket.price, ticket.currency || localCurrency) : 'Free RSVP'}
+                      </span>
+                    )}
+                  </div>
+                )}
                 <div className="mt-3">
                   <RsvpBadge status={guest.rsvpStatus} />
                 </div>
@@ -184,6 +204,9 @@ export default function GuestDetailPage() {
           {/* Contact info */}
           <div className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{t('guest_detail.contact')}</p>
+            {guestGroup && (
+              <InfoRow icon={Ticket} label="Ticket Tier / Guest Type" value={guestGroup + (ticket?.price ? ` (${formatCurrency(ticket?.price || 0, ticket?.currency || localCurrency)})` : '')} />
+            )}
             <InfoRow icon={Mail} label={t('guests.modal.email')} value={guest.email} />
             <InfoRow icon={Phone} label={t('guests.modal.phone')} value={guest.phone} />
             <InfoRow icon={Users} label={t('guests.modal.plus_ones')} value={guest.plusOnes > 0 ? `+${guest.plusOnes} guest${guest.plusOnes > 1 ? 's' : ''}` : undefined} />

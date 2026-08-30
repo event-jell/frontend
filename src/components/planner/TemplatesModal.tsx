@@ -1,6 +1,8 @@
 import { X, Search, FileSymlink, Trash2, CalendarDays } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocale } from '../../hooks/useLocale';
+import { formatLocalDate } from '../../utils/formatters';
 import type { FloorPlan, PlacedElement } from '../../types';
 
 interface Props {
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export default function TemplatesModal({ templates, currentUserId, onClose, onLoad }: Props) {
+  const { timezone, locale } = useLocale();
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'my' | 'public'>('my');
@@ -99,7 +102,7 @@ export default function TemplatesModal({ templates, currentUserId, onClose, onLo
                       {template.description || t('planner.templates_no_description')}
                     </p>
                     <div className="mt-3 flex items-center gap-3 text-xs text-slate-400 font-medium">
-                      <span className="flex items-center gap-1"><CalendarDays size={12} /> {new Date(template.createdAt).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1"><CalendarDays size={12} /> {formatLocalDate(template.createdAt, { timezone, locale })}</span>
                       <span>•</span>
                       <span>{t('planner.templates_items', { count: template.elements.length })}</span>
                     </div>

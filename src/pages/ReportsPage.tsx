@@ -11,6 +11,8 @@ import { useGuests } from '../hooks/useGuests';
 import { useTickets } from '../hooks/useTickets';
 import { useVendors } from '../hooks/useVendors';
 import { useComms } from '../hooks/useComms';
+import { useLocale } from '../hooks/useLocale';
+import { formatCurrency } from '../utils/formatters';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function CustomTooltip({ active, payload, label }: any) {
@@ -74,6 +76,7 @@ const RSVP_COLORS = { confirmed: '#10B981', pending: '#F59E0B', declined: '#EF44
 const STATUS_COLORS = { live: '#10B981', confirmed: '#7A1F1F', planning: '#F59E0B', draft: '#CBD5E1' };
 
 export default function ReportsPage() {
+  const { localCurrency } = useLocale();
   const { data: events = [] } = useEvents();
   const { data: guests = [] } = useGuests();
   const { data: tickets = [] } = useTickets();
@@ -125,7 +128,7 @@ export default function ReportsPage() {
       badge: totalTicketsCap > 0 ? `${ticketPct}% sold` : undefined, badgeColor: '#F59E0B',
     },
     {
-      icon: TrendingUp, label: 'Revenue', value: `$${totalRevenue.toLocaleString()}`,
+      icon: TrendingUp, label: 'Revenue', value: formatCurrency(totalRevenue, localCurrency),
       sub: 'gross ticket revenue', accent: '#7A1F1F', light: '#FAF7F2',
       badge: undefined, badgeColor: '',
     },
@@ -344,7 +347,7 @@ export default function ReportsPage() {
                 </div>
                 <h3 className="font-semibold text-slate-800 text-sm">Contracts</h3>
               </div>
-              <p className="text-2xl font-bold text-slate-900 mb-0.5">${totalContractValue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-slate-900 mb-0.5">{formatCurrency(totalContractValue, localCurrency)}</p>
               <p className="text-xs text-slate-400 mb-4">{paidVendors} of {vendors.length} paid</p>
               <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div className="h-full rounded-full bg-[#FAF7F2]0 transition-all duration-700"

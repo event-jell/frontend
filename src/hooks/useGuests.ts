@@ -42,12 +42,16 @@ export function useUpdateGuest() {
     mutationFn: ({ id, data }: { id: string; data: Partial<Guest> }) => guestsApi.update(id, data),
     onMutate: async ({ id, data }) => {
       await qc.cancelQueries({ queryKey: guestKeys.all });
-      const snapshots = new Map<string, Guest[]>();
+      const snapshots = new Map<string, any>();
 
-      qc.getQueriesData<Guest[]>({ queryKey: guestKeys.all }).forEach(([key, guests]) => {
-        if (!guests) return;
-        snapshots.set(JSON.stringify(key), guests);
-        qc.setQueryData(key, guests.map(g => (g._id === id ? { ...g, ...data } : g)));
+      qc.getQueriesData<any>({ queryKey: guestKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.map((g: Guest) => (g._id === id ? { ...g, ...data } : g)));
+        } else if (typeof value === 'object' && value && (value as Guest)._id === id) {
+          qc.setQueryData(key, { ...value, ...data });
+        }
       });
       const prevDetail = qc.getQueryData<Guest>(guestKeys.detail(id));
       if (prevDetail) qc.setQueryData(guestKeys.detail(id), { ...prevDetail, ...data });
@@ -77,11 +81,15 @@ export function useDeleteGuest() {
     mutationFn: (id: string) => guestsApi.delete(id),
     onMutate: async (id) => {
       await qc.cancelQueries({ queryKey: guestKeys.all });
-      const snapshots = new Map<string, Guest[]>();
-      qc.getQueriesData<Guest[]>({ queryKey: guestKeys.all }).forEach(([key, guests]) => {
-        if (!guests) return;
-        snapshots.set(JSON.stringify(key), guests);
-        qc.setQueryData(key, guests.filter(g => g._id !== id));
+      const snapshots = new Map<string, any>();
+      qc.getQueriesData<any>({ queryKey: guestKeys.all }).forEach(([key, value]) => {
+        if (!value) return;
+        snapshots.set(JSON.stringify(key), value);
+        if (Array.isArray(value)) {
+          qc.setQueryData(key, value.filter((g: Guest) => g._id !== id));
+        } else if (typeof value === 'object' && value && (value as Guest)._id === id) {
+          qc.setQueryData(key, undefined);
+        }
       });
       return { snapshots };
     },

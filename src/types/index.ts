@@ -562,8 +562,15 @@ export interface ChatMessage {
     base_price: number;
     currency: string;
   };
-  event_id?: string;
   content: string;
+  message_type?: 'text' | 'offer' | 'invoice';
+  offer_amount?: number;
+  offer_status?: 'pending' | 'accepted' | 'declined';
+  invoice_amount?: number;
+  invoice_currency?: string;
+  invoice_status?: 'pending' | 'paid' | 'failed';
+  invoice_description?: string;
+  invoice_payment_reference?: string;
   read: boolean;
   read_at?: string;
   createdAt: string;

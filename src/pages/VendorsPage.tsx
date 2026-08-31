@@ -42,6 +42,7 @@ import SEO from '../components/SEO';
 import { useVendors, useCreateVendor, useUpdateVendor, useDeleteVendor } from '../hooks/useVendors';
 import { useExploreVendorListings, useVendorCategories } from '../hooks/useVendorListings';
 import { useLocale } from '../hooks/useLocale';
+import { useAuth } from '../contexts/AuthContext';
 import { formatCurrency } from '../utils/formatters';
 import ChatDrawer from '../components/chat/ChatDrawer';
 import type { Vendor, VendorListing } from '../types';
@@ -288,6 +289,7 @@ export default function VendorsPage() {
   const { id: eventId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { localCurrency } = useLocale();
+  const { user } = useAuth();
 
   // Active event vendors
   const { data: eventVendors = [], isLoading: loadingEventVendors } = useVendors();
@@ -341,29 +343,11 @@ export default function VendorsPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50/40 no-scrollbar">
       <SEO
-        title="Vendors & Marketplace — EventJelly"
+        title="Vendors & Marketplace — EventJell"
         description="Browse, book, and manage verified DJs, Caterers, Photographers, and Venues for your event"
       />
 
-      {/* Real-time Chat Drawer */}
-      {chatVendor && (
-        <ChatDrawer
-          isOpen={!!chatVendor}
-          onClose={() => setChatVendor(null)}
-          recipientUser={{
-            _id: chatVendor.owner_id,
-            first_name: chatVendor.title,
-            email: chatVendor.contact_email,
-          }}
-          vendorListing={chatVendor}
-          eventId={eventId}
-          onBookVendor={() => {
-            const vendorId = chatVendor._id;
-            setChatVendor(null);
-            handleNavigateToVendor(vendorId);
-          }}
-        />
-      )}
+
 
       {/* Manual Add Custom Vendor Modal */}
       {showAddCustom && (
@@ -652,38 +636,7 @@ export default function VendorsPage() {
                             </div>
                           )}
 
-                          {/* Contact Shortcuts */}
-                          <div
-                            className="flex items-center gap-4 text-xs text-slate-500 pt-2 border-t border-slate-100"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {listing.contact_phone && (
-                              <a
-                                href={`tel:${listing.contact_phone}`}
-                                className="flex items-center gap-1 text-slate-600 hover:text-[#7A1F1F] font-medium"
-                                title="Call / WhatsApp"
-                              >
-                                <Phone size={12} className="text-[#7A1F1F]" />
-                                <span className="text-[11px]">Phone</span>
-                              </a>
-                            )}
-                            {listing.contact_email && (
-                              <a
-                                href={`mailto:${listing.contact_email}`}
-                                className="flex items-center gap-1 text-slate-600 hover:text-[#7A1F1F] font-medium"
-                                title="Send Email"
-                              >
-                                <Mail size={12} className="text-[#7A1F1F]" />
-                                <span className="text-[11px]">Email</span>
-                              </a>
-                            )}
-                            {listing.instagram && (
-                              <span className="flex items-center gap-1 text-slate-400">
-                                <Globe size={12} />
-                                <span className="text-[11px] truncate max-w-[100px]">{listing.instagram}</span>
-                              </span>
-                            )}
-                          </div>
+
                         </div>
                       </div>
 
@@ -699,28 +652,44 @@ export default function VendorsPage() {
                               ? 'Flat rate'
                               : 'Custom quote'}
                           </span>
-                          <span className="text-base font-black text-slate-900">
+                          <span className="text-sm sm:text-base font-black text-slate-900 truncate max-w-[95px] xs:max-w-[120px] sm:max-w-none" title={listing.base_price ? formatCurrency(listing.base_price, listing.currency) : ''}>
                             {listing.base_price ? formatCurrency(listing.base_price, listing.currency) : 'Contact'}
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <button
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setChatVendor(listing);
+                              const currentUserId = user?.id || user?._id;
+                              const vendorUserId = listing.owner_id;
+                              if (!currentUserId || !vendorUserId) {
+                                navigate('/login');
+                                return;
+                              }
+                              const conversationId = [currentUserId, vendorUserId].sort().join('_');
+                              navigate(`/messages/${conversationId}`, {
+                                state: {
+                                  recipientUser: {
+                                    _id: listing.owner_id,
+                                    first_name: listing.title,
+                                    email: listing.contact_email,
+                                  },
+                                  vendorListing: listing,
+                                }
+                              });
                             }}
-                            className="px-3 py-2.5 bg-[#FAF0E8] hover:bg-[#f3dfce] text-[#7A1F1F] text-xs font-bold rounded-xl border border-[#7A1F1F]/20 transition-all flex items-center gap-1"
+                            className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-[#FAF0E8] hover:bg-[#f3dfce] text-[#7A1F1F] text-[10px] sm:text-xs font-bold rounded-xl border border-[#7A1F1F]/20 transition-all flex items-center gap-1 whitespace-nowrap shrink-0"
                             title="Chat with vendor"
                           >
-                            <MessageSquare size={13} />
+                            <MessageSquare size={12} className="sm:w-[13px] sm:h-[13px]" />
                             <span>Chat</span>
                           </button>
 
                           {isAlreadyBooked ? (
-                            <span className="px-3 py-2 rounded-xl bg-emerald-50 text-emerald-700 text-xs font-bold flex items-center gap-1 border border-emerald-200 shadow-2xs">
-                              <Check size={13} strokeWidth={3} />
+                            <span className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-emerald-50 text-emerald-700 text-[10px] sm:text-xs font-bold flex items-center gap-1 border border-emerald-200 shadow-2xs whitespace-nowrap shrink-0">
+                              <Check size={12} strokeWidth={3} className="sm:w-[13px] sm:h-[13px]" />
                               <span>Booked</span>
                             </span>
                           ) : (
@@ -730,10 +699,10 @@ export default function VendorsPage() {
                                 e.stopPropagation();
                                 handleNavigateToVendor(listing._id);
                               }}
-                              className="px-4 py-2.5 bg-[#7A1F1F] hover:bg-[#661919] text-white text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1.5 active:scale-98"
+                              className="px-3 py-1.5 sm:px-4 sm:py-2 bg-[#7A1F1F] hover:bg-[#661919] text-white text-[10px] sm:text-xs font-bold rounded-xl shadow-sm transition-all flex items-center gap-1 sm:gap-1.5 active:scale-98 whitespace-nowrap shrink-0"
                             >
                               <span>View & Book</span>
-                              <ArrowRight size={13} />
+                              <ArrowRight size={12} className="sm:w-[13px] sm:h-[13px]" />
                             </button>
                           )}
                         </div>

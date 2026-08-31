@@ -128,32 +128,42 @@ export default function EventOnboardingPage() {
         <div className="flex items-center gap-2.5">
           <Logo size={28} className="w-[28px] h-[28px] sm:w-[32px] sm:h-[32px]" />
           <span className="text-[17px] sm:text-lg font-extrabold text-slate-900" style={{ fontFamily: 'Playfair Display, serif' }}>
-            EventJelly
+            EventJell
           </span>
           <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FAF0E8] text-[#7A1F1F] border border-[#7A1F1F]/20">
             <Sparkles size={12} /> First Event Onboarding
           </span>
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center gap-1.5">
-          {[1, 2, 3].map(n => (
-            <div
-              key={n}
-              className={`flex items-center justify-center w-[26px] h-[26px] sm:w-auto sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
-                step === n
-                  ? 'bg-[#7A1F1F] text-white shadow-sm'
-                  : step > n
-                  ? 'bg-emerald-100 text-emerald-700'
-                  : 'bg-slate-100 text-slate-400'
-              }`}
-            >
-              {step > n ? <Check size={11} strokeWidth={3} /> : n}
-              <span className="hidden md:inline ml-1.5">
-                {n === 1 ? 'Event Type' : n === 2 ? 'Details & Location' : 'Theme & Banner'}
-              </span>
-            </div>
-          ))}
+        {/* Step Indicator & Skip */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            {[1, 2, 3].map(n => (
+              <div
+                key={n}
+                className={`flex items-center justify-center w-[26px] h-[26px] sm:w-auto sm:px-3 sm:py-1 rounded-full text-[11px] sm:text-xs font-bold transition-all ${
+                  step === n
+                    ? 'bg-[#7A1F1F] text-white shadow-sm'
+                    : step > n
+                    ? 'bg-emerald-100 text-emerald-700'
+                    : 'bg-slate-100 text-slate-400'
+                }`}
+              >
+                {step > n ? <Check size={11} strokeWidth={3} /> : n}
+                <span className="hidden md:inline ml-1.5">
+                  {n === 1 ? 'Event Type' : n === 2 ? 'Details & Location' : 'Theme & Banner'}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/events', { replace: true })}
+            className="h-[28px] sm:h-[32px] px-3 rounded-full text-[11px] sm:text-xs font-bold text-slate-500 hover:text-[#7A1F1F] hover:bg-[#FAF0E8] border border-slate-200 hover:border-[#7A1F1F]/20 transition-all flex items-center justify-center bg-white cursor-pointer active:scale-95 shadow-3xs"
+          >
+            Skip
+          </button>
         </div>
       </header>
 
@@ -407,34 +417,7 @@ export default function EventOnboardingPage() {
                 </div>
 
                 {/* Event Currency selector */}
-                <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                  <div className="flex items-center justify-between">
-                    <label className="block text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                      <Coins size={13} className="text-[#7A1F1F]" />
-                      Event Currency
-                    </label>
-                    <span className="text-xs font-bold text-[#7A1F1F]">
-                      {SUPPORTED_CURRENCIES.find(c => c.code === form.currency)?.name}
-                    </span>
-                  </div>
-                  <div className="relative">
-                    <select
-                      value={form.currency}
-                      onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
-                      className="w-full appearance-none px-3.5 h-[44px] sm:h-[48px] text-[14px] font-semibold border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F] pr-10"
-                    >
-                      {SUPPORTED_CURRENCIES.map(c => (
-                        <option key={c.code} value={c.code}>
-                          {c.flag} {c.code} ({c.symbol}) - {c.country}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-3.5 pointer-events-none text-slate-400">
-                      <ChevronDown size={14} />
-                    </div>
-                  </div>
-                  <p className="text-[11px] text-slate-400">Tickets and registrations will default to this currency.</p>
-                </div>
+
               </div>
             </div>
 
@@ -634,7 +617,7 @@ export default function EventOnboardingPage() {
 
       {/* Footer */}
       <footer className="py-4 text-center text-xs text-slate-400 border-t border-slate-200/60 bg-white/50">
-        EventJelly © 2026 · Premium Event Management Platform
+        EventJell © 2026 · Premium Event Management Platform
       </footer>
     </div>
   );

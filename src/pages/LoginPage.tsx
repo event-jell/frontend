@@ -76,7 +76,7 @@ export default function LoginPage() {
         <div className="relative">
           <div className="flex items-center gap-2.5 mb-12">
             <Logo size={36} />
-            <span className="text-lg font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>EventJelly</span>
+            <span className="text-lg font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>EventJell</span>
           </div>
 
           <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold mb-6"
@@ -100,7 +100,7 @@ export default function LoginPage() {
             {[...Array(5)].map((_, i) => <Star key={i} size={12} fill={G} style={{ color: G }} />)}
           </div>
           <p className="text-sm text-white/75 italic leading-relaxed mb-3">
-            "EventJelly transformed how we run our annual gala. The floor planner alone saved us 20 hours of back-and-forth."
+            "EventJell transformed how we run our annual gala. The floor planner alone saved us 20 hours of back-and-forth."
           </p>
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
@@ -121,13 +121,13 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2.5 mb-8">
             <Logo size={32} />
-            <span className="text-base font-bold" style={{ color: '#2A2A2A', fontFamily: 'Playfair Display, serif' }}>EventJelly</span>
+            <span className="text-base font-bold" style={{ color: '#2A2A2A', fontFamily: 'Playfair Display, serif' }}>EventJell</span>
           </div>
 
           <h1 className="text-2xl font-extrabold mb-1" style={{ color: '#2A2A2A', fontFamily: 'Playfair Display, serif' }}>
             Welcome back
           </h1>
-          <p className="text-sm mb-8" style={{ color: '#8A8A8A' }}>Sign in to your EventJelly account</p>
+          <p className="text-sm mb-8" style={{ color: '#8A8A8A' }}>Sign in to your EventJell account</p>
 
           {justCreated && (
             <div className="mb-5 px-4 py-3 rounded-xl border text-sm flex items-center gap-2.5"

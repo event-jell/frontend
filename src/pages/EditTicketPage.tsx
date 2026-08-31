@@ -148,10 +148,9 @@ export default function EditTicketPage() {
                 />
               </div>
 
-              {/* Price, Currency & Capacity Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-12 gap-4">
-                {/* Price (4 cols) */}
-                <div className="sm:col-span-4">
+                {/* Price (6 cols) */}
+                <div className="sm:col-span-6">
                   <label className="text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <DollarSign size={16} className="text-slate-400" />
                     Price ({getCurrencySymbol(form.currency)})
@@ -182,27 +181,8 @@ export default function EditTicketPage() {
                   <p className="text-xs text-slate-400 mt-1">Set to 0 for free.</p>
                 </div>
 
-                {/* Currency selector (4 cols) */}
-                <div className="sm:col-span-4">
-                  <label className="text-sm font-bold text-slate-700 mb-1.5 block">
-                    Currency
-                  </label>
-                  <select
-                    value={form.currency}
-                    onChange={e => setForm(f => ({ ...f, currency: e.target.value }))}
-                    className="w-full px-3 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/5 transition-all"
-                  >
-                    {SUPPORTED_CURRENCIES.map(c => (
-                      <option key={c.code} value={c.code}>
-                        {c.flag} {c.code} ({c.symbol})
-                      </option>
-                    ))}
-                  </select>
-                  <p className="text-xs text-slate-400 mt-1">{SUPPORTED_CURRENCIES.find(c => c.code === form.currency)?.country || 'Currency'}</p>
-                </div>
-
-                {/* Total Capacity (4 cols) */}
-                <div className="sm:col-span-4">
+                {/* Total Capacity (6 cols) */}
+                <div className="sm:col-span-6">
                   <label className="text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
                     <Users size={16} className="text-slate-400" />
                     Total Capacity
@@ -230,7 +210,7 @@ export default function EditTicketPage() {
                       <Plus size={13} />
                     </button>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">{ticket.sold || 0} already sold/claimed.</p>
+                  <p className="text-xs text-slate-400 mt-1">Number of tickets available.</p>
                 </div>
               </div>
 
@@ -336,9 +316,9 @@ export default function EditTicketPage() {
               </div>
 
               <div className="p-6 pb-4 space-y-4 relative">
-                {/* EventJelly Branding */}
+                {/* EventJell Branding */}
                 <div className="flex items-center justify-between border-b border-dashed border-slate-200 pb-3">
-                  <span className="text-xs font-black tracking-widest text-[#7A1F1F] uppercase">EventJelly Pass</span>
+                  <span className="text-xs font-black tracking-widest text-[#7A1F1F] uppercase">EventJell Pass</span>
                   <span className="text-[10px] text-slate-400 font-bold tracking-wider">ADMIT ONE</span>
                 </div>
 

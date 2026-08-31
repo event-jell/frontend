@@ -8,7 +8,7 @@ const envApiUrl = runtimeEnv.VITE_API_URL || import.meta.env.VITE_API_URL || '';
 
 // VITE_API_URL:
 //   - local dev  → leave blank; Vite proxy rewrites /api → http://localhost:3000
-//   - docker/prod → set to full backend URL e.g. http://localhost:3000 or https://api.eventjelly.com
+//   - docker/prod → set to full backend URL e.g. http://localhost:3000 or https://api.eventjell.com
 const BASE_URL = envApiUrl.replace(/\/$/, '') || '';
 const API_PREFIX = BASE_URL ? `${BASE_URL}/api` : '/api';
 
@@ -914,8 +914,16 @@ export const messagesApi = {
     content: string;
     vendor_listing_id?: string;
     event_id?: string;
+    message_type?: 'text' | 'offer' | 'invoice';
+    offer_amount?: number;
+    invoice_amount?: number;
+    invoice_currency?: string;
+    invoice_description?: string;
   }) => http.post<import('../types').ChatMessage>('/messages', data).then((r) => r.data),
 
   markAsRead: (conversationId: string) =>
     http.patch<{ success: boolean }>(`/messages/conversation/${conversationId}/read`).then((r) => r.data),
+
+  payInvoiceWithWallet: (messageId: string) =>
+    http.post<import('../types').ChatMessage>(`/messages/invoice/${messageId}/pay-wallet`).then((r) => r.data),
 };

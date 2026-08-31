@@ -334,27 +334,15 @@ export default function EventSettingsPage() {
                   </div>
                 </div>
 
-                {/* Event Currency selector */}
+                {/* Event Currency viewer */}
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-slate-700 flex items-center gap-2">
                     <Coins size={16} className="text-[#7A1F1F]" />
                     Event Currency
                   </label>
-                  <div className="relative">
-                    <select
-                      value={formData.currency}
-                      onChange={e => setFormData({ ...formData, currency: e.target.value })}
-                      className="w-full appearance-none px-4 py-3 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-800 text-sm font-medium focus:outline-none focus:bg-white focus:border-[#7A1F1F] focus:ring-4 focus:ring-[#7A1F1F]/10 transition-all pr-10"
-                    >
-                      {SUPPORTED_CURRENCIES.map(c => (
-                        <option key={c.code} value={c.code}>
-                          {c.flag} {c.code} ({c.symbol}) - {c.country}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none text-slate-400">
-                      <ChevronDown size={14} />
-                    </div>
+                  <div className="px-4 py-3 bg-slate-100/80 border border-slate-200/80 rounded-xl text-slate-650 text-sm font-bold select-none flex items-center gap-2">
+                    <span>{SUPPORTED_CURRENCIES.find(c => c.code === formData.currency)?.flag}</span>
+                    <span>{formData.currency} ({SUPPORTED_CURRENCIES.find(c => c.code === formData.currency)?.symbol})</span>
                   </div>
                 </div>
               </div>

@@ -59,7 +59,7 @@ export default function AddFundsModal({
     try {
       if (gateway === 'paystack') {
         const initRes = await paymentsApi.initialize({
-          email: userEmail || user?.email || 'user@eventjelly.com',
+          email: userEmail || user?.email || 'user@eventjell.com',
           amount: numAmount,
           currency: localCurrency,
           payment_type: 'platform_subscription',
@@ -70,7 +70,7 @@ export default function AddFundsModal({
         });
 
         await openPaystackModal({
-          email: userEmail || user?.email || 'user@eventjelly.com',
+          email: userEmail || user?.email || 'user@eventjell.com',
           amount: numAmount,
           currency: localCurrency,
           reference: initRes.reference,
@@ -91,7 +91,7 @@ export default function AddFundsModal({
       } else {
         // PayPal Flow (for non-African countries)
         await openPayPalCheckout({
-          email: userEmail || user?.email || 'user@eventjelly.com',
+          email: userEmail || user?.email || 'user@eventjell.com',
           amount: numAmount,
           currency: localCurrency,
           onSuccess: async (res) => {

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -10,8 +10,17 @@
   --color-brand-cream: #FAF7F2;
   --color-brand-cream-dark: #F0EAE0;
 
-  --font-serif: "Playfair Display", serif;
+  --font-serif: "Inter", system-ui, -apple-system, sans-serif;
   --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+
+  /* Compact tier for narrow phones and split-screen windows (Galaxy Fold ~280px).
+     Below this, dense forms need shorter labels and tighter padding. */
+  --breakpoint-xs: 380px;
+}
+
+/* Force all inline font-family declarations to use Inter */
+[style*="font-family"] {
+  font-family: var(--font-sans) !important;
 }
 
 * {
@@ -76,4 +85,28 @@ body {
 .scrollbar-none {
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
+}
+
+/* Popover + bottom-sheet motion for SelectMenu. The app references
+   `animate-in`/`slide-in-from-*` in places, but no animation plugin is
+   installed, so those are no-ops — these are real keyframes. */
+@keyframes ej-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes ej-sheet-up {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes ej-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.ej-pop   { animation: ej-pop-in 160ms cubic-bezier(0.16, 1, 0.3, 1); }
+.ej-sheet { animation: ej-sheet-up 260ms cubic-bezier(0.16, 1, 0.3, 1); }
+.ej-fade  { animation: ej-fade-in 180ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ej-pop, .ej-sheet, .ej-fade { animation: none; }
 }

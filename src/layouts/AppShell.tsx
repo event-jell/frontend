@@ -68,6 +68,7 @@ export default function AppShell({ children }: Props) {
   const matchedId = eventMatch?.[1] === 'new' ? undefined : eventMatch?.[1];
   const eventId = matchedId ?? params.id;
   const inEventSuite = Boolean(eventId);
+  const isMessagesPage = location.pathname.startsWith('/messages');
 
   // Fetch event details or read from cache
   const { data: fetchedEvent } = useEvent(eventId || '');
@@ -94,6 +95,7 @@ export default function AppShell({ children }: Props) {
   const NARROW_NAV = [
     { icon: Home, label: 'Home', to: '/dashboard', activePath: '/dashboard' },
     { icon: Calendar, label: 'Events', to: '/events', activePath: '/events' },
+    { icon: Search, label: 'Explore', to: '/explore', activePath: '/explore' },
     { icon: Store, label: 'Vendors', to: '/vendor/listings', activePath: '/vendor/listings' },
     { icon: MessageSquare, label: 'Messages', to: '/messages', activePath: '/messages' },
     { icon: Wallet, label: 'Wallet', to: '/wallet', activePath: '/wallet' },
@@ -284,7 +286,7 @@ export default function AppShell({ children }: Props) {
               <div className="flex items-center gap-2 min-w-0">
                 <Logo size={28} />
                 <span className="text-xs font-black text-[#7A1F1F] tracking-wider" style={{ fontFamily: 'Playfair Display, serif' }}>
-                  EventJelly
+                  EventJell
                 </span>
               </div>
             )}
@@ -414,31 +416,33 @@ export default function AppShell({ children }: Props) {
       {/* MAIN VIEW CONTENT AREA */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Mobile Header (replaces standard desktop header) */}
-        <header className="lg:hidden flex items-center justify-between px-4 py-3 flex-shrink-0 bg-[#7A1F1F] border-b border-white/10 shadow-sm">
-          <div className="flex items-center gap-3">
-            <button onClick={() => setMobileOpen(true)} className="p-1 rounded-lg text-white/80 hover:text-white">
-              <Menu size={20} />
+        <header className="lg:hidden flex items-center justify-between px-3 py-2.5 flex-shrink-0 bg-[#7A1F1F] border-b border-white/10 shadow-sm">
+          <div className="flex items-center gap-1.5">
+            <button onClick={() => setMobileOpen(true)} className="p-1 -ml-1 rounded-lg text-white/90 hover:text-white flex items-center justify-center">
+              <Menu size={18} />
             </button>
-            <Logo size={24} />
-            <span className="text-sm font-black text-white" style={{ fontFamily: 'Playfair Display, serif' }}>
-              EventJelly
-            </span>
+            <div className="flex items-center gap-1 cursor-pointer" onClick={() => navigate('/dashboard')}>
+              <Logo size={20} className="shrink-0" />
+              <span className="text-sm font-bold text-white tracking-tight" style={{ fontFamily: 'Playfair Display, serif' }}>
+                EventJell
+              </span>
+            </div>
           </div>
-          <button className="p-1 rounded-lg text-white/80 hover:text-white relative">
-            <Bell size={20} />
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-red-500 border border-white" />
+          <button className="p-1 -mr-1 rounded-lg text-white/90 hover:text-white relative">
+            <Bell size={18} />
+            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border border-white" />
           </button>
         </header>
 
         {/* Content Box */}
-        <main className="flex-1 overflow-y-auto flex flex-col pb-16 lg:pb-0">
+        <main className={`flex-1 overflow-y-auto no-scrollbar flex flex-col ${isMessagesPage ? 'pb-0' : 'pb-16'} lg:pb-0`}>
           {children}
         </main>
 
         {/* Mobile Bottom Navigation Bar matching Canva mobile style */}
         <nav
-          className="lg:hidden fixed bottom-0 left-0 right-0 z-35 bg-white border-t border-slate-200 px-2 py-1.5 flex items-center justify-around shadow-lg"
-          style={{ paddingBottom: 'max(0.375rem, env(safe-area-inset-bottom))' }}
+          className={`${isMessagesPage ? 'hidden' : 'flex lg:hidden'} fixed bottom-0 left-0 right-0 z-35 bg-white/95 backdrop-blur-md border-t border-slate-200/80 px-1 py-1 items-center justify-around shadow-sm`}
+          style={{ paddingBottom: 'max(0.25rem, env(safe-area-inset-bottom))' }}
         >
           {inEventSuite ? (
             <>
@@ -446,58 +450,58 @@ export default function AppShell({ children }: Props) {
                 to={`/events/${slugOrId}`}
                 end
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Home size={18} />
-                <span className="text-[10px]">Overview</span>
+                <Home size={16} />
+                <span className="text-[9px] leading-tight">Overview</span>
               </NavLink>
 
               <NavLink
                 to={`/events/${slugOrId}/guests`}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Users size={18} />
-                <span className="text-[10px]">Guests</span>
+                <Users size={16} />
+                <span className="text-[9px] leading-tight">Guests</span>
               </NavLink>
 
               <NavLink
                 to={`/events/${slugOrId}/planner`}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Layout size={18} />
-                <span className="text-[10px]">Floor Plan</span>
+                <Layout size={16} />
+                <span className="text-[9px] leading-tight">Floor Plan</span>
               </NavLink>
 
               <NavLink
                 to={`/events/${slugOrId}/ticketing`}
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Ticket size={18} />
-                <span className="text-[10px]">Tickets</span>
+                <Ticket size={16} />
+                <span className="text-[9px] leading-tight">Tickets</span>
               </NavLink>
 
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-colors"
+                className="flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
               >
-                <Menu size={18} />
-                <span className="text-[10px]">Menu</span>
+                <Menu size={16} />
+                <span className="text-[9px] leading-tight">Menu</span>
               </button>
             </>
           ) : (
@@ -506,58 +510,58 @@ export default function AppShell({ children }: Props) {
                 to="/dashboard"
                 end
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <LayoutDashboard size={18} />
-                <span className="text-[10px]">Overview</span>
+                <LayoutDashboard size={16} />
+                <span className="text-[9px] leading-tight">Overview</span>
               </NavLink>
 
               <NavLink
                 to="/events"
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Calendar size={18} />
-                <span className="text-[10px]">Events</span>
+                <Calendar size={16} />
+                <span className="text-[9px] leading-tight">Events</span>
               </NavLink>
 
               <NavLink
                 to="/vendor/listings"
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Store size={18} />
-                <span className="text-[10px]">Vendor Hub</span>
+                <Store size={16} />
+                <span className="text-[9px] leading-tight">Vendor Hub</span>
               </NavLink>
 
               <NavLink
                 to="/wallet"
                 className={({ isActive }) =>
-                  `flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl transition-colors ${
+                  `flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg transition-colors ${
                     isActive ? 'text-[#7A1F1F] font-bold' : 'text-slate-500 hover:text-slate-800'
                   }`
                 }
               >
-                <Wallet size={18} />
-                <span className="text-[10px]">Wallet</span>
+                <Wallet size={16} />
+                <span className="text-[9px] leading-tight">Wallet</span>
               </NavLink>
 
               <button
                 type="button"
                 onClick={() => setMobileOpen(true)}
-                className="flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-xl text-slate-500 hover:text-slate-800 transition-colors"
+                className="flex flex-col items-center gap-0.5 py-0.5 px-1.5 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
               >
-                <Menu size={18} />
-                <span className="text-[10px]">Menu</span>
+                <Menu size={16} />
+                <span className="text-[9px] leading-tight">Menu</span>
               </button>
             </>
           )}

@@ -5,7 +5,7 @@ const envSocketUrl = runtimeEnv.VITE_SOCKET_URL || import.meta.env.VITE_SOCKET_U
 
 // VITE_SOCKET_URL:
 //   - local dev  → leave blank; Socket.io will fall back to relative path (proxy) or http://localhost:3000
-//   - docker/prod → set to backend origin e.g. http://localhost:3000 or https://api.eventjelly.com
+//   - docker/prod → set to backend origin e.g. http://localhost:3000 or https://api.eventjell.com
 const SOCKET_URL =
   envSocketUrl.replace(/\/$/, '') ||
   (import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:3001');

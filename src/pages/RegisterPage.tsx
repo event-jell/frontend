@@ -4,7 +4,7 @@ import SEO from '../components/SEO';
 import { useMutation } from '@tanstack/react-query';
 import {
   User, Mail, Lock, Eye, EyeOff, MapPin, CheckCircle, ArrowRight, Zap, Search,
-  Loader2, Building2, Users, Briefcase, Layers, Sparkles,
+  Loader2, Building2, Users, Briefcase, Layers, Sparkles, Store,
 } from 'lucide-react';
 import { authApi } from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -38,6 +38,16 @@ const EVENT_TYPES = [
   'Concerts & Live Entertainment',
   'Festivals & Outdoor Grounds',
   'Multiple / Mixed Formats',
+];
+
+const VENDOR_CATEGORIES = [
+  'Catering',
+  'AV / Production',
+  'Decor / Florals',
+  'Photography / Videography',
+  'Music & Entertainment',
+  'Security Services',
+  'Other Services',
 ];
 
 const PERKS = [
@@ -102,10 +112,7 @@ export default function RegisterPage() {
   const [isCountryOpen, setIsCountryOpen] = useState(false);
   const countryRef = useRef<HTMLDivElement>(null);
 
-  const [organizationName, setOrganizationName] = useState('');
-  const [organizationSize, setOrganizationSize] = useState('');
-  const [creatorRole, setCreatorRole] = useState('');
-  const [primaryEventType, setPrimaryEventType] = useState('');
+
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -167,6 +174,11 @@ export default function RegisterPage() {
       setValidationError('Please fill in your name and email address.');
       return;
     }
+    if (!country) {
+      setValidationError('Please select your country.');
+      return;
+    }
+
     setCheckingEmail(true);
     try {
       const res = await authApi.checkEmail(email.trim());
@@ -194,16 +206,13 @@ export default function RegisterPage() {
       setValidationError('Password must be at least 8 characters.');
       return;
     }
+    
     mutation.mutate({
       firstName,
       lastName,
       email,
       password,
       country,
-      organizationName,
-      organizationSize,
-      creatorRole,
-      primaryEventType,
     });
   };
 
@@ -219,7 +228,7 @@ export default function RegisterPage() {
       <SEO title="Create an Account" />
 
       {/* ── Left Panel ── */}
-      <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] flex-col justify-between p-12 relative overflow-hidden"
+      <div className="hidden lg:flex lg:w-[30%] xl:w-[30%] flex-col justify-between p-12 relative overflow-hidden"
         style={{ background: `linear-gradient(145deg, ${RD} 0%, ${R} 60%, #9c3030 100%)` }}>
 
         {/* Decorative orbs */}
@@ -245,7 +254,7 @@ export default function RegisterPage() {
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-16">
             <Logo size={36} />
-            <span className="text-xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>EventJelly</span>
+            <span className="text-xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>EventJell</span>
           </div>
 
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-6"
@@ -267,7 +276,7 @@ export default function RegisterPage() {
           </h1>
 
           <p className="text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.55)' }}>
-            Join 50,000+ event planners who use EventJelly to design, manage, and execute flawless events.
+            Join 50,000+ event planners who use EventJell to design, manage, and execute flawless events.
           </p>
         </div>
 
@@ -307,10 +316,10 @@ export default function RegisterPage() {
         {/* Mobile Logo */}
         <div className="lg:hidden flex items-center gap-2 mb-10">
           <Logo size={32} />
-          <span className="text-lg font-bold text-slate-800" style={{ fontFamily: 'Playfair Display, serif' }}>EventJelly</span>
+          <span className="text-lg font-bold text-slate-800" style={{ fontFamily: 'Playfair Display, serif' }}>EventJell</span>
         </div>
 
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-xl">
 
           {/* Progress dots */}
           <div className="flex items-center gap-1.5 mb-6">
@@ -410,14 +419,14 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Work email</label>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Email</label>
                     <div className="relative">
                       <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
                       <input
                         type="email" required
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        placeholder="jane@company.com"
+                        placeholder="jane@example.com"
                         className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
                         style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
                         onFocus={e => (e.target.style.borderColor = R)}
@@ -426,99 +435,11 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Organization / Company name</label>
-                    <div className="relative">
-                      <Building2 size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#cbd5e1' }} />
-                      <input
-                        type="text"
-                        value={organizationName}
-                        onChange={e => setOrganizationName(e.target.value)}
-                        placeholder="e.g. Apex Events, Luxe Studio, Independent"
-                        className="w-full h-11 pl-10 pr-4 rounded-xl border text-sm text-slate-800 placeholder:text-slate-300 transition-all outline-none"
-                        style={{ borderColor: '#e2e8f0', background: '#f8fafc' }}
-                        onFocus={e => (e.target.style.borderColor = R)}
-                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Organization size</label>
-                      <div className="relative">
-                        <Users size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#cbd5e1' }} />
-                        <select
-                          value={organizationSize}
-                          onChange={e => setOrganizationSize(e.target.value)}
-                          className="w-full h-11 pl-10 pr-8 rounded-xl border text-sm bg-[#f8fafc] text-slate-800 transition-all outline-none appearance-none cursor-pointer"
-                          style={{ borderColor: '#e2e8f0' }}
-                          onFocus={e => (e.target.style.borderColor = R)}
-                          onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
-                        >
-                          <option value="">Select company size</option>
-                          {ORG_SIZES.map(s => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Role of creator</label>
-                      <div className="relative">
-                        <Briefcase size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#cbd5e1' }} />
-                        <select
-                          value={creatorRole}
-                          onChange={e => setCreatorRole(e.target.value)}
-                          className="w-full h-11 pl-10 pr-8 rounded-xl border text-sm bg-[#f8fafc] text-slate-800 transition-all outline-none appearance-none cursor-pointer"
-                          style={{ borderColor: '#e2e8f0' }}
-                          onFocus={e => (e.target.style.borderColor = R)}
-                          onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
-                        >
-                          <option value="">Select your role</option>
-                          {CREATOR_ROLES.map(r => (
-                            <option key={r} value={r}>{r}</option>
-                          ))}
-                        </select>
-                        <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                            <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Primary event type</label>
-                    <div className="relative">
-                      <Layers size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#cbd5e1' }} />
-                      <select
-                        value={primaryEventType}
-                        onChange={e => setPrimaryEventType(e.target.value)}
-                        className="w-full h-11 pl-10 pr-8 rounded-xl border text-sm bg-[#f8fafc] text-slate-800 transition-all outline-none appearance-none cursor-pointer"
-                        style={{ borderColor: '#e2e8f0' }}
-                        onFocus={e => (e.target.style.borderColor = R)}
-                        onBlur={e => (e.target.style.borderColor = '#e2e8f0')}
-                      >
-                        <option value="">Select primary event focus</option>
-                        {EVENT_TYPES.map(t => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                          <path d="M2 4l4 4 4-4" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
+
+
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Country</label>

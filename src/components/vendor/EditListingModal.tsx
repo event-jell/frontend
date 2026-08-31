@@ -201,7 +201,7 @@ export default function EditListingModal({
 
           <div>
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-              Title *
+              Company Name *
             </label>
             <input
               type="text"

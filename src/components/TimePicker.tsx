@@ -104,7 +104,7 @@ export default function TimePicker({ value, onChange, placeholder = 'Select time
 
       {open && (
         <div
-          className="absolute right-0 z-50 mt-2 w-[280px] rounded-2xl shadow-2xl border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
+          className="absolute right-0 z-50 mt-2 w-[280px] max-w-[calc(100vw-2.5rem)] rounded-2xl shadow-2xl border overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200"
           style={{ background: '#FDFBF8', borderColor: '#EFEAE2' }}
         >
           {/* Header */}

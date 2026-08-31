@@ -38,7 +38,7 @@ export default function CheckInDashboardPage() {
 
   return (
     <>
-      <SEO title={`Check-In Dashboard | ${event?.name || 'EventJelly'}`} />
+      <SEO title={`Check-In Dashboard | ${event?.name || 'EventJell'}`} />
 
       <div className="flex flex-col h-full bg-slate-50 overflow-y-auto">
         {/* Header Banner */}

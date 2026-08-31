@@ -7,10 +7,9 @@ function RsvpRedirect() {
   return <Navigate to={`/events/${id}/invite`} replace />;
 }
 import { QueryClient, QueryClientProvider, MutationCache, QueryCache } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import AppShell from './layouts/AppShell';
 import ProtectedRoute from './components/ProtectedRoute';
-import { AuthProvider } from './contexts/AuthContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { PreferencesProvider } from './contexts/PreferencesContext';
 import EventsPage from './pages/EventsPage';
 import CreateEventPage from './pages/CreateEventPage';
@@ -44,6 +43,7 @@ import VendorHubPage from './pages/VendorHubPage';
 import CreateVendorListingPage from './pages/CreateVendorListingPage';
 import VendorProfilePage from './pages/VendorProfilePage';
 import MessagesPage from './pages/MessagesPage';
+import ExplorePage from './pages/ExplorePage';
 import { socket } from './lib/socket';
 import { getFriendlyErrorMessage } from './lib/api';
 
@@ -55,7 +55,13 @@ const handleError = (error: any, v2?: any, v3?: any, v4?: any) => {
 };
 
 const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: 1, staleTime: 30_000 } },
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 30_000,
+      refetchOnWindowFocus: false,
+    },
+  },
   mutationCache: new MutationCache({ 
     onError: handleError,
     onSuccess: (_, __, ___, mutation) => {
@@ -72,6 +78,7 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 function AppRoutes() {
+  const { token } = useAuth();
   useEffect(() => {
     const handleGuestUpdate = () => queryClient.invalidateQueries({ queryKey: ['guests'] });
     const handleTicketUpdate = () => queryClient.invalidateQueries({ queryKey: ['tickets'] });
@@ -142,6 +149,9 @@ function AppRoutes() {
       <Route path="/events/:id/invite" element={<EventInvitePage />} />
       <Route path="/events/:id/pass/:guestId" element={<GuestEventPassPage />} />
       <Route path="/invitations/accept/:token" element={<AcceptInvitePage />} />
+      <Route path="/explore" element={token ? <Shell><ExplorePage /></Shell> : <ExplorePage />} />
+      <Route path="/vendors/:listingId" element={token ? <Shell><VendorProfilePage /></Shell> : <VendorProfilePage />} />
+      <Route path="/vendor/listings/:listingId" element={token ? <Shell><VendorProfilePage /></Shell> : <VendorProfilePage />} />
 
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
@@ -170,8 +180,6 @@ function AppRoutes() {
         <Route path="/events/:id/vendors" element={<Shell><VendorsPage /></Shell>} />
         <Route path="/events/:id/vendors/marketplace/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
         <Route path="/events/:id/vendors/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
-        <Route path="/vendors/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
-        <Route path="/vendor/listings/:listingId" element={<Shell><VendorProfilePage /></Shell>} />
         <Route path="/messages" element={<Shell><MessagesPage /></Shell>} />
         <Route path="/messages/:conversationId" element={<Shell><MessagesPage /></Shell>} />
         <Route path="/events/:id/event-com" element={<Shell><EventComPage /></Shell>} />
@@ -199,7 +207,6 @@ export default function App() {
             </BrowserRouter>
           </PreferencesProvider>
         </AuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </HelmetProvider>
   );

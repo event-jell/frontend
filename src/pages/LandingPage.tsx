@@ -410,7 +410,7 @@ function TicketScreen() {
             </div>
           </div>
           <div className="px-3 pb-3 flex items-center justify-between">
-            <p className="text-[7px] font-semibold" style={{ color: C.gold }}>EventJelly™</p>
+            <p className="text-[7px] font-semibold" style={{ color: C.gold }}>EventJell™</p>
             <div className="flex items-center gap-1">
               <div className="w-1 h-1 rounded-full" style={{ background: C.gold, animation: 'pulseGold 2s infinite' }} />
               <p className="text-[6.5px]" style={{ color: 'rgba(255,255,255,0.4)' }}>Verified</p>
@@ -687,9 +687,12 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Logo size={32} />
-            <span className="text-base font-bold" style={{ color:C.charcoal, fontFamily:'Playfair Display, serif' }}>EventJelly</span>
+            <span className="text-base font-bold" style={{ color:C.charcoal, fontFamily:'Playfair Display, serif' }}>EventJell</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
+            <Link to="/explore" className="text-xs font-bold text-slate-700 hover:text-[#7A1F1F] px-3.5 py-2 border border-slate-200 hover:border-[#7A1F1F]/20 bg-slate-50/50 hover:bg-[#FAF0E8]/40 rounded-xl transition-all shadow-3xs cursor-pointer">
+              Explore Marketplace
+            </Link>
             {token ? (
               <button onClick={() => navigate('/events')}
                 className="flex items-center gap-2 px-5 py-2 text-sm font-bold text-white rounded-xl shadow-sm transition-all hover:-translate-y-0.5"
@@ -837,7 +840,7 @@ export default function LandingPage() {
               <span style={{ background:`linear-gradient(135deg,${C.red},${C.gold})`, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent' }}> every detail</span>
             </h2>
             <p className="text-lg max-w-xl mx-auto" style={{ color:C.gray }}>
-              From the first blueprint to the final check-in, EventJelly handles every moving part of your event.
+              From the first blueprint to the final check-in, EventJell handles every moving part of your event.
             </p>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -976,7 +979,7 @@ export default function LandingPage() {
             </span>
           </h2>
           <p className="text-lg mb-12 max-w-xl mx-auto leading-relaxed" style={{ color:'rgba(255,255,255,0.52)' }}>
-            Join thousands of event planners who use EventJelly to create extraordinary, unforgettable experiences.
+            Join thousands of event planners who use EventJell to create extraordinary, unforgettable experiences.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link to="/register"
@@ -998,9 +1001,9 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <Logo size={28} />
-            <span className="text-sm font-bold text-white" style={{ fontFamily:'Playfair Display, serif' }}>EventJelly</span>
+            <span className="text-sm font-bold text-white" style={{ fontFamily:'Playfair Display, serif' }}>EventJell</span>
           </div>
-          <p className="text-xs" style={{ color:'rgba(255,255,255,0.22)' }}>© {new Date().getFullYear()} EventJelly. All rights reserved.</p>
+          <p className="text-xs" style={{ color:'rgba(255,255,255,0.22)' }}>© {new Date().getFullYear()} EventJell. All rights reserved.</p>
           <div className="flex items-center gap-4 flex-wrap justify-center">
             <div className="flex items-center gap-3 text-xs" style={{ color:'rgba(255,255,255,0.3)' }}>
               <Link to="/login" className="hover:text-white transition-colors">Sign in</Link>

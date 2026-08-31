@@ -8,15 +8,14 @@ interface LogoProps {
 
 export default function Logo({ className = '', size = 36, showText = true }: LogoProps) {
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
+    <div className={`inline-flex items-center ${className}`}>
       <img
         src="/logo.png"
-        alt="Event Jell"
+        alt="EventJell"
         className="object-contain flex-shrink-0"
         style={{
           height: size,
           width: 'auto',
-          maxHeight: size * 1.5,
         }}
       />
     </div>

@@ -62,7 +62,7 @@ export default function DatePicker({ value, onChange, placeholder = 'Select a da
 
       {open && (
         <div
-          className="absolute z-50 mt-2 w-[300px] rounded-2xl shadow-2xl border overflow-hidden"
+          className="absolute z-50 mt-2 w-[300px] max-w-[calc(100vw-2.5rem)] rounded-2xl shadow-2xl border overflow-hidden"
           style={{ background: '#FDFBF8', borderColor: '#EFEAE2' }}
         >
           <div className="flex items-center justify-between px-4 py-3" style={{ background: `linear-gradient(135deg, ${R} 0%, ${RD} 100%)` }}>

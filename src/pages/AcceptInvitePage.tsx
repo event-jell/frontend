@@ -124,7 +124,7 @@ export default function AcceptInvitePage() {
             to="/"
             className="inline-flex items-center justify-center px-6 py-3 bg-[#7A1F1F] text-white font-semibold text-sm rounded-xl hover:bg-[#631818] transition-colors w-full"
           >
-            Go to EventJelly Home
+            Go to EventJell Home
           </Link>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function AcceptInvitePage() {
   return (
     <>
       <Helmet>
-        <title>Invitation to {invitation.eventName} &bull; EventJelly</title>
+        <title>Invitation to {invitation.eventName} &bull; EventJell</title>
       </Helmet>
 
       <div className="min-h-screen bg-[#FAF7F2] flex flex-col justify-between">
@@ -150,7 +150,7 @@ export default function AcceptInvitePage() {
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7A1F1F] to-[#501212] flex items-center justify-center text-[#D4A24C] font-black text-sm tracking-wider shadow-md shadow-[#7A1F1F]/20 group-hover:scale-105 transition-transform">
               EJ
             </div>
-            <span className="font-bold text-lg text-stone-900 tracking-tight">EventJelly</span>
+            <span className="font-bold text-lg text-stone-900 tracking-tight">EventJell</span>
           </Link>
 
           {user ? (
@@ -254,7 +254,7 @@ export default function AcceptInvitePage() {
                 </div>
               </div>
 
-              {/* What is EventJelly perks for unregistered users */}
+              {/* What is EventJell perks for unregistered users */}
               {!user && (
                 <div className="space-y-3 pt-2">
                   <p className="text-xs font-bold text-stone-500 uppercase tracking-wider">
@@ -365,7 +365,7 @@ export default function AcceptInvitePage() {
 
         {/* Footer */}
         <footer className="py-6 text-center text-xs text-stone-400">
-          &copy; {new Date().getFullYear()} EventJelly Inc. All rights reserved.
+          &copy; {new Date().getFullYear()} EventJell Inc. All rights reserved.
         </footer>
       </div>
     </>

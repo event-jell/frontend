@@ -8,13 +8,13 @@ interface SEOProps {
 }
 
 export default function SEO({
-  title = 'EventJelly',
+  title = 'EventJell',
   description = 'Premium event management. Floor plans, guest lists, ticketing, vendors, communications — all in one place.',
   ogImage = '/thumbnail.png',
   ogType = 'website',
 }: SEOProps) {
   // If a specific title is provided, append the brand, otherwise just use the brand.
-  const fullTitle = title === 'EventJelly' ? title : `${title} | EventJelly`;
+  const fullTitle = title === 'EventJell' ? title : `${title} | EventJell`;
 
   return (
     <Helmet>

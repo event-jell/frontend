@@ -55,7 +55,9 @@ export function useConversationMessages(conversationId?: string) {
           MESSAGES_QUERY_KEYS.conversation(conversationId),
           (prev) => {
             if (!prev) return [msg];
-            if (prev.some((m) => m._id === msg._id)) return prev;
+            if (prev.some((m) => m._id === msg._id)) {
+              return prev.map((m) => (m._id === msg._id ? msg : m));
+            }
             return [...prev, msg];
           },
         );
@@ -117,6 +119,28 @@ export function useMarkMessagesRead() {
     mutationFn: messagesApi.markAsRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MESSAGES_QUERY_KEYS.conversations });
+    },
+  });
+}
+
+export function usePayInvoiceWithWallet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: messagesApi.payInvoiceWithWallet,
+    onSuccess: (updatedMsg) => {
+      queryClient.setQueryData<ChatMessage[]>(
+        MESSAGES_QUERY_KEYS.conversation(updatedMsg.conversation_id),
+        (prev) => {
+          if (!prev) return [updatedMsg];
+          return prev.map((m) => (m._id === updatedMsg._id ? updatedMsg : m));
+        },
+      );
+      queryClient.invalidateQueries({ queryKey: MESSAGES_QUERY_KEYS.conversations });
+      toast.success('Invoice paid successfully via wallet!');
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Failed to pay invoice');
     },
   });
 }

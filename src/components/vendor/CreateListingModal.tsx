@@ -225,14 +225,14 @@ export default function CreateListingModal({
             <div className="space-y-4">
               <div>
                 <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                  Listing Title *
+                  Company Name *
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 text-sm font-semibold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#7A1F1F]/20 focus:border-[#7A1F1F]/60 transition-all"
-                  placeholder="e.g. Starlight Sound & DJ Services"
+                  placeholder="e.g. Prestige Event Planners, Royal Taste Catering"
                   required
                 />
               </div>
@@ -469,23 +469,10 @@ export default function CreateListingModal({
               </div>
 
               {/* Contact Links */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100">
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Contact Email
-                  </label>
-                  <input
-                    type="email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                    placeholder="bookings@vendor.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Contact Phone / WhatsApp
+                    Phone / WhatsApp (Optional)
                   </label>
                   <input
                     type="tel"
@@ -498,7 +485,7 @@ export default function CreateListingModal({
 
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Website URL
+                    Website (Optional)
                   </label>
                   <input
                     type="url"
@@ -511,14 +498,14 @@ export default function CreateListingModal({
 
                 <div>
                   <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-                    Instagram Handle
+                    Instagram (Optional)
                   </label>
                   <input
                     type="text"
                     value={instagram}
                     onChange={(e) => setInstagram(e.target.value)}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs"
-                    placeholder="@myvendorhandle"
+                    placeholder="@myhandle"
                   />
                 </div>
               </div>

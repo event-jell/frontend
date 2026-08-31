@@ -64,7 +64,7 @@ export default function WalletPage() {
 
   return (
     <>
-      <SEO title="Wallet & Payouts — EventJelly" description="Manage your event earnings, withdrawals, and payout methods" />
+      <SEO title="Wallet & Payouts — EventJell" description="Manage your event earnings, withdrawals, and payout methods" />
 
       {wallet && (
         <>

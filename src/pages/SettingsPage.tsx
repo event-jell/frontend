@@ -230,15 +230,15 @@ export default function SettingsPage() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-slate-50">
-      <div className="bg-white border-b border-slate-100 px-4 py-4 sm:px-8 sm:py-5 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-slate-900">Settings</h1>
+      <div className="bg-white border-b border-slate-100 px-3 py-3 sm:px-8 sm:py-5 flex-shrink-0">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Settings</h1>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-8 sm:px-8">
-        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-6 items-start">
+      <div className="flex-1 overflow-y-auto px-3 py-3.5 sm:px-8 sm:py-8 pb-28 sm:pb-20 no-scrollbar">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-3 sm:gap-6 items-start">
           
-          {/* Side Tabs Navigation */}
-          <div className="w-full md:w-64 flex-shrink-0 flex md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1 bg-white md:bg-transparent p-1 md:p-0 rounded-2xl border md:border-0 border-slate-100">
+          {/* Side Tabs Navigation (Compact on Mobile) */}
+          <div className="w-full md:w-64 flex-shrink-0 flex md:flex-col overflow-x-auto md:overflow-x-visible pb-1 md:pb-0 gap-1 bg-white md:bg-transparent p-1 md:p-0 rounded-xl sm:rounded-2xl border md:border-0 border-slate-100 no-scrollbar">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -246,14 +246,14 @@ export default function SettingsPage() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center gap-2.5 px-4 py-2.5 md:py-3 rounded-xl text-sm font-semibold whitespace-nowrap transition-all outline-none ${
+                  className={`flex items-center gap-1.5 sm:gap-2.5 px-3 py-1.5 md:py-3 rounded-lg sm:rounded-xl text-xs md:text-sm font-semibold whitespace-nowrap transition-all outline-none ${
                     isActive
                       ? 'bg-[#FAF0E8] text-[#7A1F1F]'
                       : 'text-slate-600 hover:bg-slate-100/50 hover:text-[#7A1F1F]'
                   }`}
                 >
-                  <Icon size={18} className={isActive ? 'text-[#7A1F1F]' : 'text-slate-400'} />
-                  {tab.label}
+                  <Icon size={14} className={`sm:w-[18px] sm:h-[18px] ${isActive ? 'text-[#7A1F1F]' : 'text-slate-400'}`} />
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
@@ -263,71 +263,71 @@ export default function SettingsPage() {
           <div className="flex-1 w-full">
             {activeTab === 'profile' && (
               /* Profile Section */
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <User size={18} className="text-slate-400" />
-                  <h2 className="font-semibold text-slate-800">Profile Information</h2>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xs border border-slate-100 overflow-hidden">
+                <div className="px-3.5 py-2.5 sm:px-6 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <User size={15} className="text-slate-400 sm:w-[18px] sm:h-[18px]" />
+                  <h2 className="text-xs sm:text-base font-semibold text-slate-800">Profile Information</h2>
                 </div>
-                <div className="p-6">
-                  <div className="flex items-center gap-6 mb-8">
+                <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6">
+                  <div className="flex items-center gap-3 sm:gap-6">
                     <div
-                      className="w-20 h-20 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-sm flex-shrink-0"
+                      className="w-14 h-14 sm:w-20 sm:h-20 rounded-full flex items-center justify-center text-white text-lg sm:text-2xl font-bold shadow-xs flex-shrink-0"
                       style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
                     >
                       {user?.firstName?.[0]}{user?.lastName?.[0]}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-900">{user?.firstName} {user?.lastName}</h3>
-                      <p className="text-sm text-slate-500">{user?.creatorRole || 'Event Planner'}{user?.organizationName ? ` at ${user.organizationName}` : ''}</p>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900">{user?.firstName} {user?.lastName}</h3>
+                      <p className="text-xs sm:text-sm text-slate-500">{user?.creatorRole || 'Event Planner'}{user?.organizationName ? ` at ${user.organizationName}` : ''}</p>
                     </div>
                   </div>
                   {profileError && (
-                    <div className="mb-4 px-4 py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">{profileError}</div>
+                    <div className="px-3 py-2 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs sm:text-sm">{profileError}</div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5">
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">First Name</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">First Name</label>
                       <input
                         type="text"
                         value={firstName}
                         onChange={e => setFirstName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Last Name</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Last Name</label>
                       <input
                         type="text"
                         value={lastName}
                         onChange={e => setLastName(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       />
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
-                      <input type="email" disabled value={user?.email || ''} className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 text-sm focus:outline-none cursor-not-allowed" />
-                      <p className="text-xs text-slate-400 mt-1">Email address cannot be changed.</p>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Email Address</label>
+                      <input type="email" disabled value={user?.email || ''} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl text-slate-400 text-xs sm:text-sm focus:outline-none cursor-not-allowed" />
+                      <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Email address cannot be changed.</p>
                     </div>
 
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Organization / Company Name</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Organization / Company Name</label>
                       <input
                         type="text"
                         value={organizationName}
                         onChange={e => setOrganizationName(e.target.value)}
                         placeholder="e.g. Acme Events Ltd"
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Organization Size</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Organization Size</label>
                       <select
                         value={organizationSize}
                         onChange={e => setOrganizationSize(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="">Select organization size</option>
                         <option value="1 (Just me)">1 (Just me)</option>
@@ -340,11 +340,11 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Role of Creator / Job Title</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Role of Creator / Job Title</label>
                       <select
                         value={creatorRole}
                         onChange={e => setCreatorRole(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="">Select creator role</option>
                         <option value="Event Planner / Producer">Event Planner / Producer</option>
@@ -359,11 +359,11 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Primary Event Type</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Primary Event Type</label>
                       <select
                         value={primaryEventType}
                         onChange={e => setPrimaryEventType(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="">Select primary event focus</option>
                         <option value="Weddings & Social Gatherings">Weddings & Social Gatherings</option>
@@ -376,11 +376,11 @@ export default function SettingsPage() {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Country / Region</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Country / Region</label>
                       <select
                         value={country}
                         onChange={e => setCountry(e.target.value)}
-                        className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="">Select country</option>
                         <optgroup label="Popular African Countries">
@@ -410,7 +410,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end mt-6">
+                  <div className="flex justify-end pt-2">
                     <button
                       onClick={() =>
                         profileMutation.mutate({
@@ -424,10 +424,10 @@ export default function SettingsPage() {
                         })
                       }
                       disabled={!profileDirty || !firstName.trim() || !lastName.trim() || profileMutation.isPending}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white transition-all disabled:opacity-50"
                       style={{ background: 'linear-gradient(135deg, #7A1F1F, #9c3030)' }}
                     >
-                      {profileSaved ? <><CheckCircle size={14} /> Saved!</> : profileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                      {profileSaved ? <><CheckCircle size={13} /> Saved!</> : profileMutation.isPending ? 'Saving...' : 'Save Changes'}
                     </button>
                   </div>
                 </div>
@@ -436,24 +436,24 @@ export default function SettingsPage() {
 
             {activeTab === 'billing' && (
               /* Plans & Billing Section */
-              <div className="space-y-6">
+              <div className="space-y-3.5 sm:space-y-6">
                 {/* Active Plan Overview */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 relative overflow-hidden">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-2xl bg-[#FAF0E8] text-[#7A1F1F] flex items-center justify-center flex-shrink-0 shadow-sm">
-                        <Sparkles size={24} />
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xs border border-slate-100 p-3.5 sm:p-6 relative overflow-hidden">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#FAF0E8] text-[#7A1F1F] flex items-center justify-center flex-shrink-0 shadow-2xs">
+                        <Sparkles size={18} />
                       </div>
                       <div>
-                        <div className="flex items-center gap-2.5">
-                          <h2 className="text-xl font-bold text-slate-900">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-base sm:text-xl font-bold text-slate-900">
                             {user?.plan === 'pro' ? 'Pro Organizer Plan' : 'Free Starter Plan'}
                           </h2>
-                          <span className="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-wider bg-emerald-100 text-emerald-700 border border-emerald-200">
                             {user?.subscriptionStatus === 'active' ? 'Active' : 'Free'}
                           </span>
                         </div>
-                        <p className="text-sm text-slate-500 mt-0.5">
+                        <p className="text-[11px] sm:text-sm text-slate-500 mt-0.5">
                           {user?.plan === 'pro'
                             ? 'Unlimited events, QR check-in & passes, customized branding, priority support'
                             : 'Basic event planning & seating with up to 50 guests per event'}
@@ -467,17 +467,17 @@ export default function SettingsPage() {
                           <button
                             onClick={handleUpgradePro}
                             disabled={isSubscribing}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-white transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs text-white transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
                             style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
                           >
-                            <Zap size={15} className="text-[#D4A24C]" />
+                            <Zap size={13} className="text-[#D4A24C]" />
                             Paystack (₦25,000 / mo)
                           </button>
                         ) : (
                           <button
                             onClick={handleUpgradePayPal}
                             disabled={isSubscribing}
-                            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs text-white bg-[#003087] hover:bg-[#002466] transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
+                            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl font-bold text-xs text-white bg-[#003087] hover:bg-[#002466] transition-all shadow-md hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50"
                           >
                             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.305-.59 3.82-3.13 5.768-6.947 5.768H9.68l-1.58 10.03c-.082.52-.53.901-1.054.901v.003l.03-.477z"/></svg>
                             PayPal ($29 / mo)
@@ -489,93 +489,93 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Plan Comparison Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-6">
                   {/* Starter Tier */}
-                  <div className={`bg-white rounded-2xl p-6 border transition-all ${user?.plan !== 'pro' ? 'border-[#7A1F1F]/40 shadow-sm ring-1 ring-[#7A1F1F]/20' : 'border-slate-100 shadow-sm'}`}>
-                    <div className="flex justify-between items-start mb-4">
+                  <div className={`bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border transition-all ${user?.plan !== 'pro' ? 'border-[#7A1F1F]/40 shadow-xs ring-1 ring-[#7A1F1F]/20' : 'border-slate-100 shadow-xs'}`}>
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900">Starter Plan</h3>
-                        <p className="text-xs text-slate-500">Perfect for intimate & single events</p>
+                        <h3 className="font-bold text-base sm:text-lg text-slate-900">Starter Plan</h3>
+                        <p className="text-[11px] sm:text-xs text-slate-500">Perfect for intimate & single events</p>
                       </div>
-                      <span className="text-xl font-extrabold text-slate-900">Free</span>
+                      <span className="text-lg sm:text-xl font-extrabold text-slate-900">Free</span>
                     </div>
 
-                    <ul className="space-y-2.5 text-sm text-slate-600 mb-6">
+                    <ul className="space-y-1.5 sm:space-y-2.5 text-xs sm:text-sm text-slate-600 mb-4 sm:mb-6">
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-emerald-600 flex-shrink-0" />
+                        <Check size={14} className="text-emerald-600 flex-shrink-0" />
                         <span>Up to 1 active event</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-emerald-600 flex-shrink-0" />
+                        <Check size={14} className="text-emerald-600 flex-shrink-0" />
                         <span>50 guests per event</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-emerald-600 flex-shrink-0" />
+                        <Check size={14} className="text-emerald-600 flex-shrink-0" />
                         <span>Standard 2D floor plan designer</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-emerald-600 flex-shrink-0" />
+                        <Check size={14} className="text-emerald-600 flex-shrink-0" />
                         <span>Basic RSVP tracking</span>
                       </li>
                     </ul>
 
                     {user?.plan !== 'pro' ? (
-                      <div className="py-2.5 px-4 text-center rounded-xl bg-slate-50 text-slate-500 font-semibold text-xs border border-slate-200">
+                      <div className="py-2 px-3 text-center rounded-xl bg-slate-50 text-slate-500 font-semibold text-xs border border-slate-200">
                         Current Active Plan
                       </div>
                     ) : (
-                      <div className="py-2.5 px-4 text-center rounded-xl text-slate-400 font-medium text-xs">
+                      <div className="py-2 px-3 text-center rounded-xl text-slate-400 font-medium text-xs">
                         Included
                       </div>
                     )}
                   </div>
 
                   {/* Pro Tier */}
-                  <div className={`bg-white rounded-2xl p-6 border relative overflow-hidden transition-all ${user?.plan === 'pro' ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-[#7A1F1F]/30 shadow-md ring-1 ring-[#7A1F1F]/20'}`}>
-                    <div className="absolute top-0 right-0 bg-[#7A1F1F] text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-bl-xl">
+                  <div className={`bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 border relative overflow-hidden transition-all ${user?.plan === 'pro' ? 'border-emerald-500 shadow-md ring-2 ring-emerald-500/20' : 'border-[#7A1F1F]/30 shadow-md ring-1 ring-[#7A1F1F]/20'}`}>
+                    <div className="absolute top-0 right-0 bg-[#7A1F1F] text-white text-[9px] sm:text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-bl-xl">
                       Recommended
                     </div>
 
-                    <div className="flex justify-between items-start mb-4">
+                    <div className="flex justify-between items-start mb-3">
                       <div>
-                        <h3 className="font-bold text-lg text-slate-900">Pro Organizer</h3>
-                        <p className="text-xs text-slate-500">For professional event planners & agencies</p>
+                        <h3 className="font-bold text-base sm:text-lg text-slate-900">Pro Organizer</h3>
+                        <p className="text-[11px] sm:text-xs text-slate-500">For professional event planners & agencies</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-2xl font-extrabold text-[#7A1F1F]">₦25,000</span>
-                        <span className="text-xs text-slate-400 block">/ month ($29)</span>
+                        <span className="text-xl sm:text-2xl font-extrabold text-[#7A1F1F]">₦25,000</span>
+                        <span className="text-[10px] sm:text-xs text-slate-400 block">/ month ($29)</span>
                       </div>
                     </div>
 
-                    <ul className="space-y-2.5 text-sm text-slate-600 mb-6">
+                    <ul className="space-y-1.5 sm:space-y-2.5 text-xs sm:text-sm text-slate-600 mb-4 sm:mb-6">
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-[#7A1F1F] flex-shrink-0" />
+                        <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
                         <span className="font-medium text-slate-800">Unlimited events & draft planners</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-[#7A1F1F] flex-shrink-0" />
+                        <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
                         <span className="font-medium text-slate-800">Unlimited guest RSVPs & ticket tiers</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-[#7A1F1F] flex-shrink-0" />
+                        <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
                         <span>Paystack online ticket payment checkout</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-[#7A1F1F] flex-shrink-0" />
+                        <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
                         <span>QR Pass generation & live check-in scanner</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-[#7A1F1F] flex-shrink-0" />
+                        <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
                         <span>Apple Wallet Passes download (.pkpass)</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <Check size={16} className="text-[#7A1F1F] flex-shrink-0" />
+                        <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
                         <span>Priority support & analytics export</span>
                       </li>
                     </ul>
 
                     {user?.plan === 'pro' ? (
-                      <div className="py-2.5 px-4 text-center rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
+                      <div className="py-2 px-3 text-center rounded-xl bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
                         ✓ Your Current Pro Plan
                       </div>
                     ) : (
@@ -584,7 +584,7 @@ export default function SettingsPage() {
                           <button
                             onClick={handleUpgradePro}
                             disabled={isSubscribing}
-                            className="w-full py-3 px-4 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+                            className="w-full py-2.5 px-4 rounded-xl text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                             style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
                           >
                             <CreditCard size={14} />
@@ -594,7 +594,7 @@ export default function SettingsPage() {
                           <button
                             onClick={handleUpgradePayPal}
                             disabled={isSubscribing}
-                            className="w-full py-3 px-4 rounded-xl text-white bg-[#003087] hover:bg-[#002466] font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+                            className="w-full py-2.5 px-4 rounded-xl text-white bg-[#003087] hover:bg-[#002466] font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
                           >
                             <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.305-.59 3.82-3.13 5.768-6.947 5.768H9.68l-1.58 10.03c-.082.52-.53.901-1.054.901v.003l.03-.477z"/></svg>
                             Subscribe with PayPal ($29 / mo)
@@ -606,61 +606,60 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Billing & Payment Transactions */}
-                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                  <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard size={18} className="text-slate-400" />
-                      <h2 className="font-semibold text-slate-800">Billing & Payment History</h2>
+                <div className="bg-white rounded-xl sm:rounded-2xl shadow-xs border border-slate-100 overflow-hidden">
+                  <div className="px-3.5 py-2.5 sm:px-6 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                      <CreditCard size={15} className="text-slate-400" />
+                      <h2 className="text-xs sm:text-base font-semibold text-slate-800">Billing & Payment History</h2>
                     </div>
-                    <span className="text-xs text-slate-400">
-                      {isAfricanCountry(user?.country) ? 'Powered by Paystack' : 'Powered by PayPal'}
+                    <span className="text-[10px] sm:text-xs text-slate-400">
+                      {isAfricanCountry(user?.country) ? 'Paystack' : 'PayPal'}
                     </span>
                   </div>
 
-                  <div className="p-6">
+                  <div className="p-3.5 sm:p-6">
                     {paymentHistory.length === 0 ? (
-                      <div className="text-center py-10 text-slate-400">
-                        <CreditCard size={36} className="mx-auto mb-2 opacity-40" />
-                        <p className="text-sm font-medium">No payment transactions yet</p>
-                        <p className="text-xs text-slate-400 mt-0.5">Your platform subscription and ticketing transactions will appear here.</p>
+                      <div className="text-center py-8 text-slate-400">
+                        <CreditCard size={30} className="mx-auto mb-1.5 opacity-40" />
+                        <p className="text-xs sm:text-sm font-medium">No payment transactions yet</p>
+                        <p className="text-[10px] sm:text-xs text-slate-400 mt-0.5">Your platform subscription and ticketing transactions will appear here.</p>
                       </div>
                     ) : (
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
+                      <div className="overflow-x-auto no-scrollbar">
+                        <table className="w-full text-left text-xs sm:text-sm">
                           <thead>
-                            <tr className="border-b border-slate-100 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                              <th className="pb-3">Reference</th>
-                              <th className="pb-3">Description / Type</th>
-                              <th className="pb-3">Amount</th>
-                              <th className="pb-3">Date</th>
-                              <th className="pb-3 text-right">Status</th>
+                            <tr className="border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                              <th className="pb-2">Reference</th>
+                              <th className="pb-2">Type</th>
+                              <th className="pb-2">Amount</th>
+                              <th className="pb-2">Date</th>
+                              <th className="pb-2 text-right">Status</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-slate-50">
                             {paymentHistory.map((pmt: PaymentRecord) => (
                               <tr key={pmt._id || pmt.reference} className="hover:bg-slate-50/50 transition-colors">
-                                <td className="py-3 font-mono text-xs text-slate-600 font-semibold">{pmt.reference}</td>
-                                <td className="py-3 text-slate-800 font-medium">
+                                <td className="py-2.5 font-mono text-[11px] text-slate-600 font-semibold">{pmt.reference}</td>
+                                <td className="py-2.5 text-slate-800 font-medium text-xs">
                                   {pmt.payment_type === 'platform_subscription'
-                                    ? 'Pro Plan Subscription'
+                                    ? 'Pro Subscription'
                                     : pmt.payment_type === 'ticket_purchase'
-                                    ? 'Event Ticket Purchase'
-                                    : 'Platform Payment'}
+                                    ? 'Ticket Purchase'
+                                    : 'Payment'}
                                 </td>
-                                <td className="py-3 text-slate-900 font-bold">
+                                <td className="py-2.5 text-slate-900 font-bold text-xs">
                                   {formatCurrency(pmt.amount || 0, pmt.currency || localCurrency)}
                                 </td>
-                                <td className="py-3 text-xs text-slate-400">
+                                <td className="py-2.5 text-[11px] text-slate-400">
                                   {formatLocalDate(pmt.paid_at || pmt.createdAt, {
                                     timezone,
                                     locale,
                                     month: 'short',
                                     day: 'numeric',
-                                    year: 'numeric',
                                   })}
                                 </td>
-                                <td className="py-3 text-right">
-                                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
+                                <td className="py-2.5 text-right">
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                                     pmt.status === 'success'
                                       ? 'bg-emerald-100 text-emerald-700'
                                       : pmt.status === 'pending'
@@ -683,23 +682,23 @@ export default function SettingsPage() {
 
             {activeTab === 'localization' && (
               /* Localization Section */
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <Globe size={18} className="text-slate-400" />
-                  <h2 className="font-semibold text-slate-800">Localization</h2>
-                  <span className="ml-auto text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">i18n</span>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xs border border-slate-100 overflow-hidden">
+                <div className="px-3.5 py-2.5 sm:px-6 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <Globe size={15} className="text-slate-400" />
+                  <h2 className="text-xs sm:text-base font-semibold text-slate-800">Localization</h2>
+                  <span className="ml-auto text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">i18n</span>
                 </div>
-                <div className="p-6 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="p-3.5 sm:p-6 space-y-4 sm:space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-6">
                     {/* Language */}
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                        <Globe size={14} className="text-slate-400" /> Language
+                    <div className="space-y-1">
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-700">
+                        <Globe size={13} className="text-slate-400" /> Language
                       </label>
                       <select
                         value={lang}
                         onChange={(e) => setLang(e.target.value)}
-                        className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full h-9 sm:h-10 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="en">🇬🇧 English</option>
                         <option value="fr">🇫🇷 Français</option>
@@ -710,19 +709,19 @@ export default function SettingsPage() {
                         <option value="zh">🇨🇳 中文</option>
                       </select>
                       {lang === 'ar' && (
-                        <p className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-lg">RTL layout will be applied automatically.</p>
+                        <p className="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md">RTL layout applied.</p>
                       )}
                     </div>
 
                     {/* Currency */}
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                        <DollarSign size={14} className="text-slate-400" /> Currency
+                    <div className="space-y-1">
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-700">
+                        <DollarSign size={13} className="text-slate-400" /> Currency
                       </label>
                       <select
                         value={curr}
                         onChange={(e) => setCurr(e.target.value)}
-                        className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full h-9 sm:h-10 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="USD">USD — US Dollar ($)</option>
                         <option value="EUR">EUR — Euro (€)</option>
@@ -734,14 +733,14 @@ export default function SettingsPage() {
                     </div>
 
                     {/* Timezone */}
-                    <div className="space-y-2">
-                      <label className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
-                        <Clock size={14} className="text-slate-400" /> Timezone
+                    <div className="space-y-1">
+                      <label className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-slate-700">
+                        <Clock size={13} className="text-slate-400" /> Timezone
                       </label>
                       <select
                         value={tz}
                         onChange={(e) => setTz(e.target.value)}
-                        className="w-full h-10 bg-slate-50 border border-slate-200 rounded-xl px-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full h-9 sm:h-10 bg-slate-50 border border-slate-200 rounded-lg sm:rounded-xl px-2.5 text-xs sm:text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       >
                         <option value="UTC">UTC</option>
                         <option value="America/New_York">America/New_York (ET)</option>
@@ -761,23 +760,23 @@ export default function SettingsPage() {
                   </div>
 
                   {/* Live Preview */}
-                  <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Live Preview</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-2">Live Preview</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-xs">
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Date</p>
+                        <p className="text-[10px] text-slate-400 mb-0.5">Date</p>
                         <p className="font-medium text-slate-700">
                           {new Intl.DateTimeFormat(lang, { dateStyle: 'long', timeZone: tz }).format(new Date())}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Currency</p>
+                        <p className="text-[10px] text-slate-400 mb-0.5">Currency</p>
                         <p className="font-medium text-slate-700">
                           {new Intl.NumberFormat(lang, { style: 'currency', currency: curr }).format(2499.99)}
                         </p>
                       </div>
                       <div>
-                        <p className="text-xs text-slate-400 mb-1">Number</p>
+                        <p className="text-[10px] text-slate-400 mb-0.5">Number</p>
                         <p className="font-medium text-slate-700">
                           {new Intl.NumberFormat(lang).format(1234567.89)}
                         </p>
@@ -785,14 +784,14 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
+                  <div className="flex justify-end pt-1">
                     <button
                       onClick={handleSaveLocalization}
                       disabled={isLoading}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white transition-all disabled:opacity-50"
                       style={{ background: 'linear-gradient(135deg, #7A1F1F, #9c3030)' }}
                     >
-                      {saved ? <><CheckCircle size={14} /> Saved!</> : isLoading ? 'Saving...' : 'Save Preferences'}
+                      {saved ? <><CheckCircle size={13} /> Saved!</> : isLoading ? 'Saving...' : 'Save Preferences'}
                     </button>
                   </div>
                 </div>
@@ -801,79 +800,79 @@ export default function SettingsPage() {
 
             {activeTab === 'notifications' && (
               /* Notifications Placeholder */
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden opacity-75">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <Bell size={18} className="text-slate-400" />
-                  <h2 className="font-semibold text-slate-800">Notifications</h2>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xs border border-slate-100 overflow-hidden opacity-75">
+                <div className="px-3.5 py-2.5 sm:px-6 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <Bell size={15} className="text-slate-400" />
+                  <h2 className="text-xs sm:text-base font-semibold text-slate-800">Notifications</h2>
                 </div>
-                <div className="p-6 text-center text-slate-500 text-sm">Notification settings coming soon.</div>
+                <div className="p-4 sm:p-6 text-center text-slate-500 text-xs sm:text-sm">Notification settings coming soon.</div>
               </div>
             )}
 
             {activeTab === 'security' && (
               /* Security */
-              <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-                <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
-                  <Shield size={18} className="text-slate-400" />
-                  <h2 className="font-semibold text-slate-800">Security</h2>
+              <div className="bg-white rounded-xl sm:rounded-2xl shadow-xs border border-slate-100 overflow-hidden">
+                <div className="px-3.5 py-2.5 sm:px-6 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+                  <Shield size={15} className="text-slate-400" />
+                  <h2 className="text-xs sm:text-base font-semibold text-slate-800">Security</h2>
                 </div>
-                <div className="p-6">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-4">Change password</h3>
+                <div className="p-3.5 sm:p-6">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-700 mb-3">Change password</h3>
 
                   {passwordError && (
-                    <div className="mb-4 px-4 py-2.5 rounded-xl bg-red-50 border border-red-100 text-red-600 text-sm">{passwordError}</div>
+                    <div className="mb-3 px-3 py-2 rounded-xl bg-red-50 border border-red-100 text-red-600 text-xs sm:text-sm">{passwordError}</div>
                   )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
                     <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Current Password</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Current Password</label>
                       <div className="relative max-w-sm">
                         <input
                           type={showCurrent ? 'text' : 'password'}
                           value={currentPassword}
                           onChange={e => setCurrentPassword(e.target.value)}
-                          className="w-full px-3 py-2 pr-10 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                          className="w-full px-3 py-2 pr-9 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                         />
-                        <button type="button" onClick={() => setShowCurrent(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          {showCurrent ? <EyeOff size={15} /> : <Eye size={15} />}
+                        <button type="button" onClick={() => setShowCurrent(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                          {showCurrent ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">New Password</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">New Password</label>
                       <div className="relative">
                         <input
                           type={showNew ? 'text' : 'password'}
                           value={newPassword}
                           onChange={e => setNewPassword(e.target.value)}
                           placeholder="Min. 8 characters"
-                          className="w-full px-3 py-2 pr-10 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                          className="w-full px-3 py-2 pr-9 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                         />
-                        <button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                          {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
+                        <button type="button" onClick={() => setShowNew(v => !v)} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400">
+                          {showNew ? <EyeOff size={14} /> : <Eye size={14} />}
                         </button>
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-slate-700 mb-1.5">Confirm New Password</label>
+                      <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Confirm New Password</label>
                       <input
                         type={showNew ? 'text' : 'password'}
                         value={confirmNewPassword}
                         onChange={e => setConfirmNewPassword(e.target.value)}
                         placeholder="Repeat new password"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
+                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm placeholder:text-slate-300 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="flex justify-end mt-6">
+                  <div className="flex justify-end pt-3 mt-3 border-t border-slate-100">
                     <button
                       onClick={handleChangePassword}
                       disabled={!currentPassword || !newPassword || !confirmNewPassword || passwordMutation.isPending}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-4 py-2 sm:px-6 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white transition-all disabled:opacity-50"
                       style={{ background: 'linear-gradient(135deg, #7A1F1F, #9c3030)' }}
                     >
-                      {passwordSaved ? <><CheckCircle size={14} /> Password changed!</> : passwordMutation.isPending ? 'Updating...' : 'Update Password'}
+                      {passwordSaved ? <><CheckCircle size={13} /> Password changed!</> : passwordMutation.isPending ? 'Updating...' : 'Update Password'}
                     </button>
                   </div>
                 </div>

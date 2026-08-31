@@ -17,7 +17,7 @@ export default function QrScannerView({ onScan, paused }: QrScannerViewProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const lastScannedTextRef = useRef<string>('');
   const lastScannedTimeRef = useRef<number>(0);
-  const containerId = 'eventjelly-qr-reader';
+  const containerId = 'eventjell-qr-reader';
 
   const handleScanSuccess = useCallback(
     (decodedText: string) => {

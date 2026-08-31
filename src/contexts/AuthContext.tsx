@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { socket } from '../lib/socket';
 
 export interface AuthUser {
   id: string;
@@ -42,6 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         setToken(storedToken);
         setUser(JSON.parse(storedUser));
+
+        // Connect socket with stored token
+        socket.auth = { token: storedToken };
+        socket.disconnect().connect();
       } catch {
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
@@ -55,6 +60,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     setUser(newUser);
     setToken(newToken);
+
+    // Reconnect socket with new token
+    socket.auth = { token: newToken };
+    socket.disconnect().connect();
   }, []);
 
   const logout = useCallback(() => {
@@ -62,6 +71,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY);
     setUser(null);
     setToken(null);
+
+    // Clean socket state
+    socket.auth = { token: null };
+    socket.disconnect();
   }, []);
 
   const updateUser = useCallback((patch: Partial<AuthUser>) => {

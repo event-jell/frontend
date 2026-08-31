@@ -1,14 +1,24 @@
 import { io } from 'socket.io-client';
 
-const runtimeEnv = (window as any).RUNTIME_ENV || {};
-const envSocketUrl = runtimeEnv.VITE_SOCKET_URL || import.meta.env.VITE_SOCKET_URL || '';
+const runtimeEnv = (typeof window !== 'undefined' && (window as any).RUNTIME_ENV) || {};
+const rawSocketUrl = (runtimeEnv.VITE_SOCKET_URL || import.meta.env.VITE_SOCKET_URL || '').trim();
 
-// VITE_SOCKET_URL:
-//   - local dev  → leave blank; Socket.io will fall back to relative path (proxy) or http://localhost:3000
-//   - docker/prod → set to backend origin e.g. http://localhost:3000 or https://api.eventjell.com
+const isLocalhost =
+  typeof window !== 'undefined' &&
+  (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+const safeSocketUrl =
+  !isLocalhost && (rawSocketUrl.includes('localhost') || rawSocketUrl.includes('127.0.0.1'))
+    ? (runtimeEnv.VITE_SOCKET_URL && !runtimeEnv.VITE_SOCKET_URL.includes('localhost')
+        ? runtimeEnv.VITE_SOCKET_URL
+        : (typeof window !== 'undefined' ? window.location.origin : ''))
+    : rawSocketUrl;
+
 const SOCKET_URL =
-  envSocketUrl.replace(/\/$/, '') ||
-  (import.meta.env.MODE === 'production' ? window.location.origin : 'http://localhost:3001');
+  safeSocketUrl.replace(/\/$/, '') ||
+  (typeof window !== 'undefined'
+    ? (isLocalhost ? 'http://127.0.0.1:3001' : window.location.origin)
+    : '');
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,

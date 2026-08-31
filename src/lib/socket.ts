@@ -1,7 +1,18 @@
 import { io } from 'socket.io-client';
 
 const runtimeEnv = (typeof window !== 'undefined' && (window as any).RUNTIME_ENV) || {};
-const rawSocketUrl = (runtimeEnv.VITE_SOCKET_URL || import.meta.env.VITE_SOCKET_URL || '').trim();
+const rawSocketUrl = (
+  runtimeEnv.VITE_SOCKET_URL ||
+  runtimeEnv.SOCKET_URL ||
+  (import.meta.env as any).VITE_SOCKET_URL ||
+  (import.meta.env as any).SOCKET_URL ||
+  (import.meta.env as any).REACT_APP_SOCKET_URL ||
+  runtimeEnv.VITE_API_URL ||
+  runtimeEnv.API_URL ||
+  (import.meta.env as any).VITE_API_URL ||
+  (import.meta.env as any).API_URL ||
+  ''
+).trim();
 
 const isLocalhost =
   typeof window !== 'undefined' &&
@@ -9,13 +20,19 @@ const isLocalhost =
 
 const safeSocketUrl =
   !isLocalhost && (rawSocketUrl.includes('localhost') || rawSocketUrl.includes('127.0.0.1'))
-    ? (runtimeEnv.VITE_SOCKET_URL && !runtimeEnv.VITE_SOCKET_URL.includes('localhost')
-        ? runtimeEnv.VITE_SOCKET_URL
-        : (typeof window !== 'undefined' ? window.location.origin : ''))
+    ? (
+        (runtimeEnv.VITE_SOCKET_URL && !runtimeEnv.VITE_SOCKET_URL.includes('localhost')) ? runtimeEnv.VITE_SOCKET_URL :
+        (runtimeEnv.SOCKET_URL && !runtimeEnv.SOCKET_URL.includes('localhost')) ? runtimeEnv.SOCKET_URL :
+        (runtimeEnv.VITE_API_URL && !runtimeEnv.VITE_API_URL.includes('localhost')) ? runtimeEnv.VITE_API_URL :
+        (runtimeEnv.API_URL && !runtimeEnv.API_URL.includes('localhost')) ? runtimeEnv.API_URL :
+        (typeof window !== 'undefined' ? window.location.origin : '')
+      )
     : rawSocketUrl;
 
+const cleanSocketUrl = safeSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
+
 const SOCKET_URL =
-  safeSocketUrl.replace(/\/$/, '') ||
+  cleanSocketUrl ||
   (typeof window !== 'undefined'
     ? (isLocalhost ? 'http://127.0.0.1:3001' : window.location.origin)
     : '');

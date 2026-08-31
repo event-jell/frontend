@@ -4,7 +4,14 @@ import type { FloorPlan, PlacedElement, Event, Guest, Ticket, Vendor, Comm, Coll
 const TOKEN_KEY = 'ej_token';
 
 const runtimeEnv = (typeof window !== 'undefined' && (window as any).RUNTIME_ENV) || {};
-const rawApiUrl = (runtimeEnv.VITE_API_URL || import.meta.env.VITE_API_URL || '').trim();
+const rawApiUrl = (
+  runtimeEnv.VITE_API_URL ||
+  runtimeEnv.API_URL ||
+  (import.meta.env as any).VITE_API_URL ||
+  (import.meta.env as any).API_URL ||
+  (import.meta.env as any).REACT_APP_API_URL ||
+  ''
+).trim();
 
 // If we are on a remote/cloud domain, ignore any baked-in localhost/127.0.0.1 fallbacks
 const isLocalhost =
@@ -13,14 +20,18 @@ const isLocalhost =
 
 const safeApiUrl =
   !isLocalhost && (rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1'))
-    ? (runtimeEnv.VITE_API_URL && !runtimeEnv.VITE_API_URL.includes('localhost') ? runtimeEnv.VITE_API_URL : '')
+    ? (
+        (runtimeEnv.VITE_API_URL && !runtimeEnv.VITE_API_URL.includes('localhost')) ? runtimeEnv.VITE_API_URL :
+        (runtimeEnv.API_URL && !runtimeEnv.API_URL.includes('localhost')) ? runtimeEnv.API_URL :
+        ''
+      )
     : rawApiUrl;
 
-// VITE_API_URL:
-//   - local dev  → leave blank; Vite proxy rewrites /api → http://127.0.0.1:3001
-//   - docker/prod → set to full backend URL e.g. https://api.eventjell.com or leave blank for relative /api
+// Support both base host (https://example.com) and pre-suffixed (https://example.com/api)
 const BASE_URL = safeApiUrl.replace(/\/$/, '') || '';
-const API_PREFIX = BASE_URL ? `${BASE_URL}/api` : '/api';
+const API_PREFIX = BASE_URL
+  ? (BASE_URL.endsWith('/api') ? BASE_URL : `${BASE_URL}/api`)
+  : '/api';
 
 export const http = axios.create({ baseURL: API_PREFIX });
 

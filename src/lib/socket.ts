@@ -25,17 +25,17 @@ const safeSocketUrl =
         (runtimeEnv.SOCKET_URL && !runtimeEnv.SOCKET_URL.includes('localhost')) ? runtimeEnv.SOCKET_URL :
         (runtimeEnv.VITE_API_URL && !runtimeEnv.VITE_API_URL.includes('localhost')) ? runtimeEnv.VITE_API_URL :
         (runtimeEnv.API_URL && !runtimeEnv.API_URL.includes('localhost')) ? runtimeEnv.API_URL :
-        (typeof window !== 'undefined' ? window.location.origin : '')
+        'https://backend.eventjell.com'
       )
-    : rawSocketUrl;
+    : (rawSocketUrl || (!isLocalhost && typeof window !== 'undefined' ? 'https://backend.eventjell.com' : ''));
 
 const cleanSocketUrl = safeSocketUrl.replace(/\/api\/?$/, '').replace(/\/$/, '');
 
 const SOCKET_URL =
   cleanSocketUrl ||
   (typeof window !== 'undefined'
-    ? (isLocalhost ? 'http://127.0.0.1:3001' : window.location.origin)
-    : '');
+    ? (isLocalhost ? 'http://127.0.0.1:3001' : 'https://backend.eventjell.com')
+    : 'https://backend.eventjell.com');
 
 export const socket = io(SOCKET_URL, {
   autoConnect: true,

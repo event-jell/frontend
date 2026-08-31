@@ -5,7 +5,7 @@ const TOKEN_KEY = 'ej_token';
 
 
 
-const safeApiUrl = (import.meta.env as any).VITE_API_URL
+const safeApiUrl = ((import.meta.env as any).VITE_API_URL || '').trim();
 // Support both base host (https://example.com) and pre-suffixed (https://example.com/api)
 const BASE_URL = safeApiUrl.replace(/\/$/, '') || '';
 const API_PREFIX = BASE_URL

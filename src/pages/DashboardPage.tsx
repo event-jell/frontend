@@ -83,6 +83,48 @@ export default function DashboardPage() {
         </>
       )}
 
+      {isLoading && !summary ? (
+        <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-amber-50/20 p-3 sm:p-8 space-y-4 sm:space-y-6 max-w-7xl mx-auto pb-28 sm:pb-20 animate-pulse">
+          <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-4 sm:p-7 space-y-3 shadow-xs">
+            <div className="h-4 w-28 bg-slate-200 rounded-full" />
+            <div className="h-8 w-60 bg-slate-200 rounded-xl" />
+            <div className="h-3 w-80 max-w-full bg-slate-100 rounded" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-5">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="h-3.5 w-24 bg-slate-200 rounded" />
+                  <div className="h-3.5 w-16 bg-slate-100 rounded" />
+                </div>
+                <div className="h-8 w-32 bg-slate-200 rounded-xl" />
+                <div className="h-3 w-40 bg-slate-100 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 sm:gap-6">
+            <div className="lg:col-span-2 bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="h-5 w-40 bg-slate-200 rounded-lg" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[1, 2].map((i) => (
+                  <div key={i} className="border border-slate-100 rounded-2xl p-4 space-y-3">
+                    <div className="h-28 bg-slate-100 rounded-xl" />
+                    <div className="h-4 w-32 bg-slate-200 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="h-5 w-36 bg-slate-200 rounded-lg" />
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 bg-slate-50 rounded-xl" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
       <div className="min-h-full bg-gradient-to-br from-slate-50 via-white to-amber-50/20 p-3 sm:p-8 space-y-3.5 sm:space-y-6 max-w-7xl mx-auto pb-28 sm:pb-20">
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-white border border-slate-100 rounded-2xl sm:rounded-3xl p-3.5 sm:p-7 shadow-xs">
@@ -475,6 +517,7 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+      )}
     </>
   );
 }

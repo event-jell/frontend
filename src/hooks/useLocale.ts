@@ -10,8 +10,7 @@ export function useLocale() {
   const { user } = useAuth();
 
   const userCountry = user?.country || '';
-  const userDirectCurrency = (user as any)?.preferredCurrency || (user as any)?.currency || (user as any)?.preferred_currency;
-  const localCurrency = userDirectCurrency || getCurrencyForCountry(userCountry);
+  const localCurrency = 'USD';
   const timezone = getBrowserTimezone();
   const locale = getLocaleForLanguage('en');
 
@@ -20,6 +19,6 @@ export function useLocale() {
     timezone,
     locale,
     userCountry,
-    userCurrency: localCurrency,
+    userCurrency: 'USD',
   };
 }

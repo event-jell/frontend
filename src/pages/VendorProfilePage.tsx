@@ -230,10 +230,61 @@ export default function VendorProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 border-3 border-[#7A1F1F] border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-xs sm:text-sm font-semibold text-slate-600">Loading vendor profile...</p>
+      <div className="min-h-screen bg-slate-50 overflow-hidden animate-pulse">
+        {/* Cover Skeleton */}
+        <div className="h-64 sm:h-80 bg-slate-200 w-full" />
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 -mt-20 space-y-6 pb-16">
+          {/* Header Card Skeleton */}
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-200" />
+                <div className="space-y-2">
+                  <div className="h-4 w-24 bg-slate-100 rounded-full" />
+                  <div className="h-7 w-56 bg-slate-200 rounded-xl" />
+                  <div className="h-3.5 w-40 bg-slate-100 rounded" />
+                </div>
+              </div>
+              <div className="h-11 w-36 bg-slate-200 rounded-xl" />
+            </div>
+          </div>
+
+          {/* Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-3">
+                <div className="h-5 w-32 bg-slate-200 rounded-lg" />
+                <div className="h-3.5 w-full bg-slate-100 rounded" />
+                <div className="h-3.5 w-5/6 bg-slate-100 rounded" />
+                <div className="h-3.5 w-4/6 bg-slate-100 rounded" />
+              </div>
+
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="h-5 w-40 bg-slate-200 rounded-lg" />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="border border-slate-100 rounded-2xl p-4 space-y-3">
+                      <div className="h-4 w-28 bg-slate-200 rounded" />
+                      <div className="h-6 w-20 bg-slate-200 rounded-lg" />
+                      <div className="h-3 w-full bg-slate-100 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="h-5 w-36 bg-slate-200 rounded-lg" />
+                <div className="space-y-2.5">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="h-8 bg-slate-50 rounded-xl" />
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -265,11 +316,77 @@ export default function VendorProfilePage() {
   const Icon = CATEGORY_ICONS[listing.category] || Store;
   const coverSrc = listing.cover_image || CATEGORY_FALLBACK_IMAGES[listing.category] || CATEGORY_FALLBACK_IMAGES.other;
 
+  // Canonical points to the primary public URL so all alias routes
+  // (/vendor/listings/:id, /events/:id/vendors/:id, …) consolidate here.
+  const canonicalUrl = `https://eventjell.com/vendors/${resolvedListingId}`;
+  const categoryLabel = CATEGORY_LABELS[listing.category] || listing.category;
+  const seoDescription =
+    listing.tagline ||
+    listing.description ||
+    `Book ${listing.title}, a verified ${categoryLabel.toLowerCase()} ${listing.location ? `in ${listing.location} ` : ''}on EventJell.`;
+
+  // schema.org Product + Breadcrumb. Ratings/offers are only emitted when real,
+  // to stay within Google's structured-data policies.
+  const vendorJsonLd: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: listing.title,
+    description: seoDescription,
+    image: coverSrc,
+    category: categoryLabel,
+    url: canonicalUrl,
+    brand: { '@type': 'Brand', name: 'EventJell' },
+    ...(listing.reviews_count && listing.reviews_count > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: (listing.rating ?? 5).toFixed(1),
+            reviewCount: listing.reviews_count,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+    ...(listing.base_price && listing.base_price > 0 && listing.pricing_type !== 'custom_quote'
+      ? {
+          offers: {
+            '@type': 'Offer',
+            price: listing.base_price,
+            priceCurrency: listing.currency || 'USD',
+            availability: 'https://schema.org/InStock',
+            url: canonicalUrl,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://eventjell.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Explore Vendors', item: 'https://eventjell.com/explore' },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: categoryLabel,
+        item: `https://eventjell.com/explore?category=${encodeURIComponent(listing.category)}`,
+      },
+      { '@type': 'ListItem', position: 4, name: listing.title, item: canonicalUrl },
+    ],
+  };
+
   return (
     <div className="min-h-full bg-slate-50/50 no-scrollbar pb-28 sm:pb-20">
       <SEO
-        title={`${listing.title} — EventJell Vendor Marketplace`}
-        description={listing.tagline || listing.description || 'Verified event supplier on EventJell'}
+        title={`${listing.title} — ${categoryLabel} on EventJell`}
+        description={seoDescription}
+        canonical={canonicalUrl}
+        ogType="product"
+        ogImage={coverSrc}
+        imageAlt={`${listing.title} — ${categoryLabel}`}
+        keywords={[categoryLabel, listing.location, 'event vendor', 'hire', 'book', 'EventJell'].filter(Boolean).join(', ')}
+        jsonLd={[vendorJsonLd, breadcrumbJsonLd]}
       />
 
       {/* Top Breadcrumbs & Back Navigation */}

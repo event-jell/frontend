@@ -114,8 +114,32 @@ export default function EventSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#F8FAFC]">
-        <Loader2 className="animate-spin text-slate-400" size={24} />
+      <div className="flex-1 overflow-y-auto bg-[#F8FAFC] p-4 sm:p-8 animate-pulse">
+        <div className="max-w-4xl mx-auto space-y-6">
+          <div className="flex justify-between items-center bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs">
+            <div className="space-y-2">
+              <div className="h-4 w-28 bg-slate-200 rounded-full" />
+              <div className="h-7 w-60 bg-slate-200 rounded-xl" />
+            </div>
+            <div className="h-10 w-28 bg-slate-100 rounded-xl" />
+          </div>
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xs">
+            <div className="space-y-2">
+              <div className="h-3.5 w-24 bg-slate-200 rounded" />
+              <div className="h-11 bg-slate-50 border border-slate-100 rounded-xl w-full" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="h-3.5 w-20 bg-slate-200 rounded" />
+                <div className="h-11 bg-slate-50 border border-slate-100 rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-3.5 w-20 bg-slate-200 rounded" />
+                <div className="h-11 bg-slate-50 border border-slate-100 rounded-xl" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

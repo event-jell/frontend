@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <SEO title="Forgot Password" />
+      <SEO title="Forgot Password" noindex />
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
         <div className="text-center mb-8">
           <Logo size={48} className="mx-auto mb-4" />

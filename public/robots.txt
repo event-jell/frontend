@@ -1,0 +1,35 @@
+# robots.txt for EventJell — https://eventjell.com
+# Public marketing & marketplace pages are open to crawlers.
+# Authenticated app screens and transactional links are disallowed.
+
+User-agent: *
+Allow: /$
+Allow: /explore
+Allow: /vendors/
+
+# Private / app routes — no ranking value, keep crawl budget on public pages
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /wallet
+Disallow: /messages
+Disallow: /events
+Disallow: /vendor/
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /invitations/
+Disallow: /*/checkin
+Disallow: /*/pass/
+Disallow: /*?*token=
+
+# Allow social/link-preview crawlers full access to public pages
+User-agent: Twitterbot
+Allow: /
+
+User-agent: facebookexternalhit
+Allow: /
+
+# Sitemaps (static marketing pages + dynamic vendor listings)
+Sitemap: https://eventjell.com/sitemap.xml
+Sitemap: https://backend.eventjell.com/api/sitemap.xml

@@ -208,8 +208,23 @@ export default function EventsPage() {
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 size={32} className="animate-spin text-[#7A1F1F]" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5 animate-pulse">
+            {[1, 2, 3, 4, 5, 6].map((i) => (
+              <div key={i} className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <div className="h-5 w-20 bg-slate-100 rounded-full" />
+                  <div className="h-4 w-16 bg-slate-100 rounded" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-5 w-3/4 bg-slate-200 rounded-lg" />
+                  <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-100">
+                  <div className="h-8 bg-slate-50 rounded-xl" />
+                  <div className="h-8 bg-slate-50 rounded-xl" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 shadow-2xs max-w-2xl mx-auto my-6">

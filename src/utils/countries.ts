@@ -207,3 +207,59 @@ export function getCountryFlag(nameOrCode?: string): string {
   );
   return match?.flag || '🌐';
 }
+
+export function getCountryName(nameOrCode?: string): string {
+  if (!nameOrCode) return '';
+  const match = COUNTRIES.find(
+    c => c.name.toLowerCase() === nameOrCode.toLowerCase() || c.code.toLowerCase() === nameOrCode.toLowerCase()
+  );
+  return match?.name || nameOrCode;
+}
+
+export function detectUserCountry(
+  existingCountry?: string,
+  preferredCurrency?: string,
+  timezone?: string
+): string {
+  if (existingCountry && existingCountry.trim()) {
+    const name = getCountryName(existingCountry);
+    if (name) return name;
+  }
+
+  // Fallback via Currency
+  if (preferredCurrency) {
+    const curr = preferredCurrency.toUpperCase();
+    if (curr === 'NGN') return 'Nigeria';
+    if (curr === 'GHS') return 'Ghana';
+    if (curr === 'KES') return 'Kenya';
+    if (curr === 'ZAR') return 'South Africa';
+    if (curr === 'EGP') return 'Egypt';
+    if (curr === 'RWF') return 'Rwanda';
+    if (curr === 'GBP') return 'United Kingdom';
+    if (curr === 'CAD') return 'Canada';
+    if (curr === 'AUD') return 'Australia';
+    if (curr === 'EUR') return 'Germany';
+    if (curr === 'USD') return 'United States';
+  }
+
+  // Fallback via Timezone
+  const tz = timezone || (typeof Intl !== 'undefined' ? Intl.DateTimeFormat().resolvedOptions().timeZone : '');
+  if (tz) {
+    if (tz.includes('Lagos')) return 'Nigeria';
+    if (tz.includes('Accra')) return 'Ghana';
+    if (tz.includes('Nairobi')) return 'Kenya';
+    if (tz.includes('Johannesburg')) return 'South Africa';
+    if (tz.includes('Cairo')) return 'Egypt';
+    if (tz.includes('Kigali')) return 'Rwanda';
+    if (tz.includes('London')) return 'United Kingdom';
+    if (tz.includes('New_York') || tz.includes('Chicago') || tz.includes('Los_Angeles') || tz.includes('Denver')) return 'United States';
+    if (tz.includes('Toronto') || tz.includes('Vancouver') || tz.includes('Montreal')) return 'Canada';
+    if (tz.includes('Sydney') || tz.includes('Melbourne') || tz.includes('Brisbane')) return 'Australia';
+    if (tz.includes('Paris')) return 'France';
+    if (tz.includes('Berlin')) return 'Germany';
+  }
+
+  return 'Nigeria';
+}
+
+

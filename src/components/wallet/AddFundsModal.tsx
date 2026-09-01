@@ -12,7 +12,7 @@ import { paymentsApi } from '../../lib/api';
 import { openPaystackModal } from '../../utils/paystack';
 import { openPayPalCheckout } from '../../utils/paypal';
 import { formatCurrency, getCurrencyForCountry, getCurrencySymbol } from '../../utils/formatters';
-import { isAfricanCountry } from '../../utils/currencyRates';
+import { isAfricanCountry, convertPrice, DEFAULT_EXCHANGE_RATES } from '../../utils/currencyRates';
 import type { Wallet } from '../../types';
 
 interface AddFundsModalProps {
@@ -35,20 +35,29 @@ export default function AddFundsModal({
 
   const depositMutation = useDeposit();
 
-  if (!isOpen) return null;
-
-  // Determine gateway and local currency from user's account country (Settings)
-  const userCountry = user?.country || 'Nigeria';
+  const userCountry = user?.country;
   const isAfrica = isAfricanCountry(userCountry);
   const gateway = isAfrica ? 'paystack' : 'paypal';
-  const localCurrency = getCurrencyForCountry(userCountry);
-  const localSymbol = getCurrencySymbol(localCurrency);
+
+  // Local payment currency for local payment method (e.g. NGN via Paystack)
+  const localPaymentCurrency = isAfrica ? 'NGN' : 'USD';
+  const [depositCurrency, setDepositCurrency] = useState<'USD' | string>(isAfrica ? 'NGN' : 'USD');
+  const localSymbol = getCurrencySymbol(depositCurrency);
+
+  // Convert amount to USD equivalent
+  const numAmount = Number(amount) || 0;
+  const usdEquivalent = depositCurrency === 'USD'
+    ? numAmount
+    : convertPrice(numAmount, depositCurrency, 'USD');
+
+  const exchangeRate = DEFAULT_EXCHANGE_RATES[depositCurrency.toUpperCase()] || 1.0;
+
+  if (!isOpen) return null;
 
   const handleDeposit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
-    const numAmount = Number(amount);
     if (!numAmount || numAmount <= 0) {
       setError('Please enter a valid deposit amount');
       return;
@@ -61,23 +70,25 @@ export default function AddFundsModal({
         const initRes = await paymentsApi.initialize({
           email: userEmail || user?.email || 'user@eventjell.com',
           amount: numAmount,
-          currency: localCurrency,
+          currency: depositCurrency,
           payment_type: 'platform_subscription',
           metadata: {
             is_wallet_deposit: true,
             user_country: userCountry,
+            original_currency: depositCurrency,
+            original_amount: numAmount,
           },
         });
 
         await openPaystackModal({
           email: userEmail || user?.email || 'user@eventjell.com',
           amount: numAmount,
-          currency: localCurrency,
+          currency: depositCurrency,
           reference: initRes.reference,
           onSuccess: async (res) => {
             await depositMutation.mutateAsync({
               amount: numAmount,
-              currency: localCurrency,
+              currency: depositCurrency,
               reference: res.reference,
               payment_method: 'paystack',
             });
@@ -93,11 +104,11 @@ export default function AddFundsModal({
         await openPayPalCheckout({
           email: userEmail || user?.email || 'user@eventjell.com',
           amount: numAmount,
-          currency: localCurrency,
+          currency: depositCurrency,
           onSuccess: async (res) => {
             await depositMutation.mutateAsync({
               amount: numAmount,
-              currency: localCurrency,
+              currency: depositCurrency,
               reference: res.reference || res.orderId,
               payment_method: 'paypal',
             });
@@ -119,16 +130,10 @@ export default function AddFundsModal({
     }
   };
 
-  // Presets in local currency
-  const presets = isAfrica && localCurrency === 'NGN'
-    ? [1000, 2000, 5000, 10000, 50000]
-    : isAfrica && localCurrency === 'GHS'
-    ? [50, 100, 200, 500, 1000]
-    : isAfrica && localCurrency === 'KES'
-    ? [500, 1000, 2000, 5000, 10000]
-    : isAfrica && localCurrency === 'ZAR'
-    ? [50, 100, 250, 500, 1000]
-    : [20, 50, 100, 250, 500];
+  // Presets in deposit currency
+  const presets = depositCurrency === 'NGN'
+    ? [5000, 10000, 25000, 50000, 100000]
+    : [25, 50, 100, 250, 500];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
@@ -144,7 +149,7 @@ export default function AddFundsModal({
             <div>
               <h2 className="text-lg font-bold text-slate-900">Add Funds to Wallet</h2>
               <p className="text-xs text-slate-500">
-                Top up your balance instantly via {isAfrica ? 'Paystack' : 'PayPal'}
+                Wallet balance is in USD ($) • Converted instantly
               </p>
             </div>
           </div>
@@ -164,11 +169,48 @@ export default function AddFundsModal({
         )}
 
         <form onSubmit={handleDeposit} className="space-y-4">
+          {/* Currency toggle if in Africa */}
+          {isAfrica && (
+            <div className="flex bg-slate-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setDepositCurrency('NGN');
+                  setAmount(25000);
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  depositCurrency === 'NGN' ? 'bg-white shadow-xs text-[#7A1F1F]' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Pay in Naira (₦ NGN)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDepositCurrency('USD');
+                  setAmount(50);
+                }}
+                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                  depositCurrency === 'USD' ? 'bg-white shadow-xs text-[#7A1F1F]' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Pay in Dollars ($ USD)
+              </button>
+            </div>
+          )}
+
           {/* Amount */}
           <div>
-            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-              Deposit Amount ({localCurrency}) *
-            </label>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                Deposit Amount ({depositCurrency}) *
+              </label>
+              {depositCurrency !== 'USD' && (
+                <span className="text-[10px] text-slate-400 font-medium">
+                  Rate: 1 USD ≈ ₦{exchangeRate.toLocaleString()}
+                </span>
+              )}
+            </div>
             <input
               type="number"
               min={1}
@@ -182,14 +224,24 @@ export default function AddFundsModal({
               required
             />
 
+            {/* Live USD conversion box */}
+            {depositCurrency !== 'USD' && numAmount > 0 && (
+              <div className="mt-2 px-3 py-2 bg-emerald-50 border border-emerald-200/60 rounded-xl flex items-center justify-between text-xs">
+                <span className="text-emerald-800 font-medium">Credited to USD Wallet:</span>
+                <span className="text-emerald-900 font-extrabold text-sm">
+                  +${usdEquivalent.toFixed(2)} USD
+                </span>
+              </div>
+            )}
+
             {/* Quick Presets */}
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-1.5 mt-2">
               {presets.map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => setAmount(preset)}
-                  className={`flex-1 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
+                  className={`flex-1 py-1.5 text-[11px] font-bold rounded-lg border transition-colors ${
                     amount === preset
                       ? 'bg-[#FAF0E8] border-[#7A1F1F] text-[#7A1F1F]'
                       : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -201,10 +253,10 @@ export default function AddFundsModal({
             </div>
           </div>
 
-          {/* Payment Method Card based strictly on user country */}
+          {/* Payment Method Card */}
           <div>
             <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-1.5">
-              Payment Method
+              Payment Gateway
             </label>
             {isAfrica ? (
               <div className="p-3.5 rounded-2xl border border-[#7A1F1F]/30 bg-[#FAF0E8]/50 flex items-center justify-between">
@@ -214,15 +266,15 @@ export default function AddFundsModal({
                   </div>
                   <div>
                     <span className="text-xs font-bold text-slate-900 block">
-                      Paystack Direct Checkout
+                      Paystack Secure Checkout
                     </span>
                     <span className="text-[10px] text-slate-500">
-                      Debit/Credit Cards, Bank Accounts & USSD
+                      Bank Cards, Transfer & USSD
                     </span>
                   </div>
                 </div>
                 <span className="text-[9px] font-bold uppercase bg-white text-[#7A1F1F] border border-[#7A1F1F]/20 px-2 py-0.5 rounded-md">
-                  African Region
+                  Active
                 </span>
               </div>
             ) : (
@@ -243,7 +295,7 @@ export default function AddFundsModal({
                   </div>
                 </div>
                 <span className="text-[9px] font-bold uppercase bg-white text-blue-800 border border-blue-200 px-2 py-0.5 rounded-md">
-                  International
+                  Active
                 </span>
               </div>
             )}
@@ -271,17 +323,10 @@ export default function AddFundsModal({
                   <Loader2 size={16} className="animate-spin" />
                   <span>Connecting...</span>
                 </>
-              ) : isAfrica ? (
-                <>
-                  <CreditCard size={16} />
-                  <span>Deposit via Paystack ({formatCurrency(Number(amount) || 0, localCurrency)})</span>
-                </>
               ) : (
                 <>
-                  <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                    <path d="M7.076 21.337H2.47a.641.641 0 0 1-.633-.74L4.944.901C5.026.382 5.474 0 5.998 0h7.46c2.57 0 4.578.543 5.69 1.81 1.01 1.15 1.304 2.42 1.012 4.305-.59 3.82-3.13 5.768-6.947 5.768H9.68l-1.58 10.03c-.082.52-.53.901-1.054.901v.003l.03-.477z" />
-                  </svg>
-                  <span>Deposit via PayPal ({formatCurrency(Number(amount) || 0, localCurrency)})</span>
+                  <CreditCard size={16} />
+                  <span>Deposit {formatCurrency(numAmount, depositCurrency)}</span>
                 </>
               )}
             </button>

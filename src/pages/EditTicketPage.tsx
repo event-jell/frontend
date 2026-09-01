@@ -72,10 +72,32 @@ export default function EditTicketPage() {
 
   if (isLoadingTicket) {
     return (
-      <div className="flex-1 overflow-y-auto bg-[#F8FAFC] flex items-center justify-center p-12">
-        <div className="text-center space-y-3">
-          <div className="w-10 h-10 border-4 border-[#7A1F1F]/20 border-t-[#7A1F1F] rounded-full animate-spin mx-auto" />
-          <p className="text-sm font-medium text-slate-500">Loading ticket details...</p>
+      <div className="flex-1 overflow-y-auto bg-[#F8FAFC] p-4 sm:p-8 animate-pulse">
+        <div className="max-w-2xl mx-auto space-y-6">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-slate-200" />
+            <div className="h-6 w-48 bg-slate-200 rounded-lg" />
+          </div>
+          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 space-y-5 shadow-xs">
+            <div className="space-y-2">
+              <div className="h-3.5 w-24 bg-slate-200 rounded" />
+              <div className="h-11 bg-slate-50 border border-slate-100 rounded-xl w-full" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <div className="h-3.5 w-20 bg-slate-200 rounded" />
+                <div className="h-11 bg-slate-50 border border-slate-100 rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-3.5 w-20 bg-slate-200 rounded" />
+                <div className="h-11 bg-slate-50 border border-slate-100 rounded-xl" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="h-3.5 w-28 bg-slate-200 rounded" />
+              <div className="h-24 bg-slate-50 border border-slate-100 rounded-xl w-full" />
+            </div>
+          </div>
         </div>
       </div>
     );

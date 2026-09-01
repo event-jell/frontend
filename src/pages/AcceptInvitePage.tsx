@@ -100,10 +100,22 @@ export default function AcceptInvitePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-center p-4">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="animate-spin text-[#7A1F1F]" size={36} />
-          <p className="text-sm font-semibold text-stone-600">Loading your invitation...</p>
+      <div className="min-h-screen bg-[#FAF7F2] flex flex-col items-center justify-center p-4 animate-pulse">
+        <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center border border-stone-200/80 shadow-xl shadow-stone-900/5 space-y-5">
+          <div className="w-16 h-16 rounded-2xl bg-stone-200 mx-auto" />
+          <div className="space-y-2">
+            <div className="h-4 w-28 bg-stone-200 rounded-full mx-auto" />
+            <div className="h-6 w-48 bg-stone-300 rounded-xl mx-auto" />
+            <div className="h-3.5 w-64 max-w-full bg-stone-200 rounded mx-auto" />
+          </div>
+          <div className="p-4 bg-stone-50 rounded-2xl border border-stone-100 space-y-2">
+            <div className="h-3 w-32 bg-stone-200 rounded mx-auto" />
+            <div className="h-3 w-40 bg-stone-200 rounded mx-auto" />
+          </div>
+          <div className="flex gap-3 pt-2">
+            <div className="h-11 flex-1 bg-stone-200 rounded-xl" />
+            <div className="h-11 flex-1 bg-[#7A1F1F]/20 rounded-xl" />
+          </div>
         </div>
       </div>
     );

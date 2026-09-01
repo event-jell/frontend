@@ -160,6 +160,30 @@ export default function VendorHubPage() {
           </button>
         </div>
 
+        {/* ─── LOADING SKELETON STATE ────────────────────── */}
+        {isLoading && (
+          <div className="space-y-4 sm:space-y-6 animate-pulse">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3.5">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs space-y-2">
+                  <div className="h-3 w-16 bg-slate-200 rounded" />
+                  <div className="h-7 w-12 bg-slate-200 rounded-lg" />
+                  <div className="h-2.5 w-20 bg-slate-100 rounded" />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="bg-white border border-slate-200/80 rounded-3xl p-4 space-y-3">
+                  <div className="h-36 bg-slate-100 rounded-2xl" />
+                  <div className="h-5 w-3/4 bg-slate-200 rounded-lg" />
+                  <div className="h-3.5 w-1/2 bg-slate-100 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ─── STATE 1: NO LISTINGS (EMPTY ONBOARDING STATE) ────────────────────── */}
         {!hasListings && !isLoading && (
           <div className="space-y-3.5 sm:space-y-6">

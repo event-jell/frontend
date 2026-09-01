@@ -360,10 +360,19 @@ export default function EventInvitePage() {
 
   if (isLoadingEvent || isLoadingTickets) {
     return (
-      <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-6">
-        <div className="text-center space-y-3">
-          <Loader2 className="animate-spin text-[#7A1F1F] mx-auto" size={32} />
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{t('invite.loading')}</p>
+      <div className="min-h-screen bg-[#FAF9F6] p-4 sm:p-8 flex items-center justify-center animate-pulse">
+        <div className="bg-white max-w-xl w-full rounded-3xl p-6 sm:p-10 border border-stone-200/80 shadow-xl space-y-6">
+          <div className="h-48 bg-slate-100 rounded-2xl w-full" />
+          <div className="space-y-3">
+            <div className="h-4 w-28 bg-[#FAF0E8] rounded-full" />
+            <div className="h-7 w-3/4 bg-slate-200 rounded-xl" />
+            <div className="h-4 w-1/2 bg-slate-100 rounded" />
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="h-16 bg-slate-50 rounded-2xl border border-slate-100" />
+            <div className="h-16 bg-slate-50 rounded-2xl border border-slate-100" />
+          </div>
+          <div className="h-12 bg-slate-200 rounded-2xl w-full" />
         </div>
       </div>
     );

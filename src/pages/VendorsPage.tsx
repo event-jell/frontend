@@ -530,9 +530,24 @@ export default function VendorsPage() {
 
             {/* Marketplace Grid with Card Navigation */}
             {loadingExplore ? (
-              <div className="py-20 text-center text-slate-400 space-y-2">
-                <div className="w-8 h-8 border-2 border-[#7A1F1F] border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-xs font-medium">Finding top-rated event vendors...</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 animate-pulse">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-2xs space-y-3 p-3">
+                    <div className="h-40 bg-slate-100 rounded-2xl w-full" />
+                    <div className="p-2 space-y-2.5">
+                      <div className="flex justify-between items-center">
+                        <div className="h-4 w-20 bg-slate-100 rounded-full" />
+                        <div className="h-4 w-12 bg-slate-100 rounded-md" />
+                      </div>
+                      <div className="h-5 w-3/4 bg-slate-200 rounded-lg" />
+                      <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                      <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                        <div className="h-5 w-20 bg-slate-200 rounded-md" />
+                        <div className="h-8 w-20 bg-slate-100 rounded-xl" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : marketplaceListings.length === 0 ? (
               <div className="bg-white border border-dashed border-slate-200 rounded-3xl p-12 text-center space-y-3">

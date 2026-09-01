@@ -520,6 +520,18 @@ export const floorPlansApi = {
 };
 
 export const usersApi = {
+  getProfile: () =>
+    http.get('/users/me').then(r => ({
+      id: r.data.id,
+      firstName: r.data.first_name,
+      lastName: r.data.last_name,
+      email: r.data.email,
+      country: r.data.country,
+      organizationName: r.data.organization_name,
+      organizationSize: r.data.organization_size,
+      creatorRole: r.data.creator_role,
+      primaryEventType: r.data.primary_event_type,
+    })),
   updateProfile: (data: {
     firstName?: string;
     lastName?: string;

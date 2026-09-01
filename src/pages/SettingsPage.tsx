@@ -1,14 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '../contexts/AuthContext';
 import { usePreferences } from '../contexts/PreferencesContext';
 import { useLocale } from '../hooks/useLocale';
 import { usersApi, paymentsApi, type PaymentRecord } from '../lib/api';
-import { User, Shield, Bell, Globe, DollarSign, Clock, CheckCircle, Eye, EyeOff, CreditCard, Sparkles, Zap, Check, Loader2 } from 'lucide-react';
+import { User, Shield, Bell, Globe, DollarSign, Clock, CheckCircle, Eye, EyeOff, CreditCard, Sparkles, Zap, Check, Loader2, Search, ChevronDown } from 'lucide-react';
 import { openPaystackModal } from '../utils/paystack';
 import { openPayPalCheckout } from '../utils/paypal';
 import { isAfricanCountry } from '../utils/currencyRates';
-import { COUNTRIES } from '../utils/countries';
+import { COUNTRIES, getCountryFlag, getCountryName, detectUserCountry } from '../utils/countries';
 import { formatCurrency, formatLocalDate } from '../utils/formatters';
 import { toast } from 'sonner';
 
@@ -40,8 +40,8 @@ export default function SettingsPage() {
     try {
       const init = await paymentsApi.initialize({
         email: user.email,
-        amount: 25000,
-        currency: 'NGN',
+        amount: 29,
+        currency: 'USD',
         payment_type: 'platform_subscription',
         plan: 'pro',
         customer_name: `${user.firstName} ${user.lastName}`.trim(),
@@ -50,8 +50,8 @@ export default function SettingsPage() {
 
       await openPaystackModal({
         email: user.email,
-        amount: 25000,
-        currency: 'NGN',
+        amount: 29,
+        currency: 'USD',
         reference: init.reference,
         customerName: `${user.firstName} ${user.lastName}`.trim(),
         onSuccess: async (res) => {
@@ -131,22 +131,65 @@ export default function SettingsPage() {
     }
   };
 
+  // Fetch fresh profile from backend
+  const { data: serverProfile } = useQuery({
+    queryKey: ['user-profile'],
+    queryFn: usersApi.getProfile,
+    staleTime: 30_000,
+  });
+
+  const effectiveCountry = detectUserCountry(
+    user?.country || serverProfile?.country,
+    preferences?.currency || localCurrency,
+    preferences?.timezone || timezone
+  );
+
   const [firstName, setFirstName] = useState(user?.firstName || '');
   const [lastName, setLastName] = useState(user?.lastName || '');
-  const [country, setCountry] = useState(user?.country || '');
+  const [country, setCountry] = useState(effectiveCountry);
   const [organizationName, setOrganizationName] = useState(user?.organizationName || '');
   const [organizationSize, setOrganizationSize] = useState(user?.organizationSize || '');
   const [creatorRole, setCreatorRole] = useState(user?.creatorRole || '');
   const [primaryEventType, setPrimaryEventType] = useState(user?.primaryEventType || '');
 
+  const countryRef = useRef<HTMLDivElement>(null);
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+  const [countrySearch, setCountrySearch] = useState('');
+
+  const filteredCountries = COUNTRIES.filter(c =>
+    c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    c.code.toLowerCase().includes(countrySearch.toLowerCase())
+  );
+
   useEffect(() => {
-    setFirstName(user?.firstName || '');
-    setLastName(user?.lastName || '');
-    setCountry(user?.country || '');
-    setOrganizationName(user?.organizationName || '');
-    setOrganizationSize(user?.organizationSize || '');
-    setCreatorRole(user?.creatorRole || '');
-    setPrimaryEventType(user?.primaryEventType || '');
+    function handleClickOutside(event: MouseEvent) {
+      if (countryRef.current && !countryRef.current.contains(event.target as Node)) {
+        setIsCountryOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (serverProfile) {
+      updateUser(serverProfile);
+    }
+  }, [serverProfile]);
+
+  useEffect(() => {
+    const currentCountry = detectUserCountry(
+      user?.country || serverProfile?.country,
+      preferences?.currency || localCurrency,
+      preferences?.timezone || timezone
+    );
+    setFirstName(user?.firstName || serverProfile?.firstName || '');
+    setLastName(user?.lastName || serverProfile?.lastName || '');
+    setCountry(currentCountry);
+    setOrganizationName(user?.organizationName || serverProfile?.organizationName || '');
+    setOrganizationSize(user?.organizationSize || serverProfile?.organizationSize || '');
+    setCreatorRole(user?.creatorRole || serverProfile?.creatorRole || '');
+    setPrimaryEventType(user?.primaryEventType || serverProfile?.primaryEventType || '');
   }, [
     user?.firstName,
     user?.lastName,
@@ -155,6 +198,11 @@ export default function SettingsPage() {
     user?.organizationSize,
     user?.creatorRole,
     user?.primaryEventType,
+    serverProfile,
+    preferences?.currency,
+    preferences?.timezone,
+    localCurrency,
+    timezone,
   ]);
 
   const [profileSaved, setProfileSaved] = useState(false);
@@ -163,18 +211,23 @@ export default function SettingsPage() {
     onSuccess: (data) => {
       updateUser(data);
       setProfileSaved(true);
+      toast.success('Profile and country updated successfully!');
       setTimeout(() => setProfileSaved(false), 2500);
     },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || err?.message || 'Failed to update profile';
+      toast.error(msg);
+    }
   });
 
   const profileDirty =
-    firstName.trim() !== (user?.firstName || '') ||
-    lastName.trim() !== (user?.lastName || '') ||
-    country !== (user?.country || '') ||
-    organizationName.trim() !== (user?.organizationName || '') ||
-    organizationSize !== (user?.organizationSize || '') ||
-    creatorRole !== (user?.creatorRole || '') ||
-    primaryEventType !== (user?.primaryEventType || '');
+    firstName.trim() !== (user?.firstName || serverProfile?.firstName || '') ||
+    lastName.trim() !== (user?.lastName || serverProfile?.lastName || '') ||
+    country !== (getCountryName(user?.country || serverProfile?.country) || '') ||
+    organizationName.trim() !== (user?.organizationName || serverProfile?.organizationName || '') ||
+    organizationSize !== (user?.organizationSize || serverProfile?.organizationSize || '') ||
+    creatorRole !== (user?.creatorRole || serverProfile?.creatorRole || '') ||
+    primaryEventType !== (user?.primaryEventType || serverProfile?.primaryEventType || '');
 
   const profileError = profileMutation.error instanceof Error
     ? (profileMutation.error as any).response?.data?.message ?? profileMutation.error.message
@@ -276,9 +329,17 @@ export default function SettingsPage() {
                     >
                       {user?.firstName?.[0]}{user?.lastName?.[0]}
                     </div>
-                    <div>
+                    <div className="space-y-1">
                       <h3 className="text-base sm:text-lg font-bold text-slate-900">{user?.firstName} {user?.lastName}</h3>
-                      <p className="text-xs sm:text-sm text-slate-500">{user?.creatorRole || 'Event Planner'}{user?.organizationName ? ` at ${user.organizationName}` : ''}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-xs sm:text-sm text-slate-500">{user?.creatorRole || 'Event Planner'}{user?.organizationName ? ` at ${user.organizationName}` : ''}</p>
+                        {user?.country && (
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200">
+                            <span className="text-sm leading-none">{getCountryFlag(user.country)}</span>
+                            <span>{getCountryName(user.country)}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {profileError && (
@@ -375,38 +436,67 @@ export default function SettingsPage() {
                       </select>
                     </div>
 
-                    <div>
+                    <div className="md:col-span-2">
                       <label className="block text-xs sm:text-sm font-medium text-slate-700 mb-1">Country / Region</label>
-                      <select
-                        value={country}
-                        onChange={e => setCountry(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all"
-                      >
-                        <option value="">Select country</option>
-                        <optgroup label="Popular African Countries">
-                          <option value="Nigeria">🇳🇬 Nigeria</option>
-                          <option value="Ghana">🇬🇭 Ghana</option>
-                          <option value="Kenya">🇰🇪 Kenya</option>
-                          <option value="South Africa">🇿🇦 South Africa</option>
-                          <option value="Egypt">🇪🇬 Egypt</option>
-                          <option value="Rwanda">🇷🇼 Rwanda</option>
-                        </optgroup>
-                        <optgroup label="Popular International Countries">
-                          <option value="United States">🇺🇸 United States</option>
-                          <option value="United Kingdom">🇬🇧 United Kingdom</option>
-                          <option value="Canada">🇨🇦 Canada</option>
-                          <option value="Australia">🇦🇺 Australia</option>
-                          <option value="Germany">🇩🇪 Germany</option>
-                          <option value="France">🇫🇷 France</option>
-                        </optgroup>
-                        <optgroup label="All Countries">
-                          {COUNTRIES.map(c => (
-                            <option key={c.code} value={c.name}>
-                              {c.flag} {c.name}
-                            </option>
-                          ))}
-                        </optgroup>
-                      </select>
+                      <div className="relative" ref={countryRef}>
+                        <button
+                          type="button"
+                          onClick={() => setIsCountryOpen(!isCountryOpen)}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg sm:rounded-xl text-slate-700 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all flex items-center justify-between gap-2 text-left shadow-2xs"
+                        >
+                          <div className="flex items-center gap-2 truncate">
+                            <span className="text-base leading-none flex-shrink-0">{getCountryFlag(country)}</span>
+                            <span className={country ? 'text-slate-800 font-medium truncate' : 'text-slate-400 truncate'}>
+                              {country || 'Select your country'}
+                            </span>
+                          </div>
+                          <ChevronDown size={14} className={`text-slate-400 transition-transform duration-200 flex-shrink-0 ${isCountryOpen ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {isCountryOpen && (
+                          <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+                            <div className="p-2 border-b border-slate-100 bg-slate-50">
+                              <div className="relative">
+                                <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                  type="text"
+                                  placeholder="Search countries..."
+                                  value={countrySearch}
+                                  onChange={e => setCountrySearch(e.target.value)}
+                                  autoFocus
+                                  className="w-full h-8 pl-8 pr-3 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-red-500"
+                                />
+                              </div>
+                            </div>
+                            <div className="max-h-56 overflow-y-auto custom-scrollbar p-1">
+                              {filteredCountries.length > 0 ? (
+                                filteredCountries.map(c => (
+                                  <button
+                                    key={c.code}
+                                    type="button"
+                                    onClick={() => {
+                                      setCountry(c.name);
+                                      setIsCountryOpen(false);
+                                      setCountrySearch('');
+                                    }}
+                                    className={`w-full px-3 py-2 text-left rounded-lg text-xs flex items-center justify-between transition-colors ${
+                                      country === c.name ? 'bg-[#FAF0E8] text-[#7A1F1F] font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                                    }`}
+                                  >
+                                    <div className="flex items-center gap-2 truncate">
+                                      <span className="text-sm leading-none">{c.flag}</span>
+                                      <span className="truncate">{c.name}</span>
+                                    </div>
+                                    {country === c.name && <CheckCircle size={13} className="text-[#7A1F1F] flex-shrink-0" />}
+                                  </button>
+                                ))
+                              ) : (
+                                <div className="px-3 py-4 text-xs text-center text-slate-400">No countries found</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -542,8 +632,8 @@ export default function SettingsPage() {
                         <p className="text-[11px] sm:text-xs text-slate-500">For professional event planners & agencies</p>
                       </div>
                       <div className="text-right">
-                        <span className="text-xl sm:text-2xl font-extrabold text-[#7A1F1F]">₦25,000</span>
-                        <span className="text-[10px] sm:text-xs text-slate-400 block">/ month ($29)</span>
+                        <span className="text-xl sm:text-2xl font-extrabold text-[#7A1F1F]">$29</span>
+                        <span className="text-[10px] sm:text-xs text-slate-400 block">/ month</span>
                       </div>
                     </div>
 
@@ -558,7 +648,7 @@ export default function SettingsPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
-                        <span>Paystack online ticket payment checkout</span>
+                        <span>Paystack & PayPal ticket checkout</span>
                       </li>
                       <li className="flex items-center gap-2">
                         <Check size={14} className="text-[#7A1F1F] flex-shrink-0" />
@@ -588,7 +678,7 @@ export default function SettingsPage() {
                             style={{ background: 'linear-gradient(135deg, #7A1F1F 0%, #9c3030 100%)' }}
                           >
                             <CreditCard size={14} />
-                            Subscribe with Paystack (₦25,000 / mo)
+                            Subscribe with Paystack ($29 / mo)
                           </button>
                         ) : (
                           <button

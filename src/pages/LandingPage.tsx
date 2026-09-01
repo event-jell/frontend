@@ -6,7 +6,7 @@ import { usePreferences } from '../contexts/PreferencesContext';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Layout, Users, Ticket, Store, MessageSquare, BarChart2,
-  ArrowRight, Check, Zap, ChevronRight, Calendar, Star,
+  ArrowRight, Check, Zap, ChevronRight, ChevronDown, Calendar, Star,
   TrendingUp, Bell, MapPin, Clock,
 } from 'lucide-react';
 import Logo from '../components/Logo';
@@ -103,6 +103,117 @@ const CSS = `
   .btn-gold:hover { filter: brightness(1.08); }
 
   .screen-anim { animation: screenFadeIn 0.4s ease both; }
+
+  /* ── Hero motion ─────────────────────────────────────────────────────── */
+
+  @keyframes auroraDrift {
+    0%,100% { transform: translate3d(0,0,0) scale(1); }
+    33%     { transform: translate3d(6%,-5%,0) scale(1.18); }
+    66%     { transform: translate3d(-5%,4%,0) scale(0.88); }
+  }
+  @keyframes gridPan {
+    from { background-position: 0 0; }
+    to   { background-position: 32px 32px; }
+  }
+  @keyframes raySweep {
+    0%       { transform: translateX(-70%) rotate(9deg); opacity: 0; }
+    12%, 78% { opacity: 0.5; }
+    100%     { transform: translateX(170%) rotate(9deg); opacity: 0; }
+  }
+  @keyframes orbFloat {
+    0%,100% { transform: translate3d(0,0,0); }
+    50%     { transform: translate3d(0,-22px,0); }
+  }
+  /* Words rise out of an overflow-hidden mask, so the reveal reads as type
+     being set rather than a block fading in. */
+  @keyframes wordRise {
+    from { transform: translateY(110%) rotate(3deg); opacity: 0; }
+    to   { transform: translateY(0) rotate(0deg);    opacity: 1; }
+  }
+  @keyframes shineSweep {
+    0%        { transform: translateX(-140%) skewX(-20deg); }
+    55%, 100% { transform: translateX(260%)  skewX(-20deg); }
+  }
+  @keyframes cueBounce {
+    0%,100% { transform: translateY(0);   opacity: 0.45; }
+    50%     { transform: translateY(7px); opacity: 0.95; }
+  }
+  @keyframes haloPulse {
+    0%,100% { opacity: 0.30; transform: scale(1); }
+    50%     { opacity: 0.55; transform: scale(1.07); }
+  }
+
+  .hero-word-mask {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: bottom;
+    padding-bottom: 0.14em;
+    margin-right: 0.26em;
+  }
+  .hero-word {
+    display: inline-block;
+    animation: wordRise 0.95s cubic-bezier(0.16,1,0.3,1) both;
+  }
+
+  .hero-shine { position: relative; overflow: hidden; isolation: isolate; }
+  .hero-shine::after {
+    content: '';
+    position: absolute;
+    top: -20%; bottom: -20%; left: 0;
+    width: 38%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+    animation: shineSweep 4s ease-in-out infinite 1.4s;
+    pointer-events: none;
+  }
+
+  /* Pointer-tracked spotlight. Falls back to a centred glow when the vars are
+     never set (touch devices, reduced motion). */
+  .hero-spot {
+    background: radial-gradient(
+      520px circle at var(--hero-mx, 50%) var(--hero-my, 34%),
+      rgba(212,162,76,0.20),
+      transparent 66%
+    );
+    transition: background 0.15s ease-out;
+  }
+
+  /* ── Animated background layers (now actually wired into the hero) ──────── */
+  @keyframes bgShift {
+    0%,100% { background-position: 0% 50%; }
+    50%     { background-position: 100% 50%; }
+  }
+  @keyframes rayCross {
+    0%      { transform: translateX(-12vw) rotate(10deg); opacity: 0; }
+    12%,80% { opacity: 0.55; }
+    100%    { transform: translateX(112vw) rotate(10deg); opacity: 0; }
+  }
+  .hero-bg-anim  { background-size: 220% 220%; animation: bgShift 26s ease-in-out infinite; }
+  .hero-aurora   { position:absolute; border-radius:9999px; filter:blur(80px); mix-blend-mode:screen; pointer-events:none; }
+  .hero-grid-pan {
+    position:absolute; inset:-2px; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(212,162,76,0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(212,162,76,0.05) 1px, transparent 1px);
+    background-size:32px 32px;
+    animation:gridPan 5s linear infinite;
+    -webkit-mask-image: radial-gradient(ellipse 62% 55% at 50% 40%, #000 16%, transparent 72%);
+            mask-image: radial-gradient(ellipse 62% 55% at 50% 40%, #000 16%, transparent 72%);
+  }
+  .hero-ray {
+    position:absolute; top:-30%; height:160%; width:140px; pointer-events:none;
+    background:linear-gradient(90deg, transparent, rgba(212,162,76,0.12), transparent);
+    filter:blur(8px);
+    animation:rayCross 11s ease-in-out infinite;
+  }
+  .hero-orb   { position:absolute; border-radius:9999px; pointer-events:none; }
+  .scroll-cue { animation:cueBounce 1.8s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-word { animation: none; opacity: 1; transform: none; }
+    .hero-shine::after { animation: none; opacity: 0; }
+    .hero-spot { display: none; }
+    [data-hero-motion] { animation: none !important; }
+  }
 `;
 
 function useScrollReveal() {
@@ -663,6 +774,16 @@ export default function LandingPage() {
   const { i18n, t } = useTranslation();
   const { updatePreferences } = usePreferences();
   const styleRef = useRef<HTMLStyleElement | null>(null);
+  const heroRef = useRef<HTMLElement | null>(null);
+
+  /* Pointer-tracked spotlight — feeds the --hero-mx/--hero-my CSS vars. */
+  const handleHeroPointer = (e: React.MouseEvent<HTMLElement>) => {
+    const el = heroRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    el.style.setProperty('--hero-mx', `${((e.clientX - r.left) / r.width) * 100}%`);
+    el.style.setProperty('--hero-my', `${((e.clientY - r.top) / r.height) * 100}%`);
+  };
 
   useEffect(() => {
     if (!document.getElementById('lp-styles')) {
@@ -679,7 +800,10 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen overflow-x-hidden" style={{ background: 'white' }}>
-      <SEO />
+      <SEO
+        canonical="/"
+        keywords="event management software, floor plan builder, seating chart maker, guest list manager, event ticketing, RSVP system, vendor marketplace, wedding planning software, event check-in"
+      />
 
       {/* ── Navbar ─────────────────────────────────────────────── */}
       <nav className="fixed top-0 inset-x-0 z-50 border-b"
@@ -718,65 +842,110 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ───────────────────────────────────────────────── */}
-      <section className="relative overflow-hidden min-h-screen flex items-center"
-        style={{ background:`linear-gradient(150deg,${C.redDk} 0%,#2d0808 25%,${C.red} 55%,#4a1010 75%,${C.redDk} 100%)` }}>
+      <section
+        ref={heroRef}
+        onMouseMove={handleHeroPointer}
+        data-hero-motion
+        className="hero-bg-anim relative overflow-hidden min-h-screen flex items-center"
+        style={{ background:`linear-gradient(150deg,${C.redDk} 0%,#2d0808 22%,${C.red} 52%,#4a1010 74%,${C.redDk} 100%)` }}>
+
+        {/* Drifting aurora blobs */}
+        <div data-hero-motion className="hero-aurora"
+          style={{ top:'-8%', right:'-6%', width:560, height:460,
+            background:'radial-gradient(circle at 35% 30%, rgba(212,162,76,0.30), transparent 62%)',
+            animation:'auroraDrift 18s ease-in-out infinite' }} />
+        <div data-hero-motion className="hero-aurora"
+          style={{ bottom:'-16%', left:'-9%', width:660, height:660,
+            background:'radial-gradient(circle at 60% 40%, rgba(168,40,40,0.55), transparent 66%)',
+            animation:'auroraDrift 23s ease-in-out infinite reverse' }} />
+        <div data-hero-motion className="hero-aurora"
+          style={{ top:'26%', left:'40%', width:440, height:440,
+            background:'radial-gradient(circle, rgba(214,120,60,0.22), transparent 68%)',
+            animation:'auroraDrift 27s ease-in-out infinite' }} />
+
+        {/* Panning light grid */}
+        <div data-hero-motion className="hero-grid-pan" />
+
+        {/* Sweeping light rays */}
+        <div data-hero-motion className="hero-ray" style={{ left:'6%' }} />
+        <div data-hero-motion className="hero-ray" style={{ left:'32%', width:90, animationDelay:'4.5s' }} />
+        <div data-hero-motion className="hero-ray" style={{ left:'60%', width:180, animationDelay:'7.5s' }} />
+
+        {/* Pointer-tracked spotlight */}
+        <div className="hero-spot absolute inset-0 pointer-events-none" />
 
         <Particles />
 
-        {/* Gold flare */}
-        <div className="absolute top-0 right-0 w-[700px] h-[500px] pointer-events-none"
-          style={{ background:`radial-gradient(ellipse at 80% 20%,rgba(212,162,76,0.14),transparent 60%)`, animation:'blob1 14s ease-in-out infinite', filter:'blur(40px)' }} />
-        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] pointer-events-none"
-          style={{ background:`radial-gradient(circle,rgba(122,31,31,0.45),transparent 70%)`, animation:'blob2 11s ease-in-out infinite', filter:'blur(80px)' }} />
-
-        {/* Dot grid */}
-        <div className="absolute inset-0 opacity-[0.035] pointer-events-none"
-          style={{ backgroundImage:'radial-gradient(rgba(212,162,76,1) 1px,transparent 1px)', backgroundSize:'32px 32px' }} />
+        {/* Floating glow orbs */}
+        <div data-hero-motion className="hero-orb hidden md:block"
+          style={{ top:'22%', left:'11%', width:14, height:14, background:C.gold,
+            boxShadow:`0 0 26px 5px ${C.gold}`, animation:'orbFloat 7s ease-in-out infinite' }} />
+        <div data-hero-motion className="hero-orb hidden md:block"
+          style={{ top:'64%', right:'13%', width:10, height:10, background:'#F5D78E',
+            boxShadow:'0 0 22px 4px rgba(245,215,142,0.8)', animation:'orbFloat 9s ease-in-out infinite 1s' }} />
+        <div data-hero-motion className="hero-orb hidden lg:block"
+          style={{ top:'38%', right:'7%', width:7, height:7, background:'#fff',
+            boxShadow:'0 0 16px 3px rgba(255,255,255,0.7)', animation:'orbFloat 6s ease-in-out infinite 0.5s' }} />
 
         <div className="relative max-w-6xl mx-auto px-6 w-full py-28">
-          <div className="flex flex-col items-center gap-16">
+          <div className="flex flex-col items-center gap-14">
 
             {/* Text */}
             <div className="flex-1 text-center">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold mb-7"
-                style={{ background:'rgba(212,162,76,0.12)', color:'rgba(212,162,76,0.95)', border:'1px solid rgba(212,162,76,0.25)', animation:'fadeUp 0.7s ease both 0.1s' }}>
+              <div className="hero-shine inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold mb-7"
+                style={{ background:'rgba(212,162,76,0.12)', color:'rgba(212,162,76,0.95)', border:'1px solid rgba(212,162,76,0.28)', animation:'fadeUp 0.7s ease both 0.1s' }}>
                 <Zap size={11} style={{ color: C.gold }} />
                 All-in-one event management platform
+                <span className="w-1.5 h-1.5 rounded-full" style={{ background:C.gold, animation:'pulseGold 2s infinite' }} />
               </div>
 
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-tight mb-6"
-                style={{ fontFamily:'Playfair Display, serif', animation:'fadeUp 0.7s ease both 0.25s' }}>
-                {t('landing.hero_line1', 'Plan events')}
-                <br />
-                <span style={{
-                  background:`linear-gradient(90deg,${C.gold},#F5D78E,${C.gold})`,
-                  WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent',
-                  backgroundSize:'200% auto', animation:'shimmerGold 4s linear infinite',
-                }}>
-                  {t('landing.hero_line2', 'people remember')}
+              <h1 className="text-5xl sm:text-6xl lg:text-8xl font-extrabold text-white leading-[1.02] tracking-tight mb-6"
+                style={{ fontFamily:'Playfair Display, serif' }}>
+                <span className="block">
+                  {['Plan', 'events'].map((w, i, arr) => (
+                    <span key={w} className="hero-word-mask" style={i === arr.length - 1 ? { marginRight: 0 } : undefined}>
+                      <span className="hero-word" style={{ animationDelay:`${0.2 + i * 0.13}s` }}>{w}</span>
+                    </span>
+                  ))}
+                </span>
+                <span className="block">
+                  <span className="hero-word-mask" style={{ marginRight: 0 }}>
+                    <span className="hero-word" style={{ animationDelay:'0.52s' }}>
+                      <span style={{
+                        display:'inline-block',
+                        background:`linear-gradient(90deg,${C.gold},#F7E3AC,${C.gold})`,
+                        WebkitBackgroundClip:'text', backgroundClip:'text',
+                        WebkitTextFillColor:'transparent', color:'transparent',
+                        backgroundSize:'200% auto', animation:'shimmerGold 4s linear infinite',
+                      }}>
+                        {t('landing.hero_line2', 'people remember')}
+                      </span>
+                    </span>
+                  </span>
                 </span>
               </h1>
 
               <p className="text-lg leading-relaxed mb-9 max-w-lg mx-auto"
-                style={{ color:'rgba(255,255,255,0.58)', animation:'fadeUp 0.7s ease both 0.4s' }}>
+                style={{ color:'rgba(255,255,255,0.6)', animation:'fadeUp 0.7s ease both 0.72s' }}>
                 {t('landing.hero_subtitle', 'Design stunning floor plans, manage guests, create beautiful tickets, coordinate vendors, and track every detail — all from one platform built for memorable events.')}
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-3 justify-center"
-                style={{ animation:'fadeUp 0.7s ease both 0.55s' }}>
+                style={{ animation:'fadeUp 0.7s ease both 0.86s' }}>
                 <Link to="/register"
-                  className="flex items-center gap-2 px-7 py-3.5 text-sm rounded-2xl shadow-2xl transition-all hover:-translate-y-1 btn-gold">
+                  className="flex items-center gap-2 px-7 py-3.5 text-sm rounded-2xl transition-all hover:-translate-y-1 btn-gold"
+                  style={{ boxShadow:'0 14px 44px -10px rgba(212,162,76,0.65)' }}>
                   {t('landing.start_free', 'Start for free')} <ArrowRight size={15} />
                 </Link>
                 <Link to="/login"
-                  className="flex items-center gap-2 px-7 py-3.5 text-sm font-semibold rounded-2xl transition-all hover:-translate-y-0.5"
-                  style={{ background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.8)', border:'1px solid rgba(255,255,255,0.14)' }}>
+                  className="flex items-center gap-2 px-7 py-3.5 text-sm font-semibold rounded-2xl transition-all hover:-translate-y-0.5 hover:bg-white/[0.14]"
+                  style={{ background:'rgba(255,255,255,0.08)', color:'rgba(255,255,255,0.85)', border:'1px solid rgba(255,255,255,0.16)' }}>
                   {t('landing.sign_in', 'Sign in')} <ChevronRight size={14} />
                 </Link>
               </div>
 
               <div className="flex items-center gap-3 mt-8 justify-center"
-                style={{ animation:'fadeUp 0.7s ease both 0.7s' }}>
+                style={{ animation:'fadeUp 0.7s ease both 1s' }}>
                 <div className="flex -space-x-2">
                   {[C.red,C.gold,'#6366F1',C.green].map((c,i)=>(
                     <div key={i} className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-white text-[8px] font-bold"
@@ -785,16 +954,25 @@ export default function LandingPage() {
                     </div>
                   ))}
                 </div>
-                <p className="text-xs" style={{ color:'rgba(255,255,255,0.48)' }}>
-                  Trusted by <span style={{ color:'rgba(255,255,255,0.82)', fontWeight:600 }}>50,000+</span> event planners
+                <p className="text-xs" style={{ color:'rgba(255,255,255,0.5)' }}>
+                  Trusted by <span style={{ color:'rgba(255,255,255,0.85)', fontWeight:600 }}>50,000+</span> event planners
                 </p>
               </div>
             </div>
 
             {/* Preview */}
-            <div className="flex-1 w-full lg:max-w-4xl" style={{ animation:'scaleIn 0.8s ease both 0.3s' }}>
+            <div className="flex-1 w-full lg:max-w-4xl" style={{ animation:'scaleIn 0.85s cubic-bezier(0.16,1,0.3,1) both 0.55s' }}>
               <AppPreview />
             </div>
+          </div>
+        </div>
+
+        {/* Scroll cue */}
+        <div className="absolute bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 hidden sm:flex flex-col items-center gap-1.5 pointer-events-none z-10"
+          style={{ animation:'fadeUp 0.7s ease both 1.2s' }}>
+          <span className="text-[10px] tracking-[0.22em] uppercase" style={{ color:'rgba(255,255,255,0.4)' }}>Scroll</span>
+          <div className="scroll-cue" style={{ color:'rgba(212,162,76,0.75)' }}>
+            <ChevronDown size={18} />
           </div>
         </div>
 

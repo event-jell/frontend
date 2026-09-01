@@ -114,7 +114,31 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-[#FAF9F6] flex flex-col justify-between" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <SEO title="Explore Event Vendors & Services — EventJell" description="Discover and book professional event suppliers, catering, decor, AV equipment, and music for your wedding, corporate meeting, or social event." />
+      <SEO
+        title="Explore Event Vendors & Services — EventJell"
+        description="Discover and book professional event suppliers, catering, decor, AV equipment, and music for your wedding, corporate meeting, or social event."
+        canonical="/explore"
+        keywords="event vendors, event suppliers, catering, event decor, DJ hire, photographer, wedding vendors, party rentals, book event services"
+        jsonLd={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'CollectionPage',
+            name: 'Explore Event Vendors & Services',
+            description:
+              'Discover and book professional event suppliers, catering, decor, AV equipment, and music.',
+            url: 'https://eventjell.com/explore',
+            isPartOf: { '@id': 'https://eventjell.com/#website' },
+          },
+          {
+            '@context': 'https://schema.org',
+            '@type': 'BreadcrumbList',
+            itemListElement: [
+              { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://eventjell.com/' },
+              { '@type': 'ListItem', position: 2, name: 'Explore Vendors', item: 'https://eventjell.com/explore' },
+            ],
+          },
+        ]}
+      />
 
       {/* Public Header (shown only to logged out guests) */}
       {!user && (
@@ -269,9 +293,24 @@ export default function ExplorePage() {
 
         {/* Listings Grid */}
         {isLoading ? (
-          <div className="py-24 text-center text-slate-400 space-y-2.5">
-            <div className="w-8 h-8 border-2 border-[#7A1F1F] border-t-transparent rounded-full animate-spin mx-auto" />
-            <p className="text-xs font-medium">Finding top-rated event suppliers...</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 animate-pulse">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+              <div key={i} className="bg-white rounded-3xl border border-slate-200/80 overflow-hidden shadow-2xs space-y-3 p-3">
+                <div className="h-44 bg-slate-100 rounded-2xl w-full" />
+                <div className="p-2 space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <div className="h-4 w-20 bg-slate-100 rounded-full" />
+                    <div className="h-4 w-12 bg-slate-100 rounded-md" />
+                  </div>
+                  <div className="h-5 w-3/4 bg-slate-200 rounded-lg" />
+                  <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                  <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+                    <div className="h-5 w-20 bg-slate-200 rounded-md" />
+                    <div className="h-8 w-20 bg-slate-100 rounded-xl" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : listings.length === 0 ? (
           <div className="bg-white border border-dashed border-slate-200/80 rounded-3xl p-16 text-center space-y-4 max-w-xl mx-auto shadow-3xs my-8">

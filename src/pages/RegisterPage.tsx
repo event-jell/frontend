@@ -225,7 +225,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: 'Inter, system-ui, sans-serif' }}>
-      <SEO title="Create an Account" />
+      <SEO title="Create an Account" noindex />
 
       {/* ── Left Panel ── */}
       <div className="hidden lg:flex lg:w-[30%] xl:w-[30%] flex-col justify-between p-12 relative overflow-hidden"

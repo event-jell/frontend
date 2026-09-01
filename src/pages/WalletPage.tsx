@@ -153,63 +153,80 @@ export default function WalletPage() {
         </div>
 
         {/* Hero Financial KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Available Balance */}
-          <div className="bg-gradient-to-br from-[#7A1F1F] to-[#551414] text-white rounded-3xl p-6 shadow-lg shadow-[#7A1F1F]/20 flex flex-col justify-between relative overflow-hidden">
-            <div className="flex items-center justify-between text-amber-200/90 text-xs font-bold uppercase tracking-wider mb-3">
-              <span>Available to Withdraw</span>
-              <WalletIcon size={16} />
-            </div>
-            <div>
-              <div className="text-3xl font-black tracking-tight">
-                {formatCurrency(wallet?.available_balance || 0, localCurrency)}
+        {isWalletLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="h-3.5 w-24 bg-slate-200 rounded" />
+                  <div className="w-5 h-5 bg-slate-200 rounded" />
+                </div>
+                <div className="space-y-1.5">
+                  <div className="h-7 w-32 bg-slate-200 rounded-lg" />
+                  <div className="h-3 w-40 bg-slate-100 rounded" />
+                </div>
               </div>
-              <p className="text-[11px] text-white/70 mt-1">Ready for instant bank transfer</p>
-            </div>
+            ))}
           </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Available Balance */}
+            <div className="bg-gradient-to-br from-[#7A1F1F] to-[#551414] text-white rounded-3xl p-6 shadow-lg shadow-[#7A1F1F]/20 flex flex-col justify-between relative overflow-hidden">
+              <div className="flex items-center justify-between text-amber-200/90 text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Available to Withdraw</span>
+                <WalletIcon size={16} />
+              </div>
+              <div>
+                <div className="text-3xl font-black tracking-tight">
+                  {formatCurrency(wallet?.available_balance || 0, localCurrency)}
+                </div>
+                <p className="text-[11px] text-white/70 mt-1">Ready for instant bank transfer</p>
+              </div>
+            </div>
 
-          {/* Total Earned */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">
-              <span>Total Lifetime Earned</span>
-              <ArrowDownLeft size={16} className="text-green-600" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900">
-                {formatCurrency(wallet?.total_earned || 0, localCurrency)}
+            {/* Total Earned */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Total Lifetime Earned</span>
+                <ArrowDownLeft size={16} className="text-green-600" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Gross revenue across all events</p>
+              <div>
+                <div className="text-2xl font-black text-slate-900">
+                  {formatCurrency(wallet?.total_earned || 0, localCurrency)}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">Gross revenue across all events</p>
+              </div>
             </div>
-          </div>
 
-          {/* Total Withdrawn */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">
-              <span>Total Withdrawn</span>
-              <ArrowUpRight size={16} className="text-[#7A1F1F]" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900">
-                {formatCurrency(wallet?.total_withdrawn || 0, localCurrency)}
+            {/* Total Withdrawn */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Total Withdrawn</span>
+                <ArrowUpRight size={16} className="text-[#7A1F1F]" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Disbursed to bank & PayPal</p>
+              <div>
+                <div className="text-2xl font-black text-slate-900">
+                  {formatCurrency(wallet?.total_withdrawn || 0, localCurrency)}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">Disbursed to bank & PayPal</p>
+              </div>
             </div>
-          </div>
 
-          {/* Pending Clearing */}
-          <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
-            <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">
-              <span>Pending Inflow</span>
-              <Clock size={16} className="text-amber-500" />
-            </div>
-            <div>
-              <div className="text-2xl font-black text-slate-900">
-                {formatCurrency(wallet?.pending_balance || 0, localCurrency)}
+            {/* Pending Clearing */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs flex flex-col justify-between">
+              <div className="flex items-center justify-between text-slate-500 text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Pending Inflow</span>
+                <Clock size={16} className="text-amber-500" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-1">Card payments processing</p>
+              <div>
+                <div className="text-2xl font-black text-slate-900">
+                  {formatCurrency(wallet?.pending_balance || 0, localCurrency)}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">Card payments processing</p>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Security Alert Banner if PIN is not set */}
         {wallet && !wallet.pin_set && (
@@ -352,7 +369,22 @@ export default function WalletPage() {
             </div>
           </div>
 
-          {filteredTransactions.length === 0 ? (
+          {isTxLoading ? (
+            <div className="p-4 space-y-3 animate-pulse">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-slate-200" />
+                    <div className="space-y-1.5">
+                      <div className="h-3.5 w-32 bg-slate-200 rounded" />
+                      <div className="h-2.5 w-20 bg-slate-100 rounded" />
+                    </div>
+                  </div>
+                  <div className="h-4 w-16 bg-slate-200 rounded" />
+                </div>
+              ))}
+            </div>
+          ) : filteredTransactions.length === 0 ? (
             <div className="p-12 text-center bg-slate-50 rounded-2xl">
               <p className="text-xs text-slate-400">No transactions found matching your criteria.</p>
             </div>

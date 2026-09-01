@@ -50,9 +50,22 @@ export default function GuestEventPassPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-4">
-        <div className="w-12 h-12 rounded-full border-4 border-[#D4A24C] border-t-transparent animate-spin mb-4" />
-        <p className="text-sm font-bold text-slate-400">Loading secure event pass…</p>
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 animate-pulse">
+        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+          <div className="flex justify-between items-center">
+            <div className="h-4 w-20 bg-slate-800 rounded-full" />
+            <div className="h-4 w-12 bg-slate-800 rounded-md" />
+          </div>
+          <div className="w-48 h-48 bg-slate-800 rounded-2xl mx-auto" />
+          <div className="space-y-2 text-center">
+            <div className="h-6 w-40 bg-slate-800 rounded-xl mx-auto" />
+            <div className="h-3.5 w-28 bg-slate-800 rounded mx-auto" />
+          </div>
+          <div className="pt-4 border-t border-slate-800 grid grid-cols-2 gap-3">
+            <div className="h-10 bg-slate-800/60 rounded-xl" />
+            <div className="h-10 bg-slate-800/60 rounded-xl" />
+          </div>
+        </div>
       </div>
     );
   }

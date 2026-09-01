@@ -21,36 +21,7 @@ export const SUPPORTED_CURRENCIES: CurrencyOption[] = [
   { code: 'AUD', name: 'Australian Dollar', symbol: 'A$', flag: '🇦🇺', country: 'Australia' },
 ];
 
-export const getCurrencyForCountry = (countryOrCode?: string): string => {
-  if (!countryOrCode) {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-      if (tz.includes('Lagos') || tz.includes('Nigeria')) return 'NGN';
-      if (tz.includes('Toronto') || tz.includes('Vancouver') || tz.includes('Montreal') || tz.includes('Edmonton') || tz.includes('Winnipeg') || tz.includes('Halifax')) return 'CAD';
-      if (tz.includes('London')) return 'GBP';
-      if (tz.includes('Accra')) return 'GHS';
-      if (tz.includes('Nairobi')) return 'KES';
-      if (tz.includes('Johannesburg')) return 'ZAR';
-      if (tz.includes('Sydney') || tz.includes('Melbourne') || tz.includes('Brisbane') || tz.includes('Perth')) return 'AUD';
-      if (tz.startsWith('Europe/')) return 'EUR';
-    } catch {}
-    return 'USD';
-  }
-
-  const normalized = countryOrCode.trim().toLowerCase();
-  if (['ng', 'nga', 'nigeria', '234', '+234', 'lagos', 'abuja'].includes(normalized)) return 'NGN';
-  if (['ca', 'can', 'canada', '1', '+1'].includes(normalized)) return 'CAD';
-  if (['gb', 'gbr', 'uk', 'united kingdom', 'england', 'scotland', 'wales', 'britain', 'great britain', '44', '+44'].includes(normalized)) return 'GBP';
-  if (['us', 'usa', 'united states', 'united states of america', 'america'].includes(normalized)) return 'USD';
-  if (['gh', 'gha', 'ghana', '233', '+233'].includes(normalized)) return 'GHS';
-  if (['ke', 'ken', 'kenya', '254', '+254'].includes(normalized)) return 'KES';
-  if (['za', 'zaf', 'south africa', '27', '+27'].includes(normalized)) return 'ZAR';
-  if (['au', 'aus', 'australia', '61', '+61'].includes(normalized)) return 'AUD';
-  if (['de', 'fr', 'es', 'it', 'nl', 'ie', 'pt', 'be', 'at', 'fi', 'gr', 'germany', 'france', 'spain', 'italy', 'netherlands', 'ireland', 'portugal', 'belgium', 'austria', 'finland', 'greece', 'europe'].includes(normalized)) return 'EUR';
-
-  const match = SUPPORTED_CURRENCIES.find(c => c.code.toLowerCase() === normalized);
-  if (match) return match.code;
-
+export const getCurrencyForCountry = (_countryOrCode?: string): string => {
   return 'USD';
 };
 

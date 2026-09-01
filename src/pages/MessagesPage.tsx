@@ -281,9 +281,19 @@ export default function MessagesPage() {
           {/* Conversations List */}
           <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-slate-50">
             {loadingConversations ? (
-              <div className="py-12 text-center text-slate-400 space-y-2">
-                <div className="w-5 h-5 border-2 border-[#7A1F1F] border-t-transparent rounded-full animate-spin mx-auto" />
-                <p className="text-[11px]">Loading chats...</p>
+              <div className="p-3 space-y-3 animate-pulse">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center gap-3 p-2 rounded-xl">
+                    <div className="w-10 h-10 rounded-full bg-slate-200 flex-shrink-0" />
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div className="flex justify-between">
+                        <div className="h-3.5 w-24 bg-slate-200 rounded" />
+                        <div className="h-2.5 w-10 bg-slate-100 rounded" />
+                      </div>
+                      <div className="h-3 w-40 bg-slate-100 rounded" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : filteredConversations.length === 0 ? (
               <div className="py-12 px-4 text-center space-y-1.5">
@@ -432,9 +442,27 @@ export default function MessagesPage() {
               <div className="flex-1 overflow-y-auto no-scrollbar p-3 sm:p-5 bg-[#F8FAFC]">
                 <div className="space-y-2.5 sm:space-y-3.5 flex flex-col">
                   {loadingMessages ? (
-                    <div className="py-16 text-center text-slate-400 space-y-1.5">
-                      <div className="w-5 h-5 border-2 border-[#7A1F1F] border-t-transparent rounded-full animate-spin mx-auto" />
-                      <p className="text-[11px] font-medium">Loading messages...</p>
+                    <div className="space-y-4 p-2 animate-pulse">
+                      <div className="flex items-start gap-2.5 max-w-xs">
+                        <div className="w-7 h-7 rounded-full bg-slate-200 flex-shrink-0" />
+                        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 flex-1 shadow-2xs">
+                          <div className="h-3.5 w-3/4 bg-slate-200 rounded" />
+                          <div className="h-3 w-1/2 bg-slate-100 rounded" />
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5 max-w-xs ml-auto flex-row-reverse">
+                        <div className="w-7 h-7 rounded-full bg-slate-200 flex-shrink-0" />
+                        <div className="bg-[#7A1F1F]/10 border border-[#7A1F1F]/20 rounded-2xl p-3.5 space-y-2 flex-1">
+                          <div className="h-3.5 w-4/5 bg-slate-300 rounded ml-auto" />
+                          <div className="h-3 w-2/3 bg-slate-200 rounded ml-auto" />
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2.5 max-w-xs">
+                        <div className="w-7 h-7 rounded-full bg-slate-200 flex-shrink-0" />
+                        <div className="bg-white border border-slate-200/80 rounded-2xl p-3.5 space-y-2 flex-1 shadow-2xs">
+                          <div className="h-3.5 w-2/3 bg-slate-200 rounded" />
+                        </div>
+                      </div>
                     </div>
                   ) : allMessages.length === 0 ? (
                     <div className="py-12 text-center space-y-1.5 max-w-sm mx-auto">

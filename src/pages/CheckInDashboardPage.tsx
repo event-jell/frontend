@@ -90,92 +90,109 @@ export default function CheckInDashboardPage() {
         {/* Content Body */}
         <div className="max-w-6xl mx-auto p-4 sm:p-8 space-y-6 sm:space-y-8 w-full">
           {/* Key Metric Overview Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Total Expected */}
-            <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                  Total Expected
-                </span>
-                <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                  <Users size={18} />
+          {loadingStats && !stats ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3.5 w-24 bg-slate-200 rounded" />
+                    <div className="w-9 h-9 rounded-2xl bg-slate-100" />
+                  </div>
+                  <div className="space-y-1">
+                    <div className="h-8 w-16 bg-slate-200 rounded-lg" />
+                    <div className="h-3 w-32 bg-slate-100 rounded" />
+                  </div>
                 </div>
-              </div>
-              <div>
-                <span className="text-3xl font-black text-slate-900 block">
-                  {stats?.totalExpected || 0}
-                </span>
-                <span className="text-xs text-slate-400 font-medium mt-0.5 block">
-                  Confirmed RSVPs & Tickets
-                </span>
-              </div>
+              ))}
             </div>
-
-            {/* Checked In Count */}
-            <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                  Checked In
-                </span>
-                <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <UserCheck size={18} />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-slate-900">
-                    {stats?.checkedInCount || 0}
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total Expected */}
+              <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                    Total Expected
                   </span>
-                  <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
-                    {stats?.checkInPercentage || 0}% Arrived
+                  <div className="w-9 h-9 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                    <Users size={18} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-3xl font-black text-slate-900 block">
+                    {stats?.totalExpected || 0}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5 block">
+                    Confirmed RSVPs & Tickets
                   </span>
                 </div>
-                <span className="text-xs text-slate-400 font-medium mt-0.5 block">
-                  Processed at entrance
-                </span>
               </div>
-            </div>
 
-            {/* Remaining */}
-            <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                  Remaining
-                </span>
-                <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                  <Clock size={18} />
+              {/* Checked In Count */}
+              <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                    Checked In
+                  </span>
+                  <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <UserCheck size={18} />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-3xl font-black text-slate-900">
+                      {stats?.checkedInCount || 0}
+                    </span>
+                    <span className="text-xs font-black text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md">
+                      {stats?.checkInPercentage || 0}% Arrived
+                    </span>
+                  </div>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5 block">
+                    Processed at entrance
+                  </span>
                 </div>
               </div>
-              <div>
-                <span className="text-3xl font-black text-slate-900 block">
-                  {stats?.remainingCount || 0}
-                </span>
-                <span className="text-xs text-slate-400 font-medium mt-0.5 block">
-                  Expected to arrive
-                </span>
-              </div>
-            </div>
 
-            {/* Security Alerts */}
-            <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
-                  Security Alerts
-                </span>
-                <div className="w-9 h-9 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
-                  <AlertTriangle size={18} />
+              {/* Remaining */}
+              <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                    Remaining
+                  </span>
+                  <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <Clock size={18} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-3xl font-black text-slate-900 block">
+                    {stats?.remainingCount || 0}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5 block">
+                    Expected to arrive
+                  </span>
                 </div>
               </div>
-              <div>
-                <span className="text-3xl font-black text-slate-900 block">
-                  {stats?.recentAlerts?.length || 0}
-                </span>
-                <span className="text-xs text-slate-400 font-medium mt-0.5 block">
-                  Duplicate or invalid scans
-                </span>
+
+              {/* Security Alerts */}
+              <div className="p-5 bg-white rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-extrabold text-slate-400 uppercase tracking-wider">
+                    Security Alerts
+                  </span>
+                  <div className="w-9 h-9 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <AlertTriangle size={18} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-3xl font-black text-slate-900 block">
+                    {stats?.recentAlerts?.length || 0}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium mt-0.5 block">
+                    Duplicate or invalid scans
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Tier Arrival Breakdown */}
           <div className="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-2xs">

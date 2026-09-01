@@ -3,10 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/favicon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#7A1F1F" />
+
+    <!-- Speed up first API/socket connections -->
+    <link rel="preconnect" href="https://backend.eventjell.com" crossorigin />
+    <link rel="dns-prefetch" href="https://backend.eventjell.com" />
+
     <title>EventJell | Premium Floor & Stage Planner</title>
     <meta name="description" content="Premium event management. Floor plans, guest lists, ticketing, vendors, communications — all in one place." />
+    <meta name="keywords" content="event management, floor plan builder, seating chart, guest list, event ticketing, vendor marketplace, event planning software, wedding planner, RSVP, check-in" />
+    <meta name="author" content="EventJell" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href="https://eventjell.com/" />
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -17,12 +29,57 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:site_name" content="EventJell" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="EventJell | Premium Floor & Stage Planner" />
     <meta name="twitter:description" content="Premium event management. Floor plans, guest lists, ticketing, vendors, communications — all in one place." />
     <meta name="twitter:image" content="https://eventjell.com/thumbnail.png" />
+
+    <!-- Structured data: Organization + WebSite (rendered statically so non-JS crawlers see it) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://eventjell.com/#organization",
+            "name": "EventJell",
+            "url": "https://eventjell.com",
+            "logo": "https://eventjell.com/logo.png",
+            "description": "Premium event management platform for floor plans, guest lists, ticketing, vendors and communications."
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://eventjell.com/#website",
+            "url": "https://eventjell.com",
+            "name": "EventJell",
+            "publisher": { "@id": "https://eventjell.com/#organization" },
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://eventjell.com/explore?search={search_term_string}"
+              },
+              "query-input": "required name=search_term_string"
+            }
+          },
+          {
+            "@type": "SoftwareApplication",
+            "name": "EventJell",
+            "applicationCategory": "BusinessApplication",
+            "operatingSystem": "Web, iOS, Android",
+            "url": "https://eventjell.com",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "USD"
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

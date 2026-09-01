@@ -9,7 +9,7 @@ import {
 import { usePublicEvent } from '../hooks/useEvents';
 import { useTickets } from '../hooks/useTickets';
 import { useCreateGuest } from '../hooks/useGuests';
-import { paymentsApi, getFriendlyErrorMessage } from '../lib/api';
+import { paymentsApi, getFriendlyErrorMessage, apiUrl } from '../lib/api';
 import { openPaystackModal } from '../utils/paystack';
 import { openPayPalCheckout } from '../utils/paypal';
 import { COUNTRIES, type Country } from '../utils/countries';
@@ -345,7 +345,7 @@ export default function EventInvitePage() {
     if (!event || !createdGuest) return;
     try {
       toast.loading('Generating Apple Wallet Pass...', { id: 'wallet-pass' });
-      const passUrl = `/api/events/${event.slug || id}/guests/${createdGuest._id}/apple-wallet`;
+      const passUrl = apiUrl(`/events/${event.slug || id}/guests/${createdGuest._id}/apple-wallet`);
       const link = document.createElement('a');
       link.href = passUrl;
       link.setAttribute('download', `${event.name.replace(/\s+/g, '_')}_pass.pkpass`);
@@ -451,7 +451,7 @@ export default function EventInvitePage() {
               <div className="flex flex-col items-center justify-center pt-2">
                 <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-200">
                   <img
-                    src={`/api/events/${event.slug || id}/qr-code${selectedTicket ? `?ticketId=${selectedTicket._id}` : ''}`}
+                    src={apiUrl(`/events/${event.slug || id}/qr-code${selectedTicket ? `?ticketId=${selectedTicket._id}` : ''}`)}
                     alt="Admission QR Code"
                     className="w-28 h-28 object-contain"
                   />

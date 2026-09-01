@@ -14,6 +14,7 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianG
 import type { Ticket as TicketType, Guest } from '../types';
 import { formatCurrency, formatLocalDate } from '../utils/formatters';
 import { useLocale } from '../hooks/useLocale';
+import { apiUrl } from '../lib/api';
 import { toast } from 'sonner';
 
 const STATUS_CONFIG = {
@@ -28,8 +29,8 @@ function RsvpLinkModal({ ticket, eventId, onClose }: { ticket: TicketType; event
   const [copied, setCopied] = useState(false);
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const rsvpUrl = `${window.location.origin}/events/${eventId}/invite?ticket=${ticket._id}`;
-  const qrPngUrl = `/api/events/${eventId}/qr-code?ticketId=${ticket._id}&format=png`;
-  const qrSvgUrl = `/api/events/${eventId}/qr-code?ticketId=${ticket._id}&format=svg`;
+  const qrPngUrl = apiUrl(`/events/${eventId}/qr-code?ticketId=${ticket._id}&format=png`);
+  const qrSvgUrl = apiUrl(`/events/${eventId}/qr-code?ticketId=${ticket._id}&format=svg`);
   const isPaid = ticket.price > 0;
 
   const handleCopy = () => {
@@ -78,7 +79,7 @@ function RsvpLinkModal({ ticket, eventId, onClose }: { ticket: TicketType; event
   const handleDownloadWalletPass = async () => {
     try {
       toast.loading('Generating pass...', { id: 'wallet' });
-      const res = await fetch(`/api/events/${eventId}/wallet-pass?ticketId=${ticket._id}`);
+      const res = await fetch(apiUrl(`/events/${eventId}/wallet-pass?ticketId=${ticket._id}`));
       if (!res.ok) throw new Error('Pass generation failed');
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);

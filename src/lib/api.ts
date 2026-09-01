@@ -14,6 +14,17 @@ const API_PREFIX = BASE_URL
 
 export const http = axios.create({ baseURL: API_PREFIX });
 
+/**
+ * Build an absolute URL to a backend endpoint for use *outside* the axios client
+ * — e.g. `<img src>`, `<a href>`, or `fetch()` downloads. Mirrors the axios
+ * `baseURL` so these resolve to `VITE_API_URL` in production instead of the
+ * frontend origin (which nginx does not proxy to `/api`, producing broken
+ * images / 404s). Pass a path WITHOUT the leading `/api` (e.g. `/events/123/qr-code`).
+ */
+export function apiUrl(path: string): string {
+  return `${API_PREFIX}${path.startsWith('/') ? '' : '/'}${path}`;
+}
+
 http.interceptors.request.use((config) => {
   const token = localStorage.getItem(TOKEN_KEY);
   if (token) config.headers.Authorization = `Bearer ${token}`;

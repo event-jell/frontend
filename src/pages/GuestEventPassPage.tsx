@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
 import {
   Calendar,
@@ -254,6 +254,14 @@ export default function GuestEventPassPage() {
         <p className="text-[11px] text-white/40 mt-4 text-center print:hidden">
           Present this digital QR pass on your mobile device at the entrance scanner.
         </p>
+        <div className="mt-3 text-center print:hidden">
+          <Link
+            to="/my-passes"
+            className="text-xs font-bold text-white/70 hover:text-white underline underline-offset-2 transition-colors"
+          >
+            View all my passes →
+          </Link>
+        </div>
       </div>
     </>
   );

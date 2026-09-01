@@ -48,6 +48,7 @@ const CreateVendorListingPage = lazy(() => import('./pages/CreateVendorListingPa
 const VendorProfilePage = lazy(() => import('./pages/VendorProfilePage'));
 const MessagesPage = lazy(() => import('./pages/MessagesPage'));
 const ExplorePage = lazy(() => import('./pages/ExplorePage'));
+const GuestPassesPage = lazy(() => import('./pages/GuestPassesPage'));
 
 function PageLoader() {
   return (
@@ -189,6 +190,7 @@ function AppRoutes() {
         <Route path="/events/:id/rsvp" element={<RsvpRedirect />} />
         <Route path="/events/:id/invite" element={<EventInvitePage />} />
         <Route path="/events/:id/pass/:guestId" element={<GuestEventPassPage />} />
+        <Route path="/my-passes" element={<GuestPassesPage />} />
         <Route path="/invitations/accept/:token" element={<AcceptInvitePage />} />
         <Route path="/explore" element={token ? <Shell><ExplorePage /></Shell> : <ExplorePage />} />
         <Route path="/vendors/:listingId" element={token ? <Shell><VendorProfilePage /></Shell> : <VendorProfilePage />} />

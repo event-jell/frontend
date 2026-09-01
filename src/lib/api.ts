@@ -109,6 +109,56 @@ export function getFriendlyErrorMessage(error: any, fallback = 'An unexpected er
   return fallback;
 }
 
+// ─── Guest Passes Portal (magic-link auth, separate session) ──────────────────
+
+const GUEST_TOKEN_KEY = 'ej_guest_token';
+
+/**
+ * Dedicated client for the guest passes portal. Uses its own session token and
+ * intentionally has NO 401→/login redirect (guests aren't organizers).
+ */
+const guestHttp = axios.create({ baseURL: API_PREFIX });
+guestHttp.interceptors.request.use((config) => {
+  const token = localStorage.getItem(GUEST_TOKEN_KEY);
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+export interface GuestPass {
+  guestId: string;
+  eventId: string;
+  eventSlug?: string;
+  eventName: string;
+  venue?: string;
+  date?: string;
+  startTime?: string;
+  coverImage?: string;
+  ticketName?: string | null;
+  rsvpStatus: string;
+  checkedIn: boolean;
+  token: string;
+  passUrl: string;
+}
+
+export const guestPortalApi = {
+  /** Ask for an emailed magic link (always resolves; no account enumeration). */
+  requestLink: (email: string) =>
+    guestHttp.post<{ ok: boolean }>('/guest-portal/request-link', { email }).then((r) => r.data),
+  /** Exchange a magic-link token for a guest session token. */
+  verify: (token: string) =>
+    guestHttp
+      .post<{ token: string; email: string; name?: string }>('/guest-portal/verify', { token })
+      .then((r) => r.data),
+  /** Fetch all passes for the authenticated guest. */
+  getPasses: () =>
+    guestHttp
+      .get<{ email: string; passes: GuestPass[] }>('/guest-portal/passes')
+      .then((r) => r.data),
+  getToken: () => localStorage.getItem(GUEST_TOKEN_KEY),
+  setToken: (token: string) => localStorage.setItem(GUEST_TOKEN_KEY, token),
+  clearToken: () => localStorage.removeItem(GUEST_TOKEN_KEY),
+};
+
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export interface AuthResponse {

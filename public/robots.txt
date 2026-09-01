@@ -12,6 +12,7 @@ Disallow: /dashboard
 Disallow: /settings
 Disallow: /wallet
 Disallow: /messages
+Disallow: /my-passes
 Disallow: /events
 Disallow: /vendor/
 Disallow: /login
